@@ -9,6 +9,14 @@ namespace kcp2k
         internal static readonly List<ByteBuffer> pool = new List<ByteBuffer>();
         const int PoolMaxCount = 200;
 
+        public int ReaderIndex { get; private set; }
+
+        public int ReadableBytes => writeIndex - ReaderIndex;
+
+        public int Capacity { get; private set; }
+
+        public byte[] RawBuffer { get; private set; }
+
         public ByteBuffer(int capacity)
         {
             RawBuffer = new byte[capacity];
@@ -101,14 +109,6 @@ namespace kcp2k
             Array.Copy(bytes, startIndex, RawBuffer, writeIndex, length);
             writeIndex = total;
         }
-
-        public int ReaderIndex { get; private set; }
-
-        public int ReadableBytes => writeIndex - ReaderIndex;
-
-        public int Capacity { get; private set; }
-
-        public byte[] RawBuffer { get; private set; }
 
         public void Clear()
         {

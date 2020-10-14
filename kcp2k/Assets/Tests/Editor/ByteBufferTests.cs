@@ -15,6 +15,9 @@ public class ByteBufferTests
     public void TearDown()
     {
         buffer.Dispose();
+
+        // dispose still adds to pool :(( clean up.
+        ByteBuffer.pool.Clear();
     }
 
     [Test]

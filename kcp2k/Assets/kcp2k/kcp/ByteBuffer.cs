@@ -10,11 +10,8 @@ namespace kcp2k
         const int PoolMaxCount = 200;
 
         public int ReaderIndex { get; private set; }
-
         public int ReadableBytes => writeIndex - ReaderIndex;
-
         public int Capacity { get; private set; }
-
         public byte[] RawBuffer { get; private set; }
 
         public ByteBuffer(int capacity)

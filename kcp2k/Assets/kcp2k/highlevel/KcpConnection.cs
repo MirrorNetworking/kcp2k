@@ -13,9 +13,9 @@ namespace kcp2k
         internal Kcp kcp;
         volatile bool open;
 
-        internal event Action OnConnected;
-        internal event Action<ArraySegment<byte>> OnData;
-        internal event Action OnDisconnected;
+        public event Action OnConnected;
+        public event Action<ArraySegment<byte>> OnData;
+        public event Action OnDisconnected;
 
         // If we don't receive anything these many milliseconds
         // then consider us disconnected
@@ -78,7 +78,7 @@ namespace kcp2k
             }
         }
 
-        internal void RawInput(byte[] buffer, int msgLength)
+        public void RawInput(byte[] buffer, int msgLength)
         {
             kcp.Input(buffer, 0, msgLength, true, false);
 

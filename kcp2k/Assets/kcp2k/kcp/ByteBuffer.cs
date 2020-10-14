@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace kcp2k
 {
-    class ByteBuffer : IDisposable
+    public class ByteBuffer : IDisposable
     {
         int writeIndex;
         static readonly List<ByteBuffer> pool = new List<ByteBuffer>();
         const int PoolMaxCount = 200;
 
-        ByteBuffer(int capacity)
+        public ByteBuffer(int capacity)
         {
             RawBuffer = new byte[capacity];
             Capacity = capacity;

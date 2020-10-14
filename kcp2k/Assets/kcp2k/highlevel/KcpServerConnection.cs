@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace Mirror.KCP
+namespace kcp2k
 {
     public class KcpServerConnection : KcpConnection
     {

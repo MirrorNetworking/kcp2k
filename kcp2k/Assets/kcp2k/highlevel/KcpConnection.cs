@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
-namespace Mirror.KCP
+namespace kcp2k
 {
     public abstract class KcpConnection
     {

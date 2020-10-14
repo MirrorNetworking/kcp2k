@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace Mirror.KCP
+namespace kcp2k
 {
     public class Kcp
     {

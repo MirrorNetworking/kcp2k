@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 
-namespace Mirror.KCP
+namespace kcp2k
 {
-
     // KCP Segment Definition
     internal class Segment
     {

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Mirror.KCP
+namespace kcp2k
 {
     class ByteBuffer : IDisposable
     {
@@ -38,7 +38,7 @@ namespace Mirror.KCP
             bbuf = pool[lastIndex];
             pool.RemoveAt(lastIndex);
             return bbuf;
-            
+
         }
 
         /// <summary>

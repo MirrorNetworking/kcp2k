@@ -1,6 +1,6 @@
 using System;
 
-namespace Mirror.KCP
+namespace kcp2k
 {
     public static class Utils
     {

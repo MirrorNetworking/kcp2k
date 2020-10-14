@@ -208,11 +208,6 @@ namespace Mirror.KCP
             serverSocket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
             serverSocket.DualMode = true;
             serverSocket.Bind(new IPEndPoint(IPAddress.IPv6Any, Port));
-
-            // TODO accept
-            //KcpServerConnection connection = await acceptedConnections.Reader.ReadAsync();
-            //await connection.Handshake();
-            //return connection;
         }
         public override bool ServerSend(int connectionId, int channelId, ArraySegment<byte> segment)
         {

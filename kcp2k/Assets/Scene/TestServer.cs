@@ -34,5 +34,30 @@ namespace kcp2k.Examples
         public void LateUpdate()
         {
         }
+
+        void OnGUI()
+        {
+            //int firstclient = connections.Count > 0 ? connections.First().Key : -1;
+
+            GUILayout.BeginArea(new Rect(160, 5, 250, 400));
+            GUILayout.Label("Server:");
+            if (GUILayout.Button("Start"))
+            {
+                StartServer();
+            }
+            /*if (GUILayout.Button("Send 0x01, 0x02 to " + firstclient))
+            {
+                Send(firstclient, new ArraySegment<byte>(new byte[]{0x01, 0x02}));
+            }
+            if (GUILayout.Button("Disconnect connection " + firstclient))
+            {
+                Disconnect(firstclient);
+            }*/
+            if (GUILayout.Button("Stop"))
+            {
+                StopServer();
+            }
+            GUILayout.EndArea();
+        }
     }
 }

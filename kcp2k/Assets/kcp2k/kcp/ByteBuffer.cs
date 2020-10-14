@@ -5,7 +5,7 @@ namespace kcp2k
 {
     public class ByteBuffer : IDisposable
     {
-        int writeIndex;
+        internal int writeIndex;
         internal static readonly List<ByteBuffer> pool = new List<ByteBuffer>();
         const int PoolMaxCount = 200;
 

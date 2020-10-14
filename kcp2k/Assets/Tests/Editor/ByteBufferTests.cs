@@ -25,4 +25,12 @@ public class ByteBufferTests
     {
         // just run setup & teardown
     }
+
+    [Test]
+    public void WriteBytes()
+    {
+        byte[] bytes = {0xAA, 0xBB, 0xCC, 0xDD};
+        buffer.WriteBytes(bytes, 2, 2);
+        Assert.That(buffer.writeIndex, Is.EqualTo(2));
+    }
 }

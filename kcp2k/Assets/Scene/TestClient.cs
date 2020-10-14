@@ -8,21 +8,68 @@ namespace kcp2k.Examples
         // configuration
         public ushort Port = 7777;
 
-        public void Connect(string ip)
+        // client
+        readonly byte[] buffer = new byte[Kcp.MTU_DEF];
+        KcpClientConnection clientConnection;
+
+        public void Connect(string address)
         {
+            if (clientConnection != null)
+            {
+                Debug.LogWarning("KCP: client already connected!");
+                return;
+            }
+
+            clientConnection = new KcpClientConnection();
+            // setup events
+            clientConnection.OnConnected += () =>
+            {
+                Debug.LogWarning($"KCP OnClientConnected");
+            };
+            clientConnection.OnData += (message) =>
+            {
+                Debug.LogWarning($"KCP OnClientData({BitConverter.ToString(message.Array, message.Offset, message.Count)})");
+            };
+            clientConnection.OnDisconnected += () =>
+            {
+                Debug.LogWarning($"KCP OnClientDisconnected");
+            };
+
+            // connect
+            clientConnection.Connect(address, Port);
         }
 
         public void Send(ArraySegment<byte> segment)
         {
+            if (clientConnection != null)
+            {
+                clientConnection.Send(segment);
+            }
         }
 
         public void Disconnect()
         {
+            clientConnection?.Disconnect();
+            clientConnection = null;
         }
 
         // MonoBehaviour ///////////////////////////////////////////////////////
+        void UpdateClient()
+        {
+            // tick client connection
+            if (clientConnection != null)
+            {
+                clientConnection.Tick();
+                // recv on socket
+                clientConnection.RawReceive();
+                // recv on kcp
+                clientConnection.Receive();
+            }
+        }
+
         public void LateUpdate()
         {
+            UpdateClient();
         }
 
         void OnGUI()

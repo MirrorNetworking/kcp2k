@@ -18,7 +18,7 @@ namespace kcp2k
         {
         }
 
-        internal void Connect(string host, ushort port)
+        public void Connect(string host, ushort port)
         {
             Debug.Log($"KcpClient: connect to {host}:{port}");
             IPAddress[] ipAddress = Dns.GetHostAddresses(host);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using UnityEngine;
@@ -124,7 +125,7 @@ namespace kcp2k.Examples
 
         void OnGUI()
         {
-            //int firstclient = connections.Count > 0 ? connections.First().Key : -1;
+            int firstclient = connections.Count > 0 ? connections.First().Key : -1;
 
             GUILayout.BeginArea(new Rect(160, 5, 250, 400));
             GUILayout.Label("Server:");
@@ -132,14 +133,14 @@ namespace kcp2k.Examples
             {
                 StartServer();
             }
-            /*if (GUILayout.Button("Send 0x01, 0x02 to " + firstclient))
+            if (GUILayout.Button("Send 0x01, 0x02 to " + firstclient))
             {
                 Send(firstclient, new ArraySegment<byte>(new byte[]{0x01, 0x02}));
             }
             if (GUILayout.Button("Disconnect connection " + firstclient))
             {
                 Disconnect(firstclient);
-            }*/
+            }
             if (GUILayout.Button("Stop"))
             {
                 StopServer();

@@ -38,7 +38,7 @@ namespace kcp2k
         }
 
         // kcp members.
-        readonly uint conv;
+        readonly uint conv; // conversation
         uint mtu;
         uint snd_una;
         uint snd_nxt;
@@ -97,6 +97,7 @@ namespace kcp2k
             interval = INTERVAL;
             ts_flush = INTERVAL;
             ssthresh = THRESH_INIT;
+            // note: original kcp uses (mtu + overhead) * 3
             buffer = new byte[mtu];
             output = output_;
             refTime.Start();

@@ -1,3 +1,5 @@
+// Kcp based on https://github.com/skywind3000/kcp
+// Kept as close to original as possible.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

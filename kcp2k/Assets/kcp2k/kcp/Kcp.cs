@@ -82,9 +82,8 @@ namespace kcp2k
         readonly Stopwatch refTime = new Stopwatch();
         public uint CurrentMS => (uint)refTime.ElapsedMilliseconds;
 
-        /// <summary>create a new kcp control object</summary>
-        /// <param name="conv_">must equal in two endpoint from the same connection.</param>
-        /// <param name="output_"></param>
+        // create a new kcp control object, 'conv' must equal in two endpoint
+        // from the same connection.
         public Kcp(uint conv_, Action<byte[], int> output_)
         {
             conv = conv_;
@@ -103,8 +102,7 @@ namespace kcp2k
             refTime.Start();
         }
 
-        /// <summary>PeekSize
-        /// check the size of next message in the recv queue</summary>
+        // check the size of next message in the recv queue
         public int PeekSize()
         {
             if (receiveQueue.Count == 0)

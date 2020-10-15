@@ -20,7 +20,7 @@ namespace kcp2k
         public const int ASK_TELL = 2;         // need to send CMD_WINS
         public const int WND_SND = 32;         // defualt send window
         public const int WND_RCV = 128;        // default receive window. must be >= max fragment size
-        public const int MTU_DEF = 1200;       // default MTU (reduced to 1200 to fit all cases: https://en.wikipedia.org/wiki/Maximum_transmission_unit)
+        public const int MTU_DEF = 1200;       // default MTU (reduced to 1200 to fit all cases: https://en.wikipedia.org/wiki/Maximum_transmission_unit ; steam uses 1200 too!)
         public const int ACK_FAST = 3;
         public const int INTERVAL = 100;
         public const int OVERHEAD = 24;

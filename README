@@ -4,5 +4,3 @@ The goal is to keep base kcp as close as possible to skywind3000's C version bec
 The high level C# code will be robust, fast and simple as possible.
 
 Pull requests for bug fixes & tests welcome.
-
-License: MIT, see kcp2k/Assets/kcp/LICENSE

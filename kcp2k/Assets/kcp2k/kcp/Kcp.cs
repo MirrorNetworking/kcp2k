@@ -31,8 +31,6 @@ namespace kcp2k
         public const int PROBE_LIMIT = 120000; // up to 120 secs to probe window
         public const int SN_OFFSET = 12;       // max times to trigger fastack
 
-        readonly Stopwatch refTime = new Stopwatch();
-
         internal struct AckItem
         {
             internal uint serialNumber;
@@ -81,6 +79,7 @@ namespace kcp2k
         public int WaitSnd => sendBuffer.Count + sendQueue.Count;
 
         // internal time.
+        readonly Stopwatch refTime = new Stopwatch();
         public uint CurrentMS => (uint)refTime.ElapsedMilliseconds;
 
         /// <summary>create a new kcp control object</summary>

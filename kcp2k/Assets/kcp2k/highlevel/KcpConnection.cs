@@ -155,7 +155,7 @@ namespace kcp2k
                             // we are only connected if we received the handshake.
                             // not just after receiving any first data.
                             authenticated = true;
-                            Debug.LogWarning("Kcp recv handshake");
+                            //Debug.Log("KCP: received handshake");
                             OnConnected?.Invoke();
                         }
                         // otherwise it's random data from the internet, not

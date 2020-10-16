@@ -175,7 +175,7 @@ namespace kcp2k
                         if (SegmentsEqual(dataSegment, Goodby))
                         {
                             // if we receive a disconnect message,  then close everything
-                            Debug.LogWarning("Kcp recv disconnected");
+                            //Debug.Log("KCP: received disconnect message");
                             open = false;
                             OnDisconnected?.Invoke();
                             break;

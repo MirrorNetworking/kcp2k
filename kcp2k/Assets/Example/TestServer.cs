@@ -19,6 +19,8 @@ namespace kcp2k.Examples
         // connections <connectionId, connection> where connectionId is EndPoint.GetHashCode
         public Dictionary<int, KcpServerConnection> connections = new Dictionary<int, KcpServerConnection>();
 
+        public bool Active() => serverSocket != null;
+
         public void StartServer()
         {
             // only start once

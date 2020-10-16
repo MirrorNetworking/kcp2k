@@ -176,6 +176,10 @@ namespace kcp2k
                 {
                     Send(Goodby);
                     kcp.Flush(false);
+
+                    // call OnDisconnected event, even if we manually
+                    // disconnected
+                    OnDisconnected?.Invoke();
                 }
                 catch (SocketException)
                 {

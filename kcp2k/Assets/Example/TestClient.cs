@@ -24,15 +24,15 @@ namespace kcp2k.Examples
             // setup events
             clientConnection.OnConnected += () =>
             {
-                Debug.LogWarning($"KCP OnClientConnected");
+                Debug.Log($"KCP: OnClientConnected");
             };
             clientConnection.OnData += (message) =>
             {
-                Debug.LogWarning($"KCP OnClientData({BitConverter.ToString(message.Array, message.Offset, message.Count)})");
+                Debug.Log($"KCP: OnClientData({BitConverter.ToString(message.Array, message.Offset, message.Count)})");
             };
             clientConnection.OnDisconnected += () =>
             {
-                Debug.LogWarning($"KCP OnClientDisconnected");
+                Debug.Log($"KCP: OnClientDisconnected");
             };
 
             // connect

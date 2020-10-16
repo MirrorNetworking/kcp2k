@@ -80,20 +80,20 @@ namespace kcp2k.Examples
 
                     //acceptedConnections.Writer.TryWrite(connection);
                     connections.Add(connectionId, connection);
-                    Debug.LogWarning($"KCP: server added connection {serverNewClientEP}");
+                    Debug.Log($"KCP: server added connection {serverNewClientEP}");
 
                     // setup connected event
                     connection.OnConnected += () =>
                     {
                         // call mirror event
-                        Debug.LogWarning($"KCP OnServerConnected({connectionId})");
+                        Debug.Log($"KCP: OnServerConnected({connectionId})");
                     };
 
                     // setup data event
                     connection.OnData += (message) =>
                     {
                         // call mirror event
-                        Debug.LogWarning($"KCP OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)})");
+                        Debug.Log($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)})");
                     };
 
                     // setup disconnected event
@@ -103,7 +103,7 @@ namespace kcp2k.Examples
                         connections.Remove(connectionId);
 
                         // call mirror event
-                        Debug.LogWarning($"KCP OnServerDisconnected({connectionId})");
+                        Debug.Log($"KCP: OnServerDisconnected({connectionId})");
                     };
 
                     // send handshake

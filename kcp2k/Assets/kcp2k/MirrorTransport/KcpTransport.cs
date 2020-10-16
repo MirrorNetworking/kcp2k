@@ -62,17 +62,17 @@ namespace Mirror.KCP
             // setup events
             clientConnection.OnConnected += () =>
             {
-                Debug.LogWarning($"KCP->Mirror OnClientConnected");
+                Debug.Log($"KCP: OnClientConnected");
                 OnClientConnected.Invoke();
             };
             clientConnection.OnData += (message) =>
             {
-                //Debug.LogWarning($"KCP->Mirror OnClientData({BitConverter.ToString(message.Array, message.Offset, message.Count)})");
+                //Debug.Log($"KCP: OnClientData({BitConverter.ToString(message.Array, message.Offset, message.Count)})");
                 OnClientDataReceived.Invoke(message);
             };
             clientConnection.OnDisconnected += () =>
             {
-                Debug.LogWarning($"KCP->Mirror OnClientDisconnected");
+                Debug.Log($"KCP: OnClientDisconnected");
                 OnClientDisconnected.Invoke();
             };
 
@@ -120,13 +120,13 @@ namespace Mirror.KCP
 
                     //acceptedConnections.Writer.TryWrite(connection);
                     connections.Add(connectionId, connection);
-                    Debug.LogWarning($"KCP: server added connection {serverNewClientEP}");
+                    Debug.Log($"KCP: server added connection {serverNewClientEP}");
 
                     // setup connected event
                     connection.OnConnected += () =>
                     {
                         // call mirror event
-                        Debug.LogWarning($"KCP->Mirror OnServerConnected({connectionId})");
+                        Debug.Log($"KCP: OnServerConnected({connectionId})");
                         OnServerConnected.Invoke(connectionId);
                     };
 
@@ -134,7 +134,7 @@ namespace Mirror.KCP
                     connection.OnData += (message) =>
                     {
                         // call mirror event
-                        //Debug.LogWarning($"KCP->Mirror OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)})");
+                        //Debug.Log($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)})");
                         OnServerDataReceived.Invoke(connectionId, message);
                     };
 
@@ -145,7 +145,7 @@ namespace Mirror.KCP
                         connections.Remove(connectionId);
 
                         // call mirror event
-                        Debug.LogWarning($"KCP->Mirror OnServerDisconnected({connectionId})");
+                        Debug.Log($"KCP: OnServerDisconnected({connectionId})");
                         OnServerDisconnected.Invoke(connectionId);
                     };
 

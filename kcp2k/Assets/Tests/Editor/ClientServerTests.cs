@@ -147,7 +147,7 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
 
             byte[] message = {0x01, 0x02};
-            LogAssert.Expect(LogType.Log, new Regex("KCP: OnServerDataReceived(.*, 01-02)"));;
+            LogAssert.Expect(LogType.Log, new Regex($"KCP: OnServerDataReceived(.*, {BitConverter.ToString(message)})"));
             SendClientToServerBlocking(new ArraySegment<byte>(message));
         }
 

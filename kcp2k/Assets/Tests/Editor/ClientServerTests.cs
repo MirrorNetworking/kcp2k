@@ -230,5 +230,18 @@ namespace kcp2k.Tests
             LogAssert.Expect(LogType.Log, $"KCP: OnClientDataReceived({BitConverter.ToString(message)})");
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
         }
+
+        // > max sized message should not work
+        [Test]
+        public void ServerToClientTooLargeMessage()
+        {
+            server.StartServer();
+            ConnectClientBlocking();
+
+            byte[] message = new byte[Kcp.MTU_DEF + 1];
+            int connectionId = ServerFirstConnectionId();
+            LogAssert.Expect(LogType.Error, $"Failed to send message of size {message.Length} because it's larger than MaxMessageSize={Kcp.MTU_DEF}");
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
+        }
     }
 }

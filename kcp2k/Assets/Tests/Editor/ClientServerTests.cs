@@ -84,7 +84,7 @@ namespace kcp2k.Tests
         [Test]
         public void ServerStartStop()
         {
-            LogAssert.Expect(LogType.Log, new Regex("KCP: starting server"));
+            LogAssert.Expect(LogType.Log, "KCP: starting server");
             LogAssert.Expect(LogType.Log, "KCP: server started");
             server.StartServer();
 

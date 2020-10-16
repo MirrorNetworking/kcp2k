@@ -293,5 +293,15 @@ namespace kcp2k.Tests
             Assert.That(client.Connected(), Is.False);
             Assert.That(server.connections.Count, Is.EqualTo(0));
         }
+
+        [Test]
+        public void ServerGetClientAddress()
+        {
+            server.StartServer();
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+
+            Assert.That(server.GetAddress(connectionId), Is.EqualTo("::ffff:127.0.0.1"));
+        }
     }
 }

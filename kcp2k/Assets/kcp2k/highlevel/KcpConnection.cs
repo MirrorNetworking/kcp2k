@@ -147,6 +147,7 @@ namespace kcp2k
                     Debug.LogWarning("Kcp recv disconnected");
                     open = false;
                     OnDisconnected?.Invoke();
+                    break;
                 }
                 // otherwise regular message
                 else

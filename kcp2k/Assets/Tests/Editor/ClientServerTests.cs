@@ -91,5 +91,14 @@ namespace kcp2k.Tests
             LogAssert.Expect(LogType.Log, "KCP: server stopped");
             server.StopServer();
         }
+
+        [Test]
+        public void ServerStartStopMultiple()
+        {
+            for (int i = 0; i < 10; ++i)
+            {
+                ServerStartStop();
+            }
+        }
     }
 }

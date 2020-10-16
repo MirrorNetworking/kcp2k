@@ -102,6 +102,7 @@ namespace Mirror.KCP
             clientConnection = null;
         }
 
+        HashSet<int> connectionsToRemove = new HashSet<int>();
         void UpdateServer()
         {
             while (serverSocket != null && serverSocket.Poll(0, SelectMode.SelectRead))
@@ -144,8 +145,10 @@ namespace Mirror.KCP
                     // setup disconnected event
                     connection.OnDisconnected += () =>
                     {
-                        // remove from connections
-                        connections.Remove(connectionId);
+                        // flag for removal
+                        // (can't remove directly because connection is updated
+                        //  and event is called while iterating all connections)
+                        connectionsToRemove.Add(connectionId);
 
                         // call mirror event
                         Debug.Log($"KCP: OnServerDisconnected({connectionId})");
@@ -165,6 +168,15 @@ namespace Mirror.KCP
                 connection.Tick();
                 connection.Receive();
             }
+
+            // remove disconnected connections
+            // (can't do it in connection.OnDisconnected because Tick is called
+            //  while iterating connections)
+            foreach (int connectionId in connectionsToRemove)
+            {
+                connections.Remove(connectionId);
+            }
+            connectionsToRemove.Clear();
         }
 
         void UpdateClient()

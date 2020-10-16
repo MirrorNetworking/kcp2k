@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Threading;
 using NUnit.Framework;
-using UnityEngine;
-using UnityEngine.TestTools;
 using kcp2k.Examples;
 
 namespace kcp2k.Tests
@@ -105,11 +103,17 @@ namespace kcp2k.Tests
         [Test]
         public void ConnectAndDisconnectClient()
         {
+            // connect
             server.StartServer();
             ConnectClientBlocking();
 
             Assert.That(client.Connected(), Is.True);
             Assert.That(server.connections.Count, Is.EqualTo(1));
+
+            // disconnect
+            DisconnectClientBlocking();
+            Assert.That(client.Connected(), Is.False);
+            Assert.That(server.connections.Count, Is.EqualTo(0));
         }
     }
 }

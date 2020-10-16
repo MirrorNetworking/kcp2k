@@ -233,7 +233,15 @@ namespace Mirror.KCP
             }
             return false;
         }
-        public override bool ServerDisconnect(int connectionId) => throw new NotImplementedException();
+        public override bool ServerDisconnect(int connectionId)
+        {
+            if (connections.TryGetValue(connectionId, out KcpServerConnection connection))
+            {
+                connection.Disconnect();
+                return true;
+            }
+            return false;
+        }
         public override string ServerGetClientAddress(int connectionId)
         {
             throw new NotImplementedException();

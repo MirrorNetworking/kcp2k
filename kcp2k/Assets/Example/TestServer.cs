@@ -47,7 +47,12 @@ namespace kcp2k.Examples
 
         public bool Disconnect(int connectionId)
         {
-            throw new NotImplementedException();
+            if (connections.TryGetValue(connectionId, out KcpServerConnection connection))
+            {
+                connection.Disconnect();
+                return true;
+            }
+            return false;
         }
 
         public string GetAddress(int connectionId)

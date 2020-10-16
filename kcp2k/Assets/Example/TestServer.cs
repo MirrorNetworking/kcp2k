@@ -57,7 +57,11 @@ namespace kcp2k.Examples
 
         public string GetAddress(int connectionId)
         {
-            throw new NotImplementedException();
+            if (connections.TryGetValue(connectionId, out KcpServerConnection connection))
+            {
+                return (connection.GetRemoteEndPoint() as IPEndPoint).Address.ToString();
+            }
+            return "";
         }
 
         public void StopServer()

@@ -244,7 +244,11 @@ namespace Mirror.KCP
         }
         public override string ServerGetClientAddress(int connectionId)
         {
-            throw new NotImplementedException();
+            if (connections.TryGetValue(connectionId, out KcpServerConnection connection))
+            {
+                return (connection.GetRemoteEndPoint() as IPEndPoint).Address.ToString();
+            }
+            return "";
         }
         public override void ServerStop()
         {

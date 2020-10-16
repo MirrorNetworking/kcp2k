@@ -221,5 +221,8 @@ namespace kcp2k
             // EOF is now available
             //dataAvailable?.TrySetResult();
         }
+
+        // get remote endpoint
+        public EndPoint GetRemoteEndPoint() => remoteEndpoint;
     }
 }

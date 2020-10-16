@@ -89,7 +89,13 @@ namespace kcp2k
 
         public void Send(ArraySegment<byte> data)
         {
-            kcp.Send(data.Array, data.Offset, data.Count);
+            // only allow sending up to MaxMessageSize sized messages.
+            // other end won't process bigger messages anyway.
+            if (data.Count <= Kcp.MTU_DEF)
+            {
+                kcp.Send(data.Array, data.Offset, data.Count);
+            }
+            else Debug.LogError($"Failed to send message of size {data.Count} because it's larger than MaxMessageSize={Kcp.MTU_DEF}");
         }
 
         protected virtual void Dispose()

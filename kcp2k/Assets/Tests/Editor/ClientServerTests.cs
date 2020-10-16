@@ -277,5 +277,21 @@ namespace kcp2k.Tests
             Assert.That(client.Connected(), Is.False);
             Assert.That(server.connections.Count, Is.EqualTo(0));
         }
+
+        // server kicking a client should disconnect on both ends
+        [Test]
+        public void ClientInvoluntaryDisconnect()
+        {
+            server.StartServer();
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+
+            Assert.That(client.Connected(), Is.True);
+            Assert.That(server.connections.Count, Is.EqualTo(1));
+
+            KickClientBlocking(connectionId);
+            Assert.That(client.Connected(), Is.False);
+            Assert.That(server.connections.Count, Is.EqualTo(0));
+        }
     }
 }

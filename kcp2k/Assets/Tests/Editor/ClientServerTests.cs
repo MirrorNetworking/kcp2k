@@ -115,5 +115,26 @@ namespace kcp2k.Tests
             Assert.That(client.Connected(), Is.False);
             Assert.That(server.connections.Count, Is.EqualTo(0));
         }
+
+        // need to make sure that connect->disconnect->connect works too
+        // (to detect cases where connect/disconnect might not clean up properly)
+        [Test]
+        public void ConnectAndDisconnectClientMultipleTimes()
+        {
+            server.StartServer();
+
+            for (int i = 0; i < 10; ++i)
+            {
+                ConnectClientBlocking();
+                Assert.That(client.Connected(), Is.True);
+                Assert.That(server.connections.Count, Is.EqualTo(1));
+
+                DisconnectClientBlocking();
+                Assert.That(client.Connected(), Is.False);
+                Assert.That(server.connections.Count, Is.EqualTo(0));
+            }
+
+            server.StopServer();
+        }
     }
 }

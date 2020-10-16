@@ -128,32 +128,46 @@ namespace kcp2k
             int msgSize;
             while ((msgSize = kcp.PeekSize()) > 0)
             {
-                kcp.Receive(buffer, 0, msgSize);
-
-                ArraySegment<byte> dataSegment = new ArraySegment<byte>(buffer, 0, msgSize);
-
-                // handshake message?
-                if (SegmentsEqual(dataSegment, Hello))
+                // only allow receiving up to MaxMessageSize sized messages.
+                // otherwise we would get BlockCopy ArgumentException anyway.
+                if (msgSize <= Kcp.MTU_DEF)
                 {
-                    // we are only connected if we received the handshake.
-                    // not just after receiving any first data.
-                    Debug.LogWarning("Kcp recv handshake");
-                    OnConnected?.Invoke();
+                    kcp.Receive(buffer, 0, msgSize);
+
+                    ArraySegment<byte> dataSegment = new ArraySegment<byte>(buffer, 0, msgSize);
+
+                    // handshake message?
+                    if (SegmentsEqual(dataSegment, Hello))
+                    {
+                        // we are only connected if we received the handshake.
+                        // not just after receiving any first data.
+                        Debug.LogWarning("Kcp recv handshake");
+                        OnConnected?.Invoke();
+                    }
+                    // disconnect message?
+                    else if (SegmentsEqual(dataSegment, Goodby))
+                    {
+                        // if we receive a disconnect message,  then close everything
+                        Debug.LogWarning("Kcp recv disconnected");
+                        open = false;
+                        OnDisconnected?.Invoke();
+                        break;
+                    }
+                    // otherwise regular message
+                    else
+                    {
+                        //Debug.LogWarning($"Kcp recv msg: {BitConverter.ToString(buffer, 0, msgSize)}");
+                        OnData?.Invoke(dataSegment);
+                    }
                 }
-                // disconnect message?
-                else if (SegmentsEqual(dataSegment, Goodby))
+                // we don't allow sending messages > Max, so this must be an
+                // attacker. let's disconnect to avoid allocation attacks etc.
+                else
                 {
-                    // if we receive a disconnect message,  then close everything
-                    Debug.LogWarning("Kcp recv disconnected");
+                    Debug.LogWarning($"KCP: possible allocation attack for msgSize {msgSize} > max {Kcp.MTU_DEF}. Disconnecting the connection.");
                     open = false;
                     OnDisconnected?.Invoke();
                     break;
-                }
-                // otherwise regular message
-                else
-                {
-                    //Debug.LogWarning($"Kcp recv msg: {BitConverter.ToString(buffer, 0, msgSize)}");
-                    OnData?.Invoke(dataSegment);
                 }
             }
         }

@@ -263,5 +263,19 @@ namespace kcp2k.Tests
             client.Disconnect();
             server.StopServer();
         }
+
+        // client disconnecting by himself should disconnect on both ends
+        [Test]
+        public void ClientVoluntaryDisconnect()
+        {
+            server.StartServer();
+            ConnectClientBlocking();
+            Assert.That(client.Connected(), Is.True);
+            Assert.That(server.connections.Count, Is.EqualTo(1));
+
+            DisconnectClientBlocking();
+            Assert.That(client.Connected(), Is.False);
+            Assert.That(server.connections.Count, Is.EqualTo(0));
+        }
     }
 }

@@ -150,5 +150,19 @@ namespace kcp2k.Tests
             LogAssert.Expect(LogType.Log, new Regex("KCP: OnServerDataReceived(.*, 01-02)"));;
             SendClientToServerBlocking(new ArraySegment<byte>(message));
         }
+
+        // max sized message should always work
+        [Test]
+        public void ClientToServerMaxSizedMessage()
+        {
+            server.StartServer();
+            ConnectClientBlocking();
+
+            byte[] message = new byte[Kcp.MTU_DEF];
+            for (int i = 0; i < Kcp.MTU_DEF; ++i)
+                message[i] = (byte)(i & 0xFF);
+            LogAssert.Expect(LogType.Log, new Regex($"KCP: OnServerDataReceived(.*, {BitConverter.ToString(message)})"));
+            SendClientToServerBlocking(new ArraySegment<byte>(message));
+        }
     }
 }

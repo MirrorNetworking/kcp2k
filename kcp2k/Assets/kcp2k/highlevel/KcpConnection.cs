@@ -29,6 +29,10 @@ namespace kcp2k
         internal static readonly ArraySegment<byte> Hello = new ArraySegment<byte>(new byte[] { 0 });
         private static readonly ArraySegment<byte> Goodby = new ArraySegment<byte>(new byte[] { 1 });
 
+        // a connection is authenticated after sending the correct handshake.
+        // useful to protect against random data from the internet.
+        bool authenticated;
+
         protected KcpConnection()
         {
         }
@@ -142,28 +146,47 @@ namespace kcp2k
 
                     ArraySegment<byte> dataSegment = new ArraySegment<byte>(buffer, 0, msgSize);
 
-                    // handshake message?
-                    if (SegmentsEqual(dataSegment, Hello))
+                    // not authenticated yet?
+                    if (!authenticated)
                     {
-                        // we are only connected if we received the handshake.
-                        // not just after receiving any first data.
-                        Debug.LogWarning("Kcp recv handshake");
-                        OnConnected?.Invoke();
+                        // handshake message?
+                        if (SegmentsEqual(dataSegment, Hello))
+                        {
+                            // we are only connected if we received the handshake.
+                            // not just after receiving any first data.
+                            authenticated = true;
+                            Debug.LogWarning("Kcp recv handshake");
+                            OnConnected?.Invoke();
+                        }
+                        // otherwise it's random data from the internet, not
+                        // from a legitimate player.
+                        else
+                        {
+                            Debug.LogWarning("KCP: received random data before handshake. Disconnecting the connection.");
+                            open = false;
+                            OnDisconnected?.Invoke();
+                            break;
+                        }
                     }
-                    // disconnect message?
-                    else if (SegmentsEqual(dataSegment, Goodby))
-                    {
-                        // if we receive a disconnect message,  then close everything
-                        Debug.LogWarning("Kcp recv disconnected");
-                        open = false;
-                        OnDisconnected?.Invoke();
-                        break;
-                    }
-                    // otherwise regular message
+                    // authenticated.
                     else
                     {
-                        //Debug.LogWarning($"Kcp recv msg: {BitConverter.ToString(buffer, 0, msgSize)}");
-                        OnData?.Invoke(dataSegment);
+                        // disconnect message?
+                        if (SegmentsEqual(dataSegment, Goodby))
+                        {
+                            // if we receive a disconnect message,  then close everything
+                            Debug.LogWarning("Kcp recv disconnected");
+                            open = false;
+                            OnDisconnected?.Invoke();
+                            break;
+                        }
+                        // otherwise regular message
+                        else
+                        {
+                            // only accept regular messages
+                            //Debug.LogWarning($"Kcp recv msg: {BitConverter.ToString(buffer, 0, msgSize)}");
+                            OnData?.Invoke(dataSegment);
+                        }
                     }
                 }
                 // we don't allow sending messages > Max, so this must be an

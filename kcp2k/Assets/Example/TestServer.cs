@@ -28,9 +28,11 @@ namespace kcp2k.Examples
             }
 
             // listen
+            Debug.Log("KCP: starting server");
             serverSocket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
             serverSocket.DualMode = true;
             serverSocket.Bind(new IPEndPoint(IPAddress.IPv6Any, Port));
+            Debug.Log("KCP: server started");
         }
 
         public void Send(int connectionId, ArraySegment<byte> segment)
@@ -55,6 +57,7 @@ namespace kcp2k.Examples
         {
             serverSocket?.Close();
             serverSocket = null;
+            Debug.Log("KCP: server stopped");
         }
 
         // MonoBehaviour ///////////////////////////////////////////////////////

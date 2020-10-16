@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text.RegularExpressions;
 using System.Threading;
 using NUnit.Framework;
 using UnityEngine;
@@ -34,9 +33,13 @@ namespace kcp2k.Tests
         void ConnectClientBlocking()
         {
             client.Connect("127.0.0.1");
-            Thread.Sleep(100);
-            client.LateUpdate();
-            server.LateUpdate();
+            // need update a few times for handshake to finish
+            for (int i = 0; i < 10; ++i)
+            {
+                Thread.Sleep(10);
+                client.LateUpdate();
+                server.LateUpdate();
+            }
         }
 
         // disconnect and give it enough time to handle
@@ -99,6 +102,16 @@ namespace kcp2k.Tests
             {
                 ServerStartStop();
             }
+        }
+
+        [Test]
+        public void ConnectAndDisconnectClient()
+        {
+            server.StartServer();
+            ConnectClientBlocking();
+
+            Assert.That(client.Connected(), Is.True);
+            Assert.That(server.connections.Count, Is.EqualTo(1));
         }
     }
 }

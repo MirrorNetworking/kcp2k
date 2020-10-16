@@ -17,7 +17,7 @@ namespace kcp2k.Examples
         Socket serverSocket;
         EndPoint serverNewClientEP = new IPEndPoint(IPAddress.IPv6Any, 0);
         // connections <connectionId, connection> where connectionId is EndPoint.GetHashCode
-        Dictionary<int, KcpServerConnection> connections = new Dictionary<int, KcpServerConnection>();
+        public Dictionary<int, KcpServerConnection> connections = new Dictionary<int, KcpServerConnection>();
 
         public void StartServer()
         {

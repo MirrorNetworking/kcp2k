@@ -208,9 +208,9 @@ namespace kcp2k.Tests
         {
             server.StartServer();
             ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
 
             byte[] message = {0x03, 0x04};
-            int connectionId = ServerFirstConnectionId();
             LogAssert.Expect(LogType.Log, $"KCP: OnClientDataReceived({BitConverter.ToString(message)})");
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
         }
@@ -221,12 +221,12 @@ namespace kcp2k.Tests
         {
             server.StartServer();
             ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
 
             byte[] message = new byte[Kcp.MTU_DEF];
             for (int i = 0; i < Kcp.MTU_DEF; ++i)
                 message[i] = (byte)(i & 0xFF);
 
-            int connectionId = ServerFirstConnectionId();
             LogAssert.Expect(LogType.Log, $"KCP: OnClientDataReceived({BitConverter.ToString(message)})");
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
         }
@@ -237,11 +237,31 @@ namespace kcp2k.Tests
         {
             server.StartServer();
             ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
 
             byte[] message = new byte[Kcp.MTU_DEF + 1];
-            int connectionId = ServerFirstConnectionId();
             LogAssert.Expect(LogType.Error, $"Failed to send message of size {message.Length} because it's larger than MaxMessageSize={Kcp.MTU_DEF}");
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
+        }
+
+        // test to see if successive messages still work fine.
+        [Test]
+        public void ServerToClientTwoMessages()
+        {
+            server.StartServer();
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+
+            byte[] message = {0x03, 0x04};
+            LogAssert.Expect(LogType.Log, $"KCP: OnClientDataReceived({BitConverter.ToString(message)})");
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
+
+            byte[] message2 = {0x05, 0x06};
+            LogAssert.Expect(LogType.Log, $"KCP: OnClientDataReceived({BitConverter.ToString(message2)})");
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message2));
+
+            client.Disconnect();
+            server.StopServer();
         }
     }
 }

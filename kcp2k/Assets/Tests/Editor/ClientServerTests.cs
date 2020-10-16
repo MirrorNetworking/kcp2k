@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Text.RegularExpressions;
 using System.Threading;
 using NUnit.Framework;
 using kcp2k.Examples;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace kcp2k.Tests
 {
@@ -135,6 +138,17 @@ namespace kcp2k.Tests
             }
 
             server.StopServer();
+        }
+
+        [Test]
+        public void ClientToServerMessage()
+        {
+            server.StartServer();
+            ConnectClientBlocking();
+
+            byte[] message = {0x01, 0x02};
+            LogAssert.Expect(LogType.Log, new Regex("KCP: OnServerDataReceived(.*, 01-02)"));;
+            SendClientToServerBlocking(new ArraySegment<byte>(message));
         }
     }
 }

@@ -23,6 +23,7 @@ namespace Mirror.KCP
 
         // client
         KcpClientConnection clientConnection;
+        bool clientConnected;
 
         void Awake()
         {
@@ -52,7 +53,7 @@ namespace Mirror.KCP
         public override bool ClientConnected() => clientConnection != null;
         public override void ClientConnect(string address)
         {
-            if (clientConnection != null)
+            if (clientConnected)
             {
                 Debug.LogWarning("KCP: client already connected!");
                 return;
@@ -63,6 +64,7 @@ namespace Mirror.KCP
             clientConnection.OnConnected += () =>
             {
                 Debug.Log($"KCP: OnClientConnected");
+                clientConnected = true;
                 OnClientConnected.Invoke();
             };
             clientConnection.OnData += (message) =>
@@ -73,6 +75,7 @@ namespace Mirror.KCP
             clientConnection.OnDisconnected += () =>
             {
                 Debug.Log($"KCP: OnClientDisconnected");
+                clientConnected = false;
                 OnClientDisconnected.Invoke();
             };
 

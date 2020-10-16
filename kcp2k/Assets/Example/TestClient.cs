@@ -11,10 +11,13 @@ namespace kcp2k.Examples
         // client
         readonly byte[] buffer = new byte[Kcp.MTU_DEF];
         KcpClientConnection clientConnection;
+        bool connected;
+
+        public bool Connected() => connected;
 
         public void Connect(string address)
         {
-            if (clientConnection != null)
+            if (connected)
             {
                 Debug.LogWarning("KCP: client already connected!");
                 return;
@@ -25,6 +28,7 @@ namespace kcp2k.Examples
             clientConnection.OnConnected += () =>
             {
                 Debug.Log($"KCP: OnClientConnected");
+                connected = true;
             };
             clientConnection.OnData += (message) =>
             {
@@ -33,6 +37,7 @@ namespace kcp2k.Examples
             clientConnection.OnDisconnected += () =>
             {
                 Debug.Log($"KCP: OnClientDisconnected");
+                connected = false;
             };
 
             // connect

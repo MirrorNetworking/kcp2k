@@ -32,7 +32,7 @@ namespace kcp2k.Examples
             };
             clientConnection.OnData += (message) =>
             {
-                Debug.Log($"KCP: OnClientData({BitConverter.ToString(message.Array, message.Offset, message.Count)})");
+                Debug.Log($"KCP: OnClientDataReceived({BitConverter.ToString(message.Array, message.Offset, message.Count)})");
             };
             clientConnection.OnDisconnected += () =>
             {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using NUnit.Framework;
@@ -30,6 +31,11 @@ namespace kcp2k.Tests
         }
 
         // helpers /////////////////////////////////////////////////////////////
+        int ServerFirstConnectionId()
+        {
+            return server.connections.First().Key;
+        }
+
         // connect and give it enough time to handle
         void ConnectClientBlocking()
         {
@@ -72,9 +78,13 @@ namespace kcp2k.Tests
         void SendServerToClientBlocking(int connectionId, ArraySegment<byte> message)
         {
             server.Send(connectionId, message);
-            Thread.Sleep(100);
-            client.LateUpdate();
-            server.LateUpdate();
+            // need to update a few times
+            for (int i = 0; i < 10; ++i)
+            {
+                Thread.Sleep(10);
+                client.LateUpdate();
+                server.LateUpdate();
+            }
         }
 
         // tests ///////////////////////////////////////////////////////////////
@@ -191,6 +201,18 @@ namespace kcp2k.Tests
             byte[] message2 = {0x03, 0x04};
             LogAssert.Expect(LogType.Log, new Regex($"KCP: OnServerDataReceived(.*, {BitConverter.ToString(message2)})"));
             SendClientToServerBlocking(new ArraySegment<byte>(message2));
+        }
+
+        [Test]
+        public void ServerToClientMessage()
+        {
+            server.StartServer();
+            ConnectClientBlocking();
+
+            byte[] message = {0x03, 0x04};
+            int connectionId = ServerFirstConnectionId();
+            LogAssert.Expect(LogType.Log, $"KCP: OnClientDataReceived({BitConverter.ToString(message)})");
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
         }
     }
 }

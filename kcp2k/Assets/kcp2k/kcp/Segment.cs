@@ -12,7 +12,7 @@ namespace kcp2k
         internal uint ts;
         internal uint sn;
         internal uint una;
-        internal uint rto;
+        internal int rto;
         internal uint xmit;
         internal uint resendts;
         internal uint fastack;

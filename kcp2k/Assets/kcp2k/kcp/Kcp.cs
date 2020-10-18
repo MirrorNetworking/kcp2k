@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using UnityEngine;
 
 namespace kcp2k
 {
@@ -44,10 +45,10 @@ namespace kcp2k
         uint snd_nxt;
         uint rcv_nxt;
         uint ssthresh;      // slow start threshold
-        uint rx_rttval;
-        uint rx_srtt;       // smoothed round trip time
-        uint rx_rto;
-        uint rx_minrto;
+        int rx_rttval;
+        int rx_srtt;        // smoothed round trip time
+        int rx_rto;
+        int rx_minrto;
         uint cwnd;          // congestion window
         uint probe;
         uint interval;
@@ -238,29 +239,19 @@ namespace kcp2k
             // https://tools.ietf.org/html/rfc6298
             if (rx_srtt == 0)
             {
-                rx_srtt = (uint)rtt;
-                rx_rttval = (uint)rtt / 2;
+                rx_srtt = rtt;
+                rx_rttval = rtt / 2;
             }
             else
             {
-                uint delta = (uint)Math.Abs(rtt - rx_srtt);
-                rx_srtt += delta >> 3;
-
-                if (rtt < rx_srtt - rx_rttval)
-                {
-                    // if the new RTT sample is below the bottom of the range of
-                    // what an RTT measurement is expected to be.
-                    // give an 8x reduced weight versus its normal weighting
-                    rx_rttval += (delta - rx_rttval) >> 5;
-                }
-                else
-                {
-                    rx_rttval += (delta - rx_rttval) >> 2;
-                }
+                int delta = rtt - rx_srtt;
+                if (delta < 0) delta = -delta;
+                rx_rttval = (3 * rx_rttval + delta) / 4;
+                rx_srtt = (7 * rx_srtt + rtt) / 8;
+                if (rx_srtt < 1) rx_srtt = 1;
             }
-
-            uint rto = rx_srtt + Math.Max(interval, rx_rttval << 2);
-            rx_rto = Utils.Clamp(rto, rx_minrto, RTO_MAX);
+            int rto = rx_srtt + Math.Max((int)interval, 4 * rx_rttval);
+            rx_rto = Mathf.Clamp(rto, rx_minrto, RTO_MAX);
         }
 
         void ShrinkBuf()
@@ -697,14 +688,14 @@ namespace kcp2k
                 {
                     needSend = true;
                     segment.rto = rx_rto;
-                    segment.resendts = current + segment.rto;
+                    segment.resendts = current + (uint)segment.rto; // TODO + rtomin in C???
                 }
                 else if (segment.fastack >= resent || segment.fastack > 0 && newSegsCount == 0 ) // fast retransmit
                 {
                     needSend = true;
                     segment.fastack = 0;
                     segment.rto = rx_rto;
-                    segment.resendts = current + segment.rto;
+                    segment.resendts = current + (uint)segment.rto;
                     change++;
                 }
                 else if (current >= segment.resendts) // RTO
@@ -715,7 +706,7 @@ namespace kcp2k
                     else
                         segment.rto += rx_rto / 2;
                     segment.fastack = 0;
-                    segment.resendts = current + segment.rto;
+                    segment.resendts = current + (uint)segment.rto;
                     lostSegs++;
                 }
 

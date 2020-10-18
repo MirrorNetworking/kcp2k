@@ -1,5 +1,3 @@
-using System;
-
 namespace kcp2k
 {
     public static class Utils
@@ -56,11 +54,6 @@ namespace kcp2k
             result |= (uint)(p[3 + offset] << 24);
             c = result;
             return 4;
-        }
-
-        public static uint Clamp(uint value, uint lower, uint upper)
-        {
-            return Math.Min(Math.Max(lower, value), upper);
         }
 
         public static int TimeDiff(uint later, uint earlier)

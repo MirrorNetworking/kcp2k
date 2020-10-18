@@ -71,10 +71,9 @@ namespace kcp2k
         internal readonly List<AckItem> ackList = new List<AckItem>(16);
 
         byte[] buffer;
-        uint reserved = 0;
         readonly Action<byte[], int> output; // buffer, size
 
-        public uint Mss => mtu - OVERHEAD - reserved; // maximum segment size
+        public uint Mss => mtu - OVERHEAD; // maximum segment size
 
         // get how many packet is waiting to be sent
         public int WaitSnd => sendBuffer.Count + sendQueue.Count;
@@ -561,20 +560,20 @@ namespace kcp2k
             seg.wnd = WndUnused();
             seg.una = rcv_nxt;
 
-            int writeIndex = (int)reserved;
+            int writeIndex = 0;
 
             void makeSpace(int space)
             {
                 if (writeIndex + space > mtu)
                 {
                     output(buffer, writeIndex);
-                    writeIndex = (int)reserved;
+                    writeIndex = 0;
                 }
             }
 
             void flushBuffer()
             {
-                if (writeIndex > reserved)
+                if (writeIndex > 0)
                 {
                     output(buffer, writeIndex);
                 }
@@ -862,8 +861,6 @@ namespace kcp2k
         {
             if (mtu < 50)
                 throw new ArgumentException("MTU must be higher than 50.");
-            if (reserved >= (int)(mtu - OVERHEAD))
-                throw new ArgumentException("Please increase the MTU value so it is higher than reserved bytes.");
 
             buffer = new byte[mtu];
 
@@ -914,16 +911,6 @@ namespace kcp2k
 
             if (receiveWindow > 0)
                 rcv_wnd = Math.Max(receiveWindow, WND_RCV);
-        }
-
-        /// <summary>ReserveBytes</summary>
-        /// <param name="reservedSize"></param>
-        public void ReserveBytes(uint reservedSize)
-        {
-            if (reservedSize >= (mtu - OVERHEAD))
-                throw new ArgumentException("reservedSize must be lower than MTU.");
-
-            reserved = reservedSize;
         }
     }
 }

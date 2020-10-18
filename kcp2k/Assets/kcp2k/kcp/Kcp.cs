@@ -67,7 +67,7 @@ namespace kcp2k
         bool nocwnd;
         internal readonly List<Segment> sendQueue = new List<Segment>(16);
         internal readonly List<Segment> receiveQueue = new List<Segment>(16);
-        internal readonly List<Segment> sendBuffer = new List<Segment>(16);
+        internal readonly List<Segment> snd_buf = new List<Segment>(16); // send buffer
         internal readonly List<Segment> receiveBuffer = new List<Segment>(16);
         internal readonly List<AckItem> ackList = new List<AckItem>(16);
 
@@ -76,7 +76,7 @@ namespace kcp2k
 
 
         // get how many packet is waiting to be sent
-        public int WaitSnd => sendBuffer.Count + sendQueue.Count;
+        public int WaitSnd => snd_buf.Count + sendQueue.Count;
 
         // internal time.
         readonly Stopwatch refTime = new Stopwatch();
@@ -260,9 +260,9 @@ namespace kcp2k
         // ikcp_shrink_buf
         void ShrinkBuf()
         {
-            if (sendBuffer.Count > 0)
+            if (snd_buf.Count > 0)
             {
-                Segment seg = sendBuffer[0];
+                Segment seg = snd_buf[0];
                 snd_una = seg.sn;
             }
             else
@@ -277,7 +277,7 @@ namespace kcp2k
             if (sn < snd_una || sn >= snd_nxt)
                 return;
 
-            foreach (Segment seg in sendBuffer)
+            foreach (Segment seg in snd_buf)
             {
                 if (sn == seg.sn)
                 {
@@ -297,7 +297,7 @@ namespace kcp2k
         void ParseUna(uint una)
         {
             int count = 0;
-            foreach (Segment seg in sendBuffer)
+            foreach (Segment seg in snd_buf)
             {
                 if (una >seg.sn)
                 {
@@ -308,7 +308,7 @@ namespace kcp2k
                     break;
             }
 
-            sendBuffer.RemoveRange(0, count);
+            snd_buf.RemoveRange(0, count);
         }
 
         // ikcp_parse_fastack
@@ -317,7 +317,7 @@ namespace kcp2k
             if (sn < snd_una || sn >= snd_nxt)
                 return;
 
-            foreach (Segment seg in sendBuffer)
+            foreach (Segment seg in snd_buf)
             {
                 if (sn < seg.sn)
                     break;
@@ -682,7 +682,7 @@ namespace kcp2k
                 newseg.conv = conv;
                 newseg.cmd = CMD_PUSH;
                 newseg.sn = snd_nxt;
-                sendBuffer.Add(newseg);
+                snd_buf.Add(newseg);
                 snd_nxt++;
                 newSegsCount++;
             }
@@ -698,9 +698,9 @@ namespace kcp2k
             ulong change = 0; ulong lostSegs = 0;
             int minrto = (int)interval;
 
-            for (int k = 0; k < sendBuffer.Count; k++)
+            for (int k = 0; k < snd_buf.Count; k++)
             {
-                Segment segment = sendBuffer[k];
+                Segment segment = snd_buf[k];
                 bool needSend = false;
                 if (segment.acked)
                     continue;
@@ -855,7 +855,7 @@ namespace kcp2k
 
             int tm_flush_ = Utils.TimeDiff(ts_flush_, current);
 
-            foreach (Segment seg in sendBuffer)
+            foreach (Segment seg in snd_buf)
             {
                 int diff = Utils.TimeDiff(seg.resendts, current);
                 if (diff <= 0)

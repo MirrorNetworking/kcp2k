@@ -554,10 +554,10 @@ namespace kcp2k
         }
 
         // ikcp_wnd_unused
-        ushort WndUnused()
+        uint WndUnused()
         {
             if (receiveQueue.Count < rcv_wnd)
-                return (ushort)(rcv_wnd - receiveQueue.Count);
+                return rcv_wnd - (uint)receiveQueue.Count;
             return 0;
         }
 

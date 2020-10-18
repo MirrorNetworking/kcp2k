@@ -50,6 +50,7 @@ namespace kcp2k
         int rx_rto;
         int rx_minrto;
         uint snd_wnd;       // send window
+        uint rcv_wnd;       // receive window
         uint cwnd;          // congestion window
         uint probe;
         uint interval;
@@ -72,7 +73,6 @@ namespace kcp2k
         uint reserved = 0;
         readonly Action<byte[], int> output; // buffer, size
 
-        public uint ReceiveWindowMax { get; private set; }
         public uint RmtWnd { get; private set; }
         public uint Mss => mtu - OVERHEAD - reserved; // maximum segment size
 
@@ -90,7 +90,7 @@ namespace kcp2k
             this.conv = conv;
             this.output = output;
             snd_wnd = WND_SND;
-            ReceiveWindowMax = WND_RCV;
+            rcv_wnd = WND_RCV;
             RmtWnd = WND_RCV;
             mtu = MTU_DEF;
             rx_rto = RTO_DEF;
@@ -146,7 +146,7 @@ namespace kcp2k
             if (peekSize > length)
                 return -2;
 
-            bool fastRecover = receiveQueue.Count >= ReceiveWindowMax;
+            bool fastRecover = receiveQueue.Count >= rcv_wnd;
 
             // merge fragment.
             int count = 0;
@@ -171,7 +171,7 @@ namespace kcp2k
             count = 0;
             foreach (Segment seg in receiveBuffer)
             {
-                if (seg.sn == rcv_nxt && receiveQueue.Count + count < ReceiveWindowMax)
+                if (seg.sn == rcv_nxt && receiveQueue.Count + count < rcv_wnd)
                 {
                     receiveQueue.Add(seg);
                     rcv_nxt++;
@@ -186,7 +186,7 @@ namespace kcp2k
             receiveBuffer.RemoveRange(0, count);
 
             // fast recover
-            if (receiveQueue.Count < ReceiveWindowMax && fastRecover)
+            if (receiveQueue.Count < rcv_wnd && fastRecover)
             {
                 // ready to send back CMD_WINS in flush
                 // tell remote my window size
@@ -318,7 +318,7 @@ namespace kcp2k
         void ParseData(Segment newseg)
         {
             uint sn = newseg.sn;
-            if (sn >= rcv_nxt + ReceiveWindowMax || sn < rcv_nxt)
+            if (sn >= rcv_nxt + rcv_wnd || sn < rcv_nxt)
                 return;
 
             InsertSegmentInReceiveBuffer(newseg);
@@ -362,7 +362,7 @@ namespace kcp2k
             int count = 0;
             foreach (Segment seg in receiveBuffer)
             {
-                if (seg.sn == rcv_nxt && receiveQueue.Count + count < ReceiveWindowMax)
+                if (seg.sn == rcv_nxt && receiveQueue.Count + count < rcv_wnd)
                 {
                     rcv_nxt++;
                     count++;
@@ -453,7 +453,7 @@ namespace kcp2k
                 }
                 else if (CMD_PUSH == cmd)
                 {
-                    if (sn < rcv_nxt + ReceiveWindowMax)
+                    if (sn < rcv_nxt + rcv_wnd)
                     {
                         AckPush(sn, ts);
                         if (sn >= rcv_nxt)
@@ -546,8 +546,8 @@ namespace kcp2k
 
         ushort WndUnused()
         {
-            if (receiveQueue.Count < ReceiveWindowMax)
-                return (ushort)(ReceiveWindowMax - receiveQueue.Count);
+            if (receiveQueue.Count < rcv_wnd)
+                return (ushort)(rcv_wnd - receiveQueue.Count);
             return 0;
         }
 
@@ -913,7 +913,7 @@ namespace kcp2k
                 snd_wnd = sendWindow;
 
             if (receiveWindow > 0)
-                ReceiveWindowMax = Math.Max(receiveWindow, WND_RCV);
+                rcv_wnd = Math.Max(receiveWindow, WND_RCV);
         }
 
         /// <summary>ReserveBytes</summary>

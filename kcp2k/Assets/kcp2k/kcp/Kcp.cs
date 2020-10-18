@@ -85,9 +85,10 @@ namespace kcp2k
 
         // create a new kcp control object, 'conv' must equal in two endpoint
         // from the same connection.
-        public Kcp(uint conv_, Action<byte[], int> output_)
+        public Kcp(uint conv, Action<byte[], int> output)
         {
-            conv = conv_;
+            this.conv = conv;
+            this.output = output;
             SendWindowMax = WND_SND;
             ReceiveWindowMax = WND_RCV;
             RmtWnd = WND_RCV;
@@ -99,7 +100,6 @@ namespace kcp2k
             ssthresh = THRESH_INIT;
             // note: original kcp uses (mtu + overhead) * 3
             buffer = new byte[mtu];
-            output = output_;
             refTime.Start();
         }
 

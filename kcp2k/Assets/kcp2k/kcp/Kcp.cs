@@ -745,7 +745,7 @@ namespace kcp2k
             return (uint)minrto;
         }
 
-        private void CwndUpdate(uint resent, ulong change, ulong lostSegs)
+        void CwndUpdate(uint resent, ulong change, ulong lostSegs)
         {
             // update ssthresh
             // rate halving, https://tools.ietf.org/html/rfc6937

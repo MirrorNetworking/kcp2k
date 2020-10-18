@@ -98,8 +98,7 @@ namespace kcp2k
             interval = INTERVAL;
             ts_flush = INTERVAL;
             ssthresh = THRESH_INIT;
-            // note: original kcp uses (mtu + overhead) * 3
-            buffer = new byte[mtu];
+            buffer = new byte[(mtu + OVERHEAD) * 3];
             refTime.Start();
         }
 
@@ -862,7 +861,7 @@ namespace kcp2k
             if (mtu < 50)
                 throw new ArgumentException("MTU must be higher than 50.");
 
-            buffer = new byte[mtu];
+            buffer = new byte[(mtu + OVERHEAD) * 3];
             this.mtu = mtu;
             mss = mtu - OVERHEAD;
         }

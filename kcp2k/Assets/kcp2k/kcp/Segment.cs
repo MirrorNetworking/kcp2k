@@ -63,6 +63,7 @@ namespace kcp2k
             return offset - offset_;
         }
 
+        // reset to return a fresh segment to the pool
         internal void Reset()
         {
             conv = 0;

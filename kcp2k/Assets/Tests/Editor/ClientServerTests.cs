@@ -41,6 +41,7 @@ namespace kcp2k.Tests
             // update serveral times
             // Kcp default interval is 100ms.
             // let's update for 500ms to give messages enough time to pass.
+            // (otherwise we get flaky tests)
             for (int i = 0; i < 50; ++i)
             {
                 client.LateUpdate();

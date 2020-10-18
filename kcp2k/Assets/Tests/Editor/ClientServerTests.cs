@@ -275,7 +275,6 @@ namespace kcp2k.Tests
         }
 
         // server kicking a client should disconnect on both ends
-        [Ignore("Flaky, fails 1/10 times for some reason still. Disabled until it's fixed.")]
         [Test]
         public void ClientInvoluntaryDisconnect()
         {

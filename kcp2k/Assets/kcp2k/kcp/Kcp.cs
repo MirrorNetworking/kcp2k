@@ -239,7 +239,7 @@ namespace kcp2k
             if (rx_srtt == 0)
             {
                 rx_srtt = (uint)rtt;
-                rx_rttval = (uint)rtt >> 1;
+                rx_rttval = (uint)rtt / 2;
             }
             else
             {

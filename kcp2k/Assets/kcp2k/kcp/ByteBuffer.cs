@@ -25,12 +25,13 @@ namespace kcp2k
         // Write bytes at offset
         public void WriteBytes(byte[] bytes, int offset, int count)
         {
-            if (count <= 0 || offset < 0) return;
-
-            int total = count + Position;
-            EnsureCapacity(total);
-            Array.Copy(bytes, offset, RawBuffer, Position, count);
-            Position = total;
+            if (offset >= 0 && count > 0)
+            {
+                int total = count + Position;
+                EnsureCapacity(total);
+                Array.Copy(bytes, offset, RawBuffer, Position, count);
+                Position = total;
+            }
         }
     }
 }

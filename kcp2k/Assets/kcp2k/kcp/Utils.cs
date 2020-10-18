@@ -58,7 +58,7 @@ namespace kcp2k
 
         public static int TimeDiff(uint later, uint earlier)
         {
-            return ((int)(later - earlier));
+            return (int)(later - earlier);
         }
     }
 }

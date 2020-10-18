@@ -68,7 +68,7 @@ namespace kcp2k
         internal readonly List<Segment> sendQueue = new List<Segment>(16);
         internal readonly List<Segment> receiveQueue = new List<Segment>(16);
         internal readonly List<Segment> snd_buf = new List<Segment>(16); // send buffer
-        internal readonly List<Segment> receiveBuffer = new List<Segment>(16);
+        internal readonly List<Segment> rcv_buf = new List<Segment>(16); // receive buffer
         internal readonly List<AckItem> ackList = new List<AckItem>(16);
 
         byte[] buffer;
@@ -144,7 +144,7 @@ namespace kcp2k
 
             // move available data from rcv_buf -> rcv_queue
             count = 0;
-            foreach (Segment seg in receiveBuffer)
+            foreach (Segment seg in rcv_buf)
             {
                 if (seg.sn == rcv_nxt && receiveQueue.Count + count < rcv_wnd)
                 {
@@ -158,7 +158,7 @@ namespace kcp2k
                 }
             }
 
-            receiveBuffer.RemoveRange(0, count);
+            rcv_buf.RemoveRange(0, count);
 
             // fast recover
             if (receiveQueue.Count < rcv_wnd && fastRecover)
@@ -346,12 +346,12 @@ namespace kcp2k
         private void InsertSegmentInReceiveBuffer(Segment newseg)
         {
             uint sn = newseg.sn;
-            int n = receiveBuffer.Count - 1;
+            int n = rcv_buf.Count - 1;
             int insert_idx = 0;
             bool repeat = false;
             for (int i = n; i >= 0; i--)
             {
-                Segment seg = receiveBuffer[i];
+                Segment seg = rcv_buf[i];
                 if (seg.sn == sn)
                 {
                     repeat = true;
@@ -368,9 +368,9 @@ namespace kcp2k
             if (!repeat)
             {
                 if (insert_idx == n + 1)
-                    receiveBuffer.Add(newseg);
+                    rcv_buf.Add(newseg);
                 else
-                    receiveBuffer.Insert(insert_idx, newseg);
+                    rcv_buf.Insert(insert_idx, newseg);
             }
         }
 
@@ -378,7 +378,7 @@ namespace kcp2k
         private void MoveToReceiveQueue()
         {
             int count = 0;
-            foreach (Segment seg in receiveBuffer)
+            foreach (Segment seg in rcv_buf)
             {
                 if (seg.sn == rcv_nxt && receiveQueue.Count + count < rcv_wnd)
                 {
@@ -392,8 +392,8 @@ namespace kcp2k
             }
 
             for (int i = 0; i < count; i++)
-                receiveQueue.Add(receiveBuffer[i]);
-            receiveBuffer.RemoveRange(0, count);
+                receiveQueue.Add(rcv_buf[i]);
+            rcv_buf.RemoveRange(0, count);
         }
 
         // ikcp_input

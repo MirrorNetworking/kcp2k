@@ -274,7 +274,8 @@ namespace kcp2k
         // ikcp_parse_ack
         void ParseAck(uint sn)
         {
-            if (sn < snd_una || sn >= snd_nxt) return;
+            if (sn < snd_una || sn >= snd_nxt)
+                return;
 
             foreach (Segment seg in sendBuffer)
             {

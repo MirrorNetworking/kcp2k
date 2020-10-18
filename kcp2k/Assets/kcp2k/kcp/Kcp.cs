@@ -82,6 +82,7 @@ namespace kcp2k
         readonly Stopwatch refTime = new Stopwatch();
         public uint CurrentMS => (uint)refTime.ElapsedMilliseconds;
 
+        // ikcp_create
         // create a new kcp control object, 'conv' must equal in two endpoint
         // from the same connection.
         public Kcp(uint conv, Action<byte[], int> output)
@@ -102,32 +103,7 @@ namespace kcp2k
             refTime.Start();
         }
 
-        // check the size of next message in the recv queue
-        public int PeekSize()
-        {
-            if (receiveQueue.Count == 0)
-                return -1;
-
-            Segment seq = receiveQueue[0];
-
-            if (seq.frg == 0)
-                return seq.data.ReadableBytes;
-
-            if (receiveQueue.Count < seq.frg + 1)
-                return -1;
-
-            int length = 0;
-
-            foreach (Segment item in receiveQueue)
-            {
-                length += item.data.ReadableBytes;
-                if (item.frg == 0)
-                    break;
-            }
-
-            return length;
-        }
-
+        // ikcp_recv
         /// <summary>Receive
         /// Receive data from kcp state machine
         /// <para>Return number of bytes read.</para>
@@ -195,6 +171,34 @@ namespace kcp2k
             return n - index;
         }
 
+        // ikcp_peeksize
+        // check the size of next message in the recv queue
+        public int PeekSize()
+        {
+            if (receiveQueue.Count == 0)
+                return -1;
+
+            Segment seq = receiveQueue[0];
+
+            if (seq.frg == 0)
+                return seq.data.ReadableBytes;
+
+            if (receiveQueue.Count < seq.frg + 1)
+                return -1;
+
+            int length = 0;
+
+            foreach (Segment item in receiveQueue)
+            {
+                length += item.data.ReadableBytes;
+                if (item.frg == 0)
+                    break;
+            }
+
+            return length;
+        }
+
+        // ikcp_send
         /// <summary>Send
         /// <para>user/upper level send</para></summary>
         /// <param name="buffer"></param>
@@ -232,7 +236,7 @@ namespace kcp2k
             }
         }
 
-        // update ack.
+        // ikcp_update_ack
         void UpdateAck(int rtt) // round trip time
         {
             // https://tools.ietf.org/html/rfc6298
@@ -253,11 +257,13 @@ namespace kcp2k
             rx_rto = Mathf.Clamp(rto, rx_minrto, RTO_MAX);
         }
 
+        // ikcp_shrink_buf
         void ShrinkBuf()
         {
             snd_una = sendBuffer.Count > 0 ? sendBuffer[0].sn : snd_nxt;
         }
 
+        // ikcp_parse_ack
         void ParseAck(uint sn)
         {
             if (sn < snd_una || sn >= snd_nxt) return;
@@ -278,20 +284,7 @@ namespace kcp2k
             }
         }
 
-        void ParseFastrack(uint sn, uint ts)
-        {
-            if (sn < snd_una || sn >= snd_nxt)
-                return;
-
-            foreach (Segment seg in sendBuffer)
-            {
-                if (sn < seg.sn)
-                    break;
-                else if (sn != seg.sn && seg.ts <= ts)
-                    seg.fastack++;
-            }
-        }
-
+        // ikcp_parse_una
         void ParseUna(uint una)
         {
             int count = 0;
@@ -309,11 +302,28 @@ namespace kcp2k
             sendBuffer.RemoveRange(0, count);
         }
 
+        // ikcp_parse_fastack
+        void ParseFastrack(uint sn, uint ts)
+        {
+            if (sn < snd_una || sn >= snd_nxt)
+                return;
+
+            foreach (Segment seg in sendBuffer)
+            {
+                if (sn < seg.sn)
+                    break;
+                else if (sn != seg.sn && seg.ts <= ts)
+                    seg.fastack++;
+            }
+        }
+
+        // ikcp_ack_push
         void AckPush(uint sn, uint ts)
         {
             ackList.Add(new AckItem { serialNumber = sn, timestamp = ts });
         }
 
+        // ikcp_parse_data
         void ParseData(Segment newseg)
         {
             uint sn = newseg.sn;
@@ -377,6 +387,7 @@ namespace kcp2k
             receiveBuffer.RemoveRange(0, count);
         }
 
+        // ikcp_input
         /// <summary>Input
         /// <para>Used when you receive a low level packet (eg. UDP packet)</para></summary>
         /// <param name="data"></param>
@@ -542,6 +553,7 @@ namespace kcp2k
             }
         }
 
+        // ikcp_wnd_unused
         ushort WndUnused()
         {
             if (receiveQueue.Count < rcv_wnd)
@@ -549,6 +561,7 @@ namespace kcp2k
             return 0;
         }
 
+        // ikcp_flush
         /// <summary>Flush</summary>
         /// <param name="ackOnly">flush remain ack segments</param>
         public uint Flush(bool ackOnly)
@@ -774,6 +787,7 @@ namespace kcp2k
             }
         }
 
+        // ikcp_update
         /// <summary>Update
         /// Determine when should you invoke update
         /// <para>update state (call it repeatedly, every 10ms-100ms)</para>
@@ -805,6 +819,7 @@ namespace kcp2k
             }
         }
 
+        // ikcp_check
         /// <summary>Check
         /// Determine when should you invoke update
         /// <para>Returns when you should invoke update in millisec, if there
@@ -854,6 +869,7 @@ namespace kcp2k
             return  minimal;
         }
 
+        // ikcp_setmtu
         /// <summary>Change MTU (Maximum Transmission Unit) size. Default is 1200.</summary>
         /// <param name="mtu">Maximum Transmission Unit size. Can't be lower than 50 and must be higher than reserved bytes.</param>
         public void SetMtu(uint mtu)
@@ -866,6 +882,7 @@ namespace kcp2k
             mss = mtu - OVERHEAD;
         }
 
+        // ikcp_nodelay
         /// <summary>SetNoDelay
         /// <para>Normal: false, 40, 0, 0</para>
         /// <para>Fast:    false, 30, 2, 1</para>
@@ -899,6 +916,7 @@ namespace kcp2k
             nocwnd = nc;
         }
 
+        // ikcp_wndsize
         public void SetWindowSize(uint sendWindow, uint receiveWindow)
         {
             if (sendWindow > 0)

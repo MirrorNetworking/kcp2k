@@ -22,7 +22,7 @@ namespace kcp2k
             }
         }
 
-        // Write bytes at offset
+        // write bytes at offset
         public void WriteBytes(byte[] bytes, int offset, int count)
         {
             if (offset >= 0 && count > 0)

@@ -69,7 +69,7 @@ namespace kcp2k
         internal readonly List<Segment> rcv_queue = new List<Segment>(16); // receive queue
         internal readonly List<Segment> snd_buf = new List<Segment>(16);   // send buffer
         internal readonly List<Segment> rcv_buf = new List<Segment>(16);   // receive buffer
-        internal readonly List<AckItem> ackList = new List<AckItem>(16);
+        internal readonly List<AckItem> acklist = new List<AckItem>(16);
 
         byte[] buffer;
         readonly Action<byte[], int> output; // buffer, size
@@ -329,7 +329,7 @@ namespace kcp2k
         // ikcp_ack_push
         void AckPush(uint sn, uint ts)
         {
-            ackList.Add(new AckItem { serialNumber = sn, timestamp = ts });
+            acklist.Add(new AckItem { serialNumber = sn, timestamp = ts });
         }
 
         // ikcp_parse_data
@@ -523,7 +523,7 @@ namespace kcp2k
             UpdateCwnd(s_una);
 
             // ack immediately
-            if (ackNoDelay && ackList.Count > 0)
+            if (ackNoDelay && acklist.Count > 0)
             {
                 Flush(true);
             }
@@ -601,18 +601,18 @@ namespace kcp2k
             }
 
             // flush acknowledges
-            for (int i = 0; i < ackList.Count; i++)
+            for (int i = 0; i < acklist.Count; i++)
             {
                 makeSpace(OVERHEAD);
-                AckItem ack = ackList[i];
-                if (ack.serialNumber >= rcv_nxt || ackList.Count - 1 == i)
+                AckItem ack = acklist[i];
+                if (ack.serialNumber >= rcv_nxt || acklist.Count - 1 == i)
                 {
                     seg.sn = ack.serialNumber;
                     seg.ts = ack.timestamp;
                     writeIndex += seg.Encode(buffer, writeIndex);
                 }
             }
-            ackList.Clear();
+            acklist.Clear();
 
             // flush remain ack segments
             if (ackOnly)

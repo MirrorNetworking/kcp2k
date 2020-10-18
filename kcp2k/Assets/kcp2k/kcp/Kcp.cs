@@ -820,16 +820,17 @@ namespace kcp2k
         }
 
         // ikcp_check
-        /// <summary>Check
-        /// Determine when should you invoke update
-        /// <para>Returns when you should invoke update in millisec, if there
-        /// is no input/_send calling. you can call update in that
-        /// time, instead of call update repeatly.</para>
-        /// <para>Important to reduce unnacessary update invoking. use it to
-        /// schedule update (eg. implementing an epoll-like mechanism, or
-        /// optimize update when handling massive kcp connections)</para>
-        /// <remark> Standard KCP returns time as current + delta.  This version returns delta</remark>
-        /// </summary>
+        // Determine when should you invoke update
+        // Returns when you should invoke update in millisec, if there is no
+        // input/_send calling. you can call update in that time, instead of
+        // call update repeatly.
+        //
+        // Important to reduce unnecessary update invoking. use it to schedule
+        // update (eg. implementing an epoll-like mechanism, or optimize update
+        // when handling massive kcp connections).
+        //
+        // NOTE: Standard KCP returns time as current + delta. This version
+        //       returns delta
         public int Check()
         {
             uint current = CurrentMS;

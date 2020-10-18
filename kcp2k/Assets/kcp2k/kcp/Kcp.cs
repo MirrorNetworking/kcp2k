@@ -51,6 +51,7 @@ namespace kcp2k
         int rx_minrto;
         uint snd_wnd;       // send window
         uint rcv_wnd;       // receive window
+        uint rmt_wnd;       // remote window
         uint cwnd;          // congestion window
         uint probe;
         uint interval;
@@ -73,7 +74,6 @@ namespace kcp2k
         uint reserved = 0;
         readonly Action<byte[], int> output; // buffer, size
 
-        public uint RmtWnd { get; private set; }
         public uint Mss => mtu - OVERHEAD - reserved; // maximum segment size
 
         // get how many packet is waiting to be sent
@@ -91,7 +91,7 @@ namespace kcp2k
             this.output = output;
             snd_wnd = WND_SND;
             rcv_wnd = WND_RCV;
-            RmtWnd = WND_RCV;
+            rmt_wnd = WND_RCV;
             mtu = MTU_DEF;
             rx_rto = RTO_DEF;
             rx_minrto = RTO_MIN;
@@ -438,7 +438,7 @@ namespace kcp2k
                 // only trust window updates from regular packets. i.e: latest update
                 if (regular)
                 {
-                    RmtWnd = wnd;
+                    rmt_wnd = wnd;
                 }
 
                 ParseUna(una);
@@ -514,7 +514,7 @@ namespace kcp2k
 
         void UpdateCwnd(uint s_una)
         {
-            if (!nocwnd && snd_una > s_una && cwnd < RmtWnd)
+            if (!nocwnd && snd_una > s_una && cwnd < rmt_wnd)
             {
                 uint _mss = Mss;
                 if (cwnd < ssthresh)
@@ -536,10 +536,10 @@ namespace kcp2k
                             cwnd /= _mss;
                     }
                 }
-                if (cwnd > RmtWnd)
+                if (cwnd > rmt_wnd)
                 {
-                    cwnd = RmtWnd;
-                    incr = RmtWnd * _mss;
+                    cwnd = rmt_wnd;
+                    incr = rmt_wnd * _mss;
                 }
             }
         }
@@ -603,7 +603,7 @@ namespace kcp2k
 
             uint current = 0;
             // probe window size (if remote window size equals zero)
-            if (RmtWnd == 0)
+            if (rmt_wnd == 0)
             {
                 current = CurrentMS;
                 if (probe_wait == 0)
@@ -647,7 +647,7 @@ namespace kcp2k
             probe = 0;
 
             // calculate window size
-            uint cwnd_ = Math.Min(snd_wnd, RmtWnd);
+            uint cwnd_ = Math.Min(snd_wnd, rmt_wnd);
             if (!nocwnd)
                 cwnd_ = Math.Min(cwnd, cwnd_);
 

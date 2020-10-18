@@ -13,6 +13,8 @@ namespace kcp2k.Examples
         public ushort Port = 7777;
         [Tooltip("NoDelay is recommended to reduce latency. This also scales better without buffers getting full.")]
         public bool NoDelay = true;
+        [Tooltip("KCP internal update interval. 100ms is KCP default, but a lower interval is recommended to minimize latency.")]
+        public uint Interval = 40;
 
         // server
         readonly byte[] buffer = new byte[Kcp.MTU_DEF];
@@ -89,7 +91,7 @@ namespace kcp2k.Examples
                 if (!connections.TryGetValue(connectionId, out KcpServerConnection connection))
                 {
                     // add it to a queue
-                    connection = new KcpServerConnection(serverSocket, serverNewClientEP, NoDelay);
+                    connection = new KcpServerConnection(serverSocket, serverNewClientEP, NoDelay, Interval);
 
                     //acceptedConnections.Writer.TryWrite(connection);
                     connections.Add(connectionId, connection);

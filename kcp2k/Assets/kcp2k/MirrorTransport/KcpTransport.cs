@@ -15,6 +15,8 @@ namespace Mirror.KCP
         public ushort Port = 7777;
         [Tooltip("NoDelay is recommended to reduce latency. This also scales better without buffers getting full.")]
         public bool NoDelay = true;
+        [Tooltip("KCP internal update interval. 100ms is KCP default, but a lower interval is recommended to minimize latency.")]
+        public uint Interval = 40;
         readonly byte[] buffer = new byte[Kcp.MTU_DEF];
 
         // server
@@ -83,7 +85,7 @@ namespace Mirror.KCP
             };
 
             // connect
-            clientConnection.Connect(address, Port, NoDelay);
+            clientConnection.Connect(address, Port, NoDelay, Interval);
 
             // configure connection for max scale
             //ConfigureKcpConnection(clientConnection);
@@ -120,7 +122,7 @@ namespace Mirror.KCP
                 if (!connections.TryGetValue(connectionId, out KcpServerConnection connection))
                 {
                     // add it to a queue
-                    connection = new KcpServerConnection(serverSocket, serverNewClientEP, NoDelay);
+                    connection = new KcpServerConnection(serverSocket, serverNewClientEP, NoDelay, Interval);
 
                     // configure connection for max scale
                     //ConfigureKcpConnection(connection);

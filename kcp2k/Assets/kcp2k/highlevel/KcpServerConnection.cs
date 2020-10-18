@@ -5,11 +5,11 @@ namespace kcp2k
 {
     public class KcpServerConnection : KcpConnection
     {
-        public KcpServerConnection(Socket socket, EndPoint remoteEndpoint, bool noDelay)
+        public KcpServerConnection(Socket socket, EndPoint remoteEndpoint, bool noDelay, uint interval = Kcp.INTERVAL)
         {
             this.socket = socket;
             this.remoteEndpoint = remoteEndpoint;
-            SetupKcp(noDelay);
+            SetupKcp(noDelay, interval);
         }
 
         protected override void RawSend(byte[] data, int length)

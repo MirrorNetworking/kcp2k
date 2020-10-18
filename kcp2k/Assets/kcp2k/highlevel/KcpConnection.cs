@@ -37,12 +37,12 @@ namespace kcp2k
         {
         }
 
-        // NoDelay is the most important configuration. let's force require the
-        // parameter so we don't forget it anywhere.
-        protected void SetupKcp(bool noDelay)
+        // NoDelay & interval are the most important configurations.
+        // let's force require the parameters so we don't forget it anywhere.
+        protected void SetupKcp(bool noDelay, uint interval = Kcp.INTERVAL)
         {
             kcp = new Kcp(0, RawSend);
-            kcp.SetNoDelay(noDelay);
+            kcp.SetNoDelay(noDelay, interval);
             open = true;
 
             Tick();

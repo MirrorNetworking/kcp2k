@@ -28,6 +28,12 @@ namespace kcp2k.Tests
         {
             client.Disconnect();
             server.StopServer();
+
+            // force NoDelay and minimum interval.
+            // this way UpdateSeveralTimes() doesn't need to wait very long and
+            // tests run a lot faster.
+            server.NoDelay = client.NoDelay = true;
+            server.Interval = client.Interval = 1; // 1ms so at interval code at least runs.
         }
 
         // helpers /////////////////////////////////////////////////////////////

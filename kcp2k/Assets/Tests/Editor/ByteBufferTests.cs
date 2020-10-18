@@ -45,5 +45,26 @@ namespace kcp2k.Tests
             for (int i = 0; i < bytes.Length; ++i)
                 Assert.That(bytes[i], Is.EqualTo(buffer.RawBuffer[i]));
         }
+
+        // need to make sure that multiple writes to same buffer still work fine
+        [Test]
+        public void WriteBytesTwice()
+        {
+            // first half
+            byte[] bytes = {0xAA, 0xBB};
+            buffer.WriteBytes(bytes, 0, 2);
+            Assert.That(buffer.Position, Is.EqualTo(2));
+            Assert.That(buffer.RawBuffer[0], Is.EqualTo(0xAA));
+            Assert.That(buffer.RawBuffer[1], Is.EqualTo(0xBB));
+
+            // second half
+            byte[] bytes2 = {0xCC, 0xDD};
+            buffer.WriteBytes(bytes2, 0, 2);
+            Assert.That(buffer.Position, Is.EqualTo(4));
+            Assert.That(buffer.RawBuffer[0], Is.EqualTo(0xAA));
+            Assert.That(buffer.RawBuffer[1], Is.EqualTo(0xBB));
+            Assert.That(buffer.RawBuffer[2], Is.EqualTo(0xCC));
+            Assert.That(buffer.RawBuffer[3], Is.EqualTo(0xDD));
+        }
     }
 }

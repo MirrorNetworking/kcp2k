@@ -19,13 +19,14 @@ namespace kcp2k
         internal bool acked;
         internal ByteBuffer data;
 
-        static readonly Stack<Segment> msSegmentPool = new Stack<Segment>(32);
+        // pool ////////////////////////////////////////////////////////////////
+        internal static readonly Stack<Segment> Pool = new Stack<Segment>(32);
 
         public static Segment Take(int size)
         {
-            if (msSegmentPool.Count > 0)
+            if (Pool.Count > 0)
             {
-                Segment seg = msSegmentPool.Pop();
+                Segment seg = Pool.Pop();
                 seg.data = ByteBuffer.Allocate(size);
                 return seg;
             }
@@ -35,8 +36,9 @@ namespace kcp2k
         public static void Return(Segment seg)
         {
             seg.Reset();
-            msSegmentPool.Push(seg);
+            Pool.Push(seg);
         }
+        ////////////////////////////////////////////////////////////////////////
 
         Segment(int size)
         {

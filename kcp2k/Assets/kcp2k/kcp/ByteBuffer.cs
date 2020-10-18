@@ -1,13 +1,9 @@
 using System;
-using System.Collections.Generic;
 
 namespace kcp2k
 {
     public class ByteBuffer : IDisposable
     {
-        internal static readonly List<ByteBuffer> pool = new List<ByteBuffer>();
-        const int PoolMaxCount = 200;
-
         public int Position;
         public int Capacity { get; private set; }
         public byte[] RawBuffer { get; private set; }
@@ -16,30 +12,6 @@ namespace kcp2k
         {
             RawBuffer = new byte[capacity];
             Capacity = capacity;
-        }
-
-        /// <summary>
-        /// Construct a capacity length byte buffer ByteBuffer object
-        /// </summary>
-        /// <param name="capacity">Initial capacity</param>
-        /// <param name="fromPool">
-        /// true means to obtain a pooled ByteBuffer object, the pooled object must be pushed into the pool after calling Dispose, this method is thread-safe.
-        /// When true, the actual capacity value of the object obtained from the pool
-        /// </param>
-        /// <returns>ByteBuffer object</returns>
-        public static ByteBuffer Allocate(int capacity)
-        {
-            ByteBuffer bbuf;
-            if (pool.Count == 0)
-            {
-                bbuf = new ByteBuffer(capacity);
-                return bbuf;
-            }
-            int lastIndex = pool.Count - 1;
-            bbuf = pool[lastIndex];
-            pool.RemoveAt(lastIndex);
-            return bbuf;
-
         }
 
         /// <summary>
@@ -111,12 +83,6 @@ namespace kcp2k
 
         public void Dispose()
         {
-            if (pool.Count < PoolMaxCount)
-            {
-                Clear();
-                pool.Add(this);
-                return;
-            }
             Position = 0;
             Capacity = 0;
             RawBuffer = null;

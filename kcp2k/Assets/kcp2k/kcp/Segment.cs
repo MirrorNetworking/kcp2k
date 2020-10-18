@@ -27,7 +27,8 @@ namespace kcp2k
             if (Pool.Count > 0)
             {
                 Segment seg = Pool.Pop();
-                seg.data = ByteBuffer.Allocate(size);
+                // TODO avoid ByteBuffer allocation
+                seg.data = new ByteBuffer(size);
                 return seg;
             }
             return new Segment(size);
@@ -42,7 +43,7 @@ namespace kcp2k
 
         Segment(int size)
         {
-            data = ByteBuffer.Allocate(size);
+            data = new ByteBuffer(size);
         }
 
         // encode a segment into buffer

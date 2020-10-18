@@ -40,7 +40,7 @@ namespace kcp2k
         protected void SetupKcp()
         {
             kcp = new Kcp(0, RawSend);
-            kcp.SetNoDelay();
+            kcp.SetNoDelay(true);
             open = true;
 
             Tick();

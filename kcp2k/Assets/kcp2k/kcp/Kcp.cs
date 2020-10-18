@@ -57,7 +57,7 @@ namespace kcp2k
         uint probe;
         uint interval;
         uint ts_flush;
-        bool noDelay;
+        bool nodelay;
         bool updated;
         uint ts_probe;      // timestamp probe
         uint probe_wait;
@@ -712,7 +712,7 @@ namespace kcp2k
                 else if (current >= segment.resendts) // RTO
                 {
                     needSend = true;
-                    if (!noDelay)
+                    if (!nodelay)
                         segment.rto += rx_rto;
                     else
                         segment.rto += rx_rto / 2;
@@ -880,37 +880,35 @@ namespace kcp2k
         }
 
         // ikcp_nodelay
-        /// <summary>SetNoDelay
-        /// <para>Normal: false, 40, 0, 0</para>
-        /// <para>Fast:    false, 30, 2, 1</para>
-        /// <para>Fast2:   true, 20, 2, 1</para>
-        /// <para>Fast3:   true, 10, 2, 1</para>
-        /// </summary>
-        /// <param name="nodelay">Whether to enable nodelay mode.</param>
-        /// <param name="interval">Interval of the internal working of the protocol, in milliseconds, such as 10ms or 20ms.</param>
-        /// <param name="resend">fast retransmission mode, default 0 is off, 1 fast resend, 2 can be set (2 ACK crossings will directly retransmit).</param>
-        /// <param name="nc">Whether to close the flow control (congestion), the default is 0 means not to close, 1 means to close.</param>
-        public void SetNoDelay(bool nodelay = false, uint interval = 40, int resend = 0, bool nc = false)
+        //   Normal: false, 40, 0, 0
+        //   Fast:   false, 30, 2, 1
+        //   Fast2:   true, 20, 2, 1
+        //   Fast3:   true, 10, 2, 1
+        public void SetNoDelay(bool nodelay, uint interval = INTERVAL, int resend = 0, bool nocwnd = false)
         {
+            this.nodelay = nodelay;
             if (nodelay)
             {
-                noDelay = nodelay;
                 rx_minrto = RTO_NDL;
+            }
+            else
+            {
+                rx_minrto = RTO_MIN;
             }
 
             if (interval >= 0)
             {
-                if (interval > 5000)
-                    interval = 5000;
-                else if (interval < 10)
-                    interval = 10;
+                if (interval > 5000) interval = 5000;
+                else if (interval < 10) interval = 10;
                 this.interval = interval;
             }
 
             if (resend >= 0)
+            {
                 fastresend = resend;
+            }
 
-            nocwnd = nc;
+            this.nocwnd = nocwnd;
         }
 
         // ikcp_wndsize

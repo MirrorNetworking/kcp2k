@@ -38,6 +38,7 @@ namespace Mirror.KCP
         void ConfigureKcpConnection(KcpConnection connection)
         {
             // NoDelay=false doesn't scale past ~1000 monsters. let's force enable it.
+            TODO use defaults
             connection.kcp.SetNoDelay(true, 10, 2, true);
             // PUMP those numbers up.
             // this works for 4k:

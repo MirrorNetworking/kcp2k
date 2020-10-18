@@ -302,7 +302,7 @@ namespace kcp2k
             int count = 0;
             foreach (Segment seg in snd_buf)
             {
-                if (una >seg.sn)
+                if (una > seg.sn)
                 {
                     count++;
                     Segment.Put(seg);

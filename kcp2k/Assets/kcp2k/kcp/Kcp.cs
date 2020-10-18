@@ -260,7 +260,15 @@ namespace kcp2k
         // ikcp_shrink_buf
         void ShrinkBuf()
         {
-            snd_una = sendBuffer.Count > 0 ? sendBuffer[0].sn : snd_nxt;
+            if (sendBuffer.Count > 0)
+            {
+                Segment seg = sendBuffer[0];
+                snd_una = seg.sn;
+            }
+            else
+            {
+                snd_una = snd_nxt;
+            }
         }
 
         // ikcp_parse_ack

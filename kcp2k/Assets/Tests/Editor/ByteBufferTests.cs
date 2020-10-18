@@ -1,36 +1,38 @@
 ﻿using NUnit.Framework;
-using kcp2k;
 
-public class ByteBufferTests
+namespace kcp2k.Tests
 {
-    ByteBuffer buffer;
-
-    [SetUp]
-    public void SetUp()
+    public class ByteBufferTests
     {
-        buffer = new ByteBuffer(1024);
-    }
+        ByteBuffer buffer;
 
-    [TearDown]
-    public void TearDown()
-    {
-        buffer.Dispose();
+        [SetUp]
+        public void SetUp()
+        {
+            buffer = new ByteBuffer(1024);
+        }
 
-        // dispose still adds to pool :(( clean up.
-        ByteBuffer.pool.Clear();
-    }
+        [TearDown]
+        public void TearDown()
+        {
+            buffer.Dispose();
 
-    [Test]
-    public void CreateAndDispose()
-    {
-        // just run setup & teardown
-    }
+            // dispose still adds to pool :(( clean up.
+            ByteBuffer.pool.Clear();
+        }
 
-    [Test]
-    public void WriteBytes()
-    {
-        byte[] bytes = {0xAA, 0xBB, 0xCC, 0xDD};
-        buffer.WriteBytes(bytes, 2, 2);
-        Assert.That(buffer.writeIndex, Is.EqualTo(2));
+        [Test]
+        public void CreateAndDispose()
+        {
+            // just run setup & teardown
+        }
+
+        [Test]
+        public void WriteBytes()
+        {
+            byte[] bytes = {0xAA, 0xBB, 0xCC, 0xDD};
+            buffer.WriteBytes(bytes, 2, 2);
+            Assert.That(buffer.writeIndex, Is.EqualTo(2));
+        }
     }
 }

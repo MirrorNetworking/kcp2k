@@ -289,7 +289,9 @@ namespace kcp2k
                     break;
                 }
                 if (sn < seg.sn)
+                {
                     break;
+                }
             }
         }
 

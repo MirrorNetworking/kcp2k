@@ -28,24 +28,6 @@ namespace kcp2k.Tests
             Assert.That(buffer.RawBuffer[1], Is.EqualTo(0xDD));
         }
 
-        // writing more than initial capacity should resize automatically
-        [Test]
-        public void WriteBytesWithResize()
-        {
-            // create array with unique values
-            byte[] bytes = new byte[ByteBuffer.InitialCapacity * 2];
-            for (int i = 0; i < bytes.Length; ++i)
-                bytes[i] = (byte)(i & 0xFF);
-
-            // write
-            buffer.WriteBytes(bytes, 0, bytes.Length);
-            Assert.That(buffer.Position, Is.EqualTo(bytes.Length));
-
-            // compare
-            for (int i = 0; i < bytes.Length; ++i)
-                Assert.That(bytes[i], Is.EqualTo(buffer.RawBuffer[i]));
-        }
-
         // need to make sure that multiple writes to same buffer still work fine
         [Test]
         public void WriteBytesTwice()
@@ -65,6 +47,24 @@ namespace kcp2k.Tests
             Assert.That(buffer.RawBuffer[1], Is.EqualTo(0xBB));
             Assert.That(buffer.RawBuffer[2], Is.EqualTo(0xCC));
             Assert.That(buffer.RawBuffer[3], Is.EqualTo(0xDD));
+        }
+
+        // writing more than initial capacity should resize automatically
+        [Test]
+        public void WriteBytesWithResize()
+        {
+            // create array with unique values
+            byte[] bytes = new byte[ByteBuffer.InitialCapacity * 2];
+            for (int i = 0; i < bytes.Length; ++i)
+                bytes[i] = (byte)(i & 0xFF);
+
+            // write
+            buffer.WriteBytes(bytes, 0, bytes.Length);
+            Assert.That(buffer.Position, Is.EqualTo(bytes.Length));
+
+            // compare
+            for (int i = 0; i < bytes.Length; ++i)
+                Assert.That(bytes[i], Is.EqualTo(buffer.RawBuffer[i]));
         }
     }
 }

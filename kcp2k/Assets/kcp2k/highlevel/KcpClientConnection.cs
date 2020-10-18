@@ -18,7 +18,7 @@ namespace kcp2k
         {
         }
 
-        public void Connect(string host, ushort port)
+        public void Connect(string host, ushort port, bool noDelay)
         {
             Debug.Log($"KcpClient: connect to {host}:{port}");
             IPAddress[] ipAddress = Dns.GetHostAddresses(host);
@@ -28,7 +28,7 @@ namespace kcp2k
             remoteEndpoint = new IPEndPoint(ipAddress[0], port);
             socket = new Socket(remoteEndpoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
             socket.Connect(remoteEndpoint);
-            SetupKcp();
+            SetupKcp(noDelay);
 
             RawReceive();
 

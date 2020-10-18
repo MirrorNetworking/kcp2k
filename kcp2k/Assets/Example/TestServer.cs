@@ -11,6 +11,8 @@ namespace kcp2k.Examples
     {
         // configuration
         public ushort Port = 7777;
+        [Tooltip("NoDelay is recommended to reduce latency. This also scales better without buffers getting full.")]
+        public bool NoDelay = true;
 
         // server
         readonly byte[] buffer = new byte[Kcp.MTU_DEF];
@@ -87,7 +89,7 @@ namespace kcp2k.Examples
                 if (!connections.TryGetValue(connectionId, out KcpServerConnection connection))
                 {
                     // add it to a queue
-                    connection = new KcpServerConnection(serverSocket, serverNewClientEP);
+                    connection = new KcpServerConnection(serverSocket, serverNewClientEP, NoDelay);
 
                     //acceptedConnections.Writer.TryWrite(connection);
                     connections.Add(connectionId, connection);

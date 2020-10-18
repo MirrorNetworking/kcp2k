@@ -7,6 +7,8 @@ namespace kcp2k.Examples
     {
         // configuration
         public ushort Port = 7777;
+        [Tooltip("NoDelay is recommended to reduce latency. This also scales better without buffers getting full.")]
+        public bool NoDelay = true;
 
         // client
         readonly byte[] buffer = new byte[Kcp.MTU_DEF];
@@ -41,7 +43,7 @@ namespace kcp2k.Examples
             };
 
             // connect
-            clientConnection.Connect(address, Port);
+            clientConnection.Connect(address, Port, NoDelay);
         }
 
         public void Send(ArraySegment<byte> segment)

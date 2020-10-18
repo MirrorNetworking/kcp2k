@@ -13,6 +13,8 @@ namespace Mirror.KCP
         // common
         [Header("Transport Configuration")]
         public ushort Port = 7777;
+        [Tooltip("NoDelay is recommended to reduce latency. This also scales better without buffers getting full.")]
+        public bool NoDelay = true;
         readonly byte[] buffer = new byte[Kcp.MTU_DEF];
 
         // server
@@ -38,15 +40,15 @@ namespace Mirror.KCP
         void ConfigureKcpConnection(KcpConnection connection)
         {
             // NoDelay=false doesn't scale past ~1000 monsters. let's force enable it.
-            TODO use defaults
-            connection.kcp.SetNoDelay(true, 10, 2, true);
+            // TODO consider lower interval IF interval matters in nodelay mode
+            //connection.kcp.SetNoDelay(true);
             // PUMP those numbers up.
             // this works for 4k:
             //connection.kcp.SetWindowSize(128, 128);
             // this works for 10k:
             //connection.kcp.SetWindowSize(512, 512);
             // this works for 20k:
-            connection.kcp.SetWindowSize(8192, 8192);
+            //connection.kcp.SetWindowSize(8192, 8192);
         }
 
         // client
@@ -81,10 +83,10 @@ namespace Mirror.KCP
             };
 
             // connect
-            clientConnection.Connect(address, Port);
+            clientConnection.Connect(address, Port, NoDelay);
 
             // configure connection for max scale
-            ConfigureKcpConnection(clientConnection);
+            //ConfigureKcpConnection(clientConnection);
         }
         public override bool ClientSend(int channelId, ArraySegment<byte> segment)
         {
@@ -118,10 +120,10 @@ namespace Mirror.KCP
                 if (!connections.TryGetValue(connectionId, out KcpServerConnection connection))
                 {
                     // add it to a queue
-                    connection = new KcpServerConnection(serverSocket, serverNewClientEP);
+                    connection = new KcpServerConnection(serverSocket, serverNewClientEP, NoDelay);
 
                     // configure connection for max scale
-                    ConfigureKcpConnection(connection);
+                    //ConfigureKcpConnection(connection);
 
                     //acceptedConnections.Writer.TryWrite(connection);
                     connections.Add(connectionId, connection);

@@ -308,7 +308,9 @@ namespace kcp2k
                     Segment.Put(seg);
                 }
                 else
+                {
                     break;
+                }
             }
 
             snd_buf.RemoveRange(0, count);

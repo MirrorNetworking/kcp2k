@@ -36,6 +36,7 @@ Library
 Temp
 UnityPackageManager
 CodeCoverage
+com.unity.testtools.codecoverage
 Logs
 Obj
 *.mdb

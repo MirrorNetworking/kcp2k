@@ -49,6 +49,7 @@ namespace kcp2k
         int rx_srtt;        // smoothed round trip time
         int rx_rto;
         int rx_minrto;
+        uint snd_wnd;       // send window
         uint cwnd;          // congestion window
         uint probe;
         uint interval;
@@ -71,7 +72,6 @@ namespace kcp2k
         uint reserved = 0;
         readonly Action<byte[], int> output; // buffer, size
 
-        public uint SendWindowMax { get; private set; }
         public uint ReceiveWindowMax { get; private set; }
         public uint RmtWnd { get; private set; }
         public uint Mss => mtu - OVERHEAD - reserved; // maximum segment size
@@ -89,7 +89,7 @@ namespace kcp2k
         {
             this.conv = conv;
             this.output = output;
-            SendWindowMax = WND_SND;
+            snd_wnd = WND_SND;
             ReceiveWindowMax = WND_RCV;
             RmtWnd = WND_RCV;
             mtu = MTU_DEF;
@@ -647,7 +647,7 @@ namespace kcp2k
             probe = 0;
 
             // calculate window size
-            uint cwnd_ = Math.Min(SendWindowMax, RmtWnd);
+            uint cwnd_ = Math.Min(snd_wnd, RmtWnd);
             if (!nocwnd)
                 cwnd_ = Math.Min(cwnd, cwnd_);
 
@@ -910,7 +910,7 @@ namespace kcp2k
         public void SetWindowSize(uint sendWindow = 32, uint receiveWindow = 32)
         {
             if (sendWindow > 0)
-                SendWindowMax = sendWindow;
+                snd_wnd = sendWindow;
 
             if (receiveWindow > 0)
                 ReceiveWindowMax = Math.Max(receiveWindow, WND_RCV);

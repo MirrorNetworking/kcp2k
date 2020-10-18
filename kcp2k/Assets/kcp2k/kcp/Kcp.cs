@@ -146,7 +146,7 @@ namespace kcp2k
             count = 0;
             foreach (Segment seg in rcv_buf)
             {
-                if (seg.sn == rcv_nxt && rcv_queue.Count + count < rcv_wnd)
+                if (seg.sn == rcv_nxt && rcv_queue.Count < rcv_wnd)
                 {
                     rcv_queue.Add(seg);
                     rcv_nxt++;

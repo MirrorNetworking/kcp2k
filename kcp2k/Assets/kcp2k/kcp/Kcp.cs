@@ -65,10 +65,10 @@ namespace kcp2k
 
         int fastresend;
         bool nocwnd;
-        internal readonly List<Segment> sendQueue = new List<Segment>(16);
+        internal readonly List<Segment> snd_queue = new List<Segment>(16);    // send queue
         internal readonly List<Segment> receiveQueue = new List<Segment>(16);
-        internal readonly List<Segment> snd_buf = new List<Segment>(16); // send buffer
-        internal readonly List<Segment> rcv_buf = new List<Segment>(16); // receive buffer
+        internal readonly List<Segment> snd_buf = new List<Segment>(16);      // send buffer
+        internal readonly List<Segment> rcv_buf = new List<Segment>(16);      // receive buffer
         internal readonly List<AckItem> ackList = new List<AckItem>(16);
 
         byte[] buffer;
@@ -76,7 +76,7 @@ namespace kcp2k
 
 
         // get how many packet is waiting to be sent
-        public int WaitSnd => snd_buf.Count + sendQueue.Count;
+        public int WaitSnd => snd_buf.Count + snd_queue.Count;
 
         // internal time.
         readonly Stopwatch refTime = new Stopwatch();
@@ -232,7 +232,7 @@ namespace kcp2k
                 length -= size;
 
                 seg.frg = (byte)(count - i - 1);
-                sendQueue.Add(seg);
+                snd_queue.Add(seg);
             }
         }
 
@@ -673,12 +673,12 @@ namespace kcp2k
 
             // sliding window, controlled by snd_nxt && sna_una+cwnd
             int newSegsCount = 0;
-            for (int k = 0; k < sendQueue.Count; k++)
+            for (int k = 0; k < snd_queue.Count; k++)
             {
                 if (snd_nxt >= snd_una + cwnd_)
                     break;
 
-                Segment newseg = sendQueue[k];
+                Segment newseg = snd_queue[k];
                 newseg.conv = conv;
                 newseg.cmd = CMD_PUSH;
                 newseg.sn = snd_nxt;
@@ -687,7 +687,7 @@ namespace kcp2k
                 newSegsCount++;
             }
 
-            sendQueue.RemoveRange(0, newSegsCount);
+            snd_queue.RemoveRange(0, newSegsCount);
 
             // calculate resent
             uint resent = (uint)fastresend;

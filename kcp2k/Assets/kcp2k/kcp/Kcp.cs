@@ -788,10 +788,7 @@ namespace kcp2k
         }
 
         // ikcp_update
-        /// <summary>Update
-        /// Determine when should you invoke update
-        /// <para>update state (call it repeatedly, every 10ms-100ms)</para>
-        /// </summary>
+        // update state (call it repeatedly, every 10ms-100ms)
         public void Update()
         {
             uint current = CurrentMS;

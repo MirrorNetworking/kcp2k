@@ -325,9 +325,13 @@ namespace kcp2k
             foreach (Segment seg in snd_buf)
             {
                 if (sn < seg.sn)
+                {
                     break;
+                }
                 else if (sn != seg.sn && seg.ts <= ts)
+                {
                     seg.fastack++;
+                }
             }
         }
 

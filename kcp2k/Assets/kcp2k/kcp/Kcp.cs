@@ -135,7 +135,7 @@ namespace kcp2k
 
                 count++;
                 uint fragment = seg.frg;
-                Segment.Put(seg);
+                Segment.Return(seg);
                 if (fragment == 0)
                     break;
             }
@@ -305,7 +305,7 @@ namespace kcp2k
                 if (una > seg.sn)
                 {
                     count++;
-                    Segment.Put(seg);
+                    Segment.Return(seg);
                 }
                 else
                 {

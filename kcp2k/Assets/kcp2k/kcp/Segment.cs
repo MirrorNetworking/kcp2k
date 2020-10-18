@@ -32,7 +32,7 @@ namespace kcp2k
             return new Segment(size);
         }
 
-        public static void Put(Segment seg)
+        public static void Return(Segment seg)
         {
             seg.Reset();
             msSegmentPool.Push(seg);

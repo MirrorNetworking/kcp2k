@@ -281,6 +281,7 @@ namespace kcp2k
             {
                 if (sn == seg.sn)
                 {
+                    // TODO this is different from native C
                     // mark and free space, but leave the segment here,
                     // and wait until `una` to delete this, then we don't
                     // have to shift the segments behind forward,

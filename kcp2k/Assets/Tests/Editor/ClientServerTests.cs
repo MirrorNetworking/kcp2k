@@ -36,55 +36,50 @@ namespace kcp2k.Tests
             return server.connections.First().Key;
         }
 
+        void UpdateSeveralTimes()
+        {
+            // update serveral times
+            // Kcp default interval is 100ms.
+            // let's update for 500ms to give messages enough time to pass.
+            for (int i = 0; i < 50; ++i)
+            {
+                client.LateUpdate();
+                server.LateUpdate();
+                Thread.Sleep(10);
+            }
+        }
+
         // connect and give it enough time to handle
         void ConnectClientBlocking()
         {
             client.Connect("127.0.0.1");
-            // need update a few times for handshake to finish
-            for (int i = 0; i < 10; ++i)
-            {
-                Thread.Sleep(10);
-                client.LateUpdate();
-                server.LateUpdate();
-            }
+            UpdateSeveralTimes();
         }
 
         // disconnect and give it enough time to handle
         void DisconnectClientBlocking()
         {
             client.Disconnect();
-            Thread.Sleep(100);
-            client.LateUpdate();
-            server.LateUpdate();
+            UpdateSeveralTimes();
         }
 
         // kick and give it enough time to handle
         void KickClientBlocking(int connectionId)
         {
             server.Disconnect(connectionId);
-            Thread.Sleep(100);
-            client.LateUpdate();
-            server.LateUpdate();
+            UpdateSeveralTimes();
         }
 
         void SendClientToServerBlocking(ArraySegment<byte> message)
         {
             client.Send(message);
-            Thread.Sleep(100);
-            client.LateUpdate();
-            server.LateUpdate();
+            UpdateSeveralTimes();
         }
 
         void SendServerToClientBlocking(int connectionId, ArraySegment<byte> message)
         {
             server.Send(connectionId, message);
-            // need to update a few times
-            for (int i = 0; i < 10; ++i)
-            {
-                Thread.Sleep(10);
-                client.LateUpdate();
-                server.LateUpdate();
-            }
+            UpdateSeveralTimes();
         }
 
         // tests ///////////////////////////////////////////////////////////////

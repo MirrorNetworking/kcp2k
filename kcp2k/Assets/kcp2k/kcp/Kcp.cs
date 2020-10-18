@@ -899,17 +899,18 @@ namespace kcp2k
             nocwnd = nc;
         }
 
-        /// <summary>SetWindowSize
-        /// sets maximum window size</summary>
-        /// <param name="sendWindow">32 by default</param>
-        /// <param name="receiveWindow">32 by default</param>
-        public void SetWindowSize(uint sendWindow = 32, uint receiveWindow = 32)
+        public void SetWindowSize(uint sendWindow, uint receiveWindow)
         {
             if (sendWindow > 0)
+            {
                 snd_wnd = sendWindow;
+            }
 
             if (receiveWindow > 0)
+            {
+                // must >= max fragment size
                 rcv_wnd = Math.Max(receiveWindow, WND_RCV);
+            }
         }
     }
 }

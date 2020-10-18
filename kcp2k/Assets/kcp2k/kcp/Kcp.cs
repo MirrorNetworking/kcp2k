@@ -40,21 +40,21 @@ namespace kcp2k
         // kcp members.
         readonly uint conv; // conversation
         uint mtu;
-        uint snd_una;
+        uint snd_una;       // unacknowledged
         uint snd_nxt;
         uint rcv_nxt;
-        uint ssthresh;
+        uint ssthresh;      // slow start threshold
         uint rx_rttval;
-        uint rx_srtt;     // smoothed round trip time
+        uint rx_srtt;       // smoothed round trip time
         uint rx_rto;
         uint rx_minrto;
-        uint cwnd;        // congestion window
+        uint cwnd;          // congestion window
         uint probe;
         uint interval;
         uint ts_flush;
         bool noDelay;
         bool updated;
-        uint ts_probe;
+        uint ts_probe;      // timestamp probe
         uint probe_wait;
         uint incr;
 

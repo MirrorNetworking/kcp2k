@@ -41,6 +41,7 @@ namespace kcp2k
         // kcp members.
         readonly uint conv; // conversation
         uint mtu;
+        uint mss;           // maximum segment size
         uint snd_una;       // unacknowledged
         uint snd_nxt;
         uint rcv_nxt;
@@ -73,7 +74,6 @@ namespace kcp2k
         byte[] buffer;
         readonly Action<byte[], int> output; // buffer, size
 
-        public uint Mss => mtu - OVERHEAD; // maximum segment size
 
         // get how many packet is waiting to be sent
         public int WaitSnd => sendBuffer.Count + sendQueue.Count;
@@ -92,6 +92,7 @@ namespace kcp2k
             rcv_wnd = WND_RCV;
             rmt_wnd = WND_RCV;
             mtu = MTU_DEF;
+            mss = mtu - OVERHEAD;
             rx_rto = RTO_DEF;
             rx_minrto = RTO_MIN;
             interval = INTERVAL;
@@ -206,10 +207,10 @@ namespace kcp2k
                 throw new ArgumentException("You cannot send a packet with a length of 0.");
 
             int count;
-            if (length <= Mss)
+            if (length <= mss)
                 count = 1;
             else
-                count = (int)((length + Mss - 1) / Mss);
+                count = (int)((length + mss - 1) / mss);
 
             if (count > 255)
                 throw new ArgumentException("Your packet is too big, please reduce its length or increase the MTU with SetMtu().");
@@ -220,7 +221,7 @@ namespace kcp2k
             // fragment
             for (int i = 0; i < count; i++)
             {
-                int size = Math.Min(length, (int)Mss);
+                int size = Math.Min(length, (int)mss);
 
                 var seg = Segment.Get(size);
                 seg.data.WriteBytes(buffer, index, size);
@@ -515,30 +516,29 @@ namespace kcp2k
         {
             if (!nocwnd && snd_una > s_una && cwnd < rmt_wnd)
             {
-                uint _mss = Mss;
                 if (cwnd < ssthresh)
                 {
                     cwnd++;
-                    incr += _mss;
+                    incr += mss;
                 }
                 else
                 {
-                    incr = Math.Max(incr, _mss);
+                    incr = Math.Max(incr, mss);
 
-                    incr += _mss * _mss / incr + _mss / 16;
+                    incr += mss * mss / incr + mss / 16;
 
-                    if ((cwnd + 1) * _mss <= incr)
+                    if ((cwnd + 1) * mss <= incr)
                     {
-                        cwnd = incr + _mss - 1;
+                        cwnd = incr + mss - 1;
 
-                        if (_mss > 0)
-                            cwnd /= _mss;
+                        if (mss > 0)
+                            cwnd /= mss;
                     }
                 }
                 if (cwnd > rmt_wnd)
                 {
                     cwnd = rmt_wnd;
-                    incr = rmt_wnd * _mss;
+                    incr = rmt_wnd * mss;
                 }
             }
         }
@@ -755,7 +755,7 @@ namespace kcp2k
                 if (ssthresh < THRESH_MIN)
                     ssthresh = THRESH_MIN;
                 cwnd = ssthresh + resent;
-                incr = cwnd * Mss;
+                incr = cwnd * mss;
             }
 
             // congestion control, https://tools.ietf.org/html/rfc5681
@@ -765,13 +765,13 @@ namespace kcp2k
                 if (ssthresh < THRESH_MIN)
                     ssthresh = THRESH_MIN;
                 cwnd = 1;
-                incr = Mss;
+                incr = mss;
             }
 
             if (cwnd < 1)
             {
                 cwnd = 1;
-                incr = Mss;
+                incr = mss;
             }
         }
 
@@ -863,8 +863,8 @@ namespace kcp2k
                 throw new ArgumentException("MTU must be higher than 50.");
 
             buffer = new byte[mtu];
-
             this.mtu = mtu;
+            mss = mtu - OVERHEAD;
         }
 
         /// <summary>SetNoDelay

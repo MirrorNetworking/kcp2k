@@ -1,6 +1,6 @@
 C# kcp[https://github.com/skywind3000/kcp] for Unity, with MMOs in mind.
 
 The goal is to keep base Kcp.cs as close as possible to skywind3000's C code.
-The high level C# code will be robust, fast and simple as possible.
+The high level C# code will be robust, fast and as simple as possible.
 
 Pull requests for bug fixes & tests welcome.

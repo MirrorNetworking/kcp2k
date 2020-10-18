@@ -233,7 +233,7 @@ namespace kcp2k
         }
 
         // update ack.
-        void UpdateAck(int rtt)
+        void UpdateAck(int rtt) // round trip time
         {
             // https://tools.ietf.org/html/rfc6298
             if (rx_srtt == 0)

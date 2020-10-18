@@ -30,6 +30,7 @@ namespace kcp2k.Tests
         {
             // take a new one from an empty pool
             Segment seg = Segment.Take(22);
+            Assert.That(seg.data.Capacity, Is.EqualTo(22));
 
             // return to pool
             Segment.Return(seg);
@@ -38,6 +39,10 @@ namespace kcp2k.Tests
             // a new one
             Segment val = Segment.Take(44);
             Assert.That(val, Is.EqualTo(seg));
+
+            // internal data buffer should have the requested size.
+            // pool should handle that.
+            Assert.That(val.data.Capacity, Is.EqualTo(44));
         }
 
         [Test]

@@ -317,7 +317,7 @@ namespace kcp2k
         }
 
         // ikcp_parse_fastack
-        void ParseFastrack(uint sn, uint ts)
+        void ParseFastack(uint sn, uint ts)
         {
             if (sn < snd_una || sn >= snd_nxt)
                 return;
@@ -471,7 +471,7 @@ namespace kcp2k
                 if (CMD_ACK == cmd)
                 {
                     ParseAck(sn);
-                    ParseFastrack(sn, ts);
+                    ParseFastack(sn, ts);
                     flag |= 1;
                     latest = ts;
                 }

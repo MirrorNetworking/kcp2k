@@ -65,10 +65,10 @@ namespace kcp2k
 
         int fastresend;
         bool nocwnd;
-        internal readonly List<Segment> snd_queue = new List<Segment>(16);    // send queue
-        internal readonly List<Segment> receiveQueue = new List<Segment>(16);
-        internal readonly List<Segment> snd_buf = new List<Segment>(16);      // send buffer
-        internal readonly List<Segment> rcv_buf = new List<Segment>(16);      // receive buffer
+        internal readonly List<Segment> snd_queue = new List<Segment>(16); // send queue
+        internal readonly List<Segment> rcv_queue = new List<Segment>(16); // receive queue
+        internal readonly List<Segment> snd_buf = new List<Segment>(16);   // send buffer
+        internal readonly List<Segment> rcv_buf = new List<Segment>(16);   // receive buffer
         internal readonly List<AckItem> ackList = new List<AckItem>(16);
 
         byte[] buffer;
@@ -121,13 +121,13 @@ namespace kcp2k
             if (peekSize > length)
                 return -2;
 
-            bool fastRecover = receiveQueue.Count >= rcv_wnd;
+            bool fastRecover = rcv_queue.Count >= rcv_wnd;
 
             // merge fragment.
             int count = 0;
             int n = index;
 
-            foreach (Segment seg in receiveQueue)
+            foreach (Segment seg in rcv_queue)
             {
                 // copy fragment data into buffer.
                 Buffer.BlockCopy(seg.data.RawBuffer, seg.data.ReaderIndex, buffer, n, seg.data.ReadableBytes);
@@ -140,15 +140,15 @@ namespace kcp2k
                     break;
             }
 
-            receiveQueue.RemoveRange(0, count);
+            rcv_queue.RemoveRange(0, count);
 
             // move available data from rcv_buf -> rcv_queue
             count = 0;
             foreach (Segment seg in rcv_buf)
             {
-                if (seg.sn == rcv_nxt && receiveQueue.Count + count < rcv_wnd)
+                if (seg.sn == rcv_nxt && rcv_queue.Count + count < rcv_wnd)
                 {
-                    receiveQueue.Add(seg);
+                    rcv_queue.Add(seg);
                     rcv_nxt++;
                     count++;
                 }
@@ -161,7 +161,7 @@ namespace kcp2k
             rcv_buf.RemoveRange(0, count);
 
             // fast recover
-            if (receiveQueue.Count < rcv_wnd && fastRecover)
+            if (rcv_queue.Count < rcv_wnd && fastRecover)
             {
                 // ready to send back CMD_WINS in flush
                 // tell remote my window size
@@ -175,20 +175,20 @@ namespace kcp2k
         // check the size of next message in the recv queue
         public int PeekSize()
         {
-            if (receiveQueue.Count == 0)
+            if (rcv_queue.Count == 0)
                 return -1;
 
-            Segment seq = receiveQueue[0];
+            Segment seq = rcv_queue[0];
 
             if (seq.frg == 0)
                 return seq.data.ReadableBytes;
 
-            if (receiveQueue.Count < seq.frg + 1)
+            if (rcv_queue.Count < seq.frg + 1)
                 return -1;
 
             int length = 0;
 
-            foreach (Segment item in receiveQueue)
+            foreach (Segment item in rcv_queue)
             {
                 length += item.data.ReadableBytes;
                 if (item.frg == 0)
@@ -380,7 +380,7 @@ namespace kcp2k
             int count = 0;
             foreach (Segment seg in rcv_buf)
             {
-                if (seg.sn == rcv_nxt && receiveQueue.Count + count < rcv_wnd)
+                if (seg.sn == rcv_nxt && rcv_queue.Count + count < rcv_wnd)
                 {
                     rcv_nxt++;
                     count++;
@@ -392,7 +392,7 @@ namespace kcp2k
             }
 
             for (int i = 0; i < count; i++)
-                receiveQueue.Add(rcv_buf[i]);
+                rcv_queue.Add(rcv_buf[i]);
             rcv_buf.RemoveRange(0, count);
         }
 
@@ -565,8 +565,8 @@ namespace kcp2k
         // ikcp_wnd_unused
         uint WndUnused()
         {
-            if (receiveQueue.Count < rcv_wnd)
-                return rcv_wnd - (uint)receiveQueue.Count;
+            if (rcv_queue.Count < rcv_wnd)
+                return rcv_wnd - (uint)rcv_queue.Count;
             return 0;
         }
 

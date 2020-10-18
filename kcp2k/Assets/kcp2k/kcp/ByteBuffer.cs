@@ -1,3 +1,5 @@
+// byte[] buffer with Position, resizes automatically.
+// There is no size limit because we will only use it with ~MTU sized arrays.
 using System;
 
 namespace kcp2k

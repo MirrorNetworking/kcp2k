@@ -56,7 +56,7 @@ namespace kcp2k
             offset += Utils.Encode32U(ptr, offset, ts);
             offset += Utils.Encode32U(ptr, offset, sn);
             offset += Utils.Encode32U(ptr, offset, una);
-            offset += Utils.Encode32U(ptr, offset, (uint)data.ReadableBytes);
+            offset += Utils.Encode32U(ptr, offset, (uint)data.Position);
 
             return offset - offset_;
         }

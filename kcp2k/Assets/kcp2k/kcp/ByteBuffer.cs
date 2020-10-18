@@ -5,11 +5,10 @@ namespace kcp2k
 {
     public class ByteBuffer : IDisposable
     {
-        internal int writeIndex;
         internal static readonly List<ByteBuffer> pool = new List<ByteBuffer>();
         const int PoolMaxCount = 200;
 
-        public int ReadableBytes => writeIndex;
+        public int Position;
         public int Capacity { get; private set; }
         public byte[] RawBuffer { get; private set; }
 
@@ -17,7 +16,6 @@ namespace kcp2k
         {
             RawBuffer = new byte[capacity];
             Capacity = capacity;
-            writeIndex = 0;
         }
 
         /// <summary>
@@ -98,16 +96,16 @@ namespace kcp2k
         {
             if (length <= 0 || startIndex < 0) return;
 
-            int total = length + writeIndex;
+            int total = length + Position;
             int len = RawBuffer.Length;
             FixSizeAndReset(len, total);
-            Array.Copy(bytes, startIndex, RawBuffer, writeIndex, length);
-            writeIndex = total;
+            Array.Copy(bytes, startIndex, RawBuffer, Position, length);
+            Position = total;
         }
 
         public void Clear()
         {
-            writeIndex = 0;
+            Position = 0;
             Capacity = RawBuffer.Length;
         }
 
@@ -119,7 +117,7 @@ namespace kcp2k
                 pool.Add(this);
                 return;
             }
-            writeIndex = 0;
+            Position = 0;
             Capacity = 0;
             RawBuffer = null;
         }

@@ -130,8 +130,8 @@ namespace kcp2k
             foreach (Segment seg in rcv_queue)
             {
                 // copy fragment data into buffer.
-                Buffer.BlockCopy(seg.data.RawBuffer, 0, buffer, n, seg.data.ReadableBytes);
-                n += seg.data.ReadableBytes;
+                Buffer.BlockCopy(seg.data.RawBuffer, 0, buffer, n, seg.data.Position);
+                n += seg.data.Position;
 
                 count++;
                 uint fragment = seg.frg;
@@ -181,7 +181,7 @@ namespace kcp2k
             Segment seq = rcv_queue[0];
 
             if (seq.frg == 0)
-                return seq.data.ReadableBytes;
+                return seq.data.Position;
 
             if (rcv_queue.Count < seq.frg + 1)
                 return -1;
@@ -190,7 +190,7 @@ namespace kcp2k
 
             foreach (Segment item in rcv_queue)
             {
-                length += item.data.ReadableBytes;
+                length += item.data.Position;
                 if (item.frg == 0)
                     break;
             }
@@ -747,11 +747,11 @@ namespace kcp2k
                     segment.wnd = seg.wnd;
                     segment.una = seg.una;
 
-                    int need = OVERHEAD + segment.data.ReadableBytes;
+                    int need = OVERHEAD + segment.data.Position;
                     makeSpace(need);
                     writeIndex += segment.Encode(buffer, writeIndex);
-                    Buffer.BlockCopy(segment.data.RawBuffer, 0, buffer, writeIndex, segment.data.ReadableBytes);
-                    writeIndex += segment.data.ReadableBytes;
+                    Buffer.BlockCopy(segment.data.RawBuffer, 0, buffer, writeIndex, segment.data.Position);
+                    writeIndex += segment.data.Position;
                 }
 
                 // get the nearest rto

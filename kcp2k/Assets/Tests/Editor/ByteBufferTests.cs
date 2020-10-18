@@ -32,7 +32,7 @@ namespace kcp2k.Tests
         {
             byte[] bytes = {0xAA, 0xBB, 0xCC, 0xDD};
             buffer.WriteBytes(bytes, 2, 2);
-            Assert.That(buffer.writeIndex, Is.EqualTo(2));
+            Assert.That(buffer.Position, Is.EqualTo(2));
         }
     }
 }

@@ -9,13 +9,7 @@ namespace kcp2k.Tests
         [SetUp]
         public void SetUp()
         {
-            buffer = new ByteBuffer(1024);
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            buffer.Dispose();
+            buffer = new ByteBuffer();
         }
 
         [Test]

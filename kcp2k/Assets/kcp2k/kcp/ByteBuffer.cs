@@ -4,17 +4,11 @@ using System;
 
 namespace kcp2k
 {
-    public class ByteBuffer : IDisposable
+    public class ByteBuffer
     {
         public int Position;
-        public int Capacity { get; private set; }
-        public byte[] RawBuffer { get; private set; }
-
-        public ByteBuffer(int capacity)
-        {
-            RawBuffer = new byte[capacity];
-            Capacity = capacity;
-        }
+        internal const int InitialCapacity = 1200;
+        public byte[] RawBuffer = new byte[InitialCapacity];
 
         /// <summary>
         /// According to the value, determine the nearest 2nd power greater than this length, such as length=7, the return value is 8; length=12, then 16
@@ -56,7 +50,6 @@ namespace kcp2k
                 byte[] newbuf = new byte[size];
                 Array.Copy(RawBuffer, 0, newbuf, 0, currLen);
                 RawBuffer = newbuf;
-                Capacity = size;
             }
         }
 
@@ -75,19 +68,6 @@ namespace kcp2k
             FixSizeAndReset(len, total);
             Array.Copy(bytes, startIndex, RawBuffer, Position, length);
             Position = total;
-        }
-
-        public void Clear()
-        {
-            Position = 0;
-            Capacity = RawBuffer.Length;
-        }
-
-        public void Dispose()
-        {
-            Position = 0;
-            Capacity = 0;
-            RawBuffer = null;
         }
     }
 }

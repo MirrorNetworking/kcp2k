@@ -226,7 +226,7 @@ namespace kcp2k
             {
                 int size = Math.Min(length, (int)mss);
 
-                Segment seg = Segment.Take(size);
+                Segment seg = Segment.Take();
                 seg.data.WriteBytes(buffer, index, size);
                 index += size;
                 length -= size;
@@ -486,7 +486,7 @@ namespace kcp2k
                         AckPush(sn, ts);
                         if (sn >= rcv_nxt)
                         {
-                            Segment seg = Segment.Take((int)length);
+                            Segment seg = Segment.Take();
                             seg.conv = conv_;
                             seg.cmd = cmd;
                             seg.frg = frg;
@@ -584,7 +584,7 @@ namespace kcp2k
         /// <param name="ackOnly">flush remain ack segments</param>
         public uint Flush(bool ackOnly)
         {
-            Segment seg = Segment.Take(32);
+            Segment seg = Segment.Take();
             seg.conv = conv;
             seg.cmd = CMD_ACK;
             seg.wnd = WndUnused();

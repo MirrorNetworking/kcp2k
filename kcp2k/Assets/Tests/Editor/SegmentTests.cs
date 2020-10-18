@@ -19,37 +19,29 @@ namespace kcp2k.Tests
         [Test]
         public void TakeFromEmptyPool()
         {
-            // taking from an empty pool should still return a new segment with
-            // the correct size
-            Segment seg = Segment.Take(42);
-            Assert.That(seg.data.Capacity, Is.EqualTo(42));
+            Segment.Take();
         }
 
         [Test]
         public void TakeReturnTake()
         {
             // take a new one from an empty pool
-            Segment seg = Segment.Take(22);
-            Assert.That(seg.data.Capacity, Is.EqualTo(22));
+            Segment seg = Segment.Take();
 
             // return to pool
             Segment.Return(seg);
 
             // next take call should give our returned one instead of allocating
             // a new one
-            Segment val = Segment.Take(44);
+            Segment val = Segment.Take();
             Assert.That(val, Is.EqualTo(seg));
-
-            // internal data buffer should have the requested size.
-            // pool should handle that.
-            Assert.That(val.data.Capacity, Is.EqualTo(44));
         }
 
         [Test]
         public void Encode()
         {
             // get a segment
-            Segment seg = Segment.Take(32);
+            Segment seg = Segment.Take();
 
             // set some unique values
             seg.conv = 0x04030201;
@@ -99,7 +91,7 @@ namespace kcp2k.Tests
         public void Reset()
         {
             // get a segment
-            Segment seg = Segment.Take(32);
+            Segment seg = Segment.Take();
 
             // set some unique values
             seg.conv = 0x04030201;
@@ -124,7 +116,7 @@ namespace kcp2k.Tests
             Assert.That(seg.resendts, Is.EqualTo(0));
             Assert.That(seg.fastack, Is.EqualTo(0));
             Assert.That(seg.acked, Is.EqualTo(false));
-            Assert.That(seg.data, Is.EqualTo(null));
+            Assert.That(seg.data.Position, Is.EqualTo(0));
         }
     }
 }

@@ -22,16 +22,14 @@ namespace kcp2k
         // pool ////////////////////////////////////////////////////////////////
         internal static readonly Stack<Segment> Pool = new Stack<Segment>(32);
 
-        public static Segment Take(int size)
+        public static Segment Take()
         {
             if (Pool.Count > 0)
             {
                 Segment seg = Pool.Pop();
-                // TODO avoid ByteBuffer allocation
-                seg.data = new ByteBuffer(size);
                 return seg;
             }
-            return new Segment(size);
+            return new Segment();
         }
 
         public static void Return(Segment seg)
@@ -41,9 +39,12 @@ namespace kcp2k
         }
         ////////////////////////////////////////////////////////////////////////
 
-        Segment(int size)
+        Segment()
         {
-            data = new ByteBuffer(size);
+            // allocate the ByteBuffer once.
+            // note that we don't need to pool ByteBuffer, because Segment is
+            // already pooled.
+            data = new ByteBuffer();
         }
 
         // encode a segment into buffer
@@ -77,9 +78,8 @@ namespace kcp2k
             fastack = 0;
             acked = false;
 
-            data.Clear();
-            data.Dispose();
-            data = null;
+            // keep buffer for next pool usage, but reset position
+            data.Position = 0;
         }
     }
 }

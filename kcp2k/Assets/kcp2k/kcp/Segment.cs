@@ -21,7 +21,7 @@ namespace kcp2k
 
         static readonly Stack<Segment> msSegmentPool = new Stack<Segment>(32);
 
-        public static Segment Get(int size)
+        public static Segment Take(int size)
         {
             if (msSegmentPool.Count > 0)
             {

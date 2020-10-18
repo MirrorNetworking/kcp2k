@@ -48,7 +48,7 @@ namespace kcp2k
         uint rx_srtt;
         uint rx_rto;
         uint rx_minrto;
-        uint cwnd;
+        uint cwnd;        // congestion window
         uint probe;
         uint interval;
         uint ts_flush;
@@ -73,7 +73,7 @@ namespace kcp2k
         public uint SendWindowMax { get; private set; }
         public uint ReceiveWindowMax { get; private set; }
         public uint RmtWnd { get; private set; }
-        public uint Mss => mtu - OVERHEAD - reserved;
+        public uint Mss => mtu - OVERHEAD - reserved; // maximum segment size
 
         // get how many packet is waiting to be sent
         public int WaitSnd => sendBuffer.Count + sendQueue.Count;

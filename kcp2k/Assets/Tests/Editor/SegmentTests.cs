@@ -89,5 +89,37 @@ namespace kcp2k.Tests
             Assert.That(data[offset + 22], Is.EqualTo(0x00));
             Assert.That(data[offset + 23], Is.EqualTo(0x00));
         }
+
+        [Test]
+        public void Reset()
+        {
+            // get a segment
+            Segment seg = Segment.Take(32);
+
+            // set some unique values
+            seg.conv = 0x04030201;
+            seg.cmd = 0x05;
+            seg.frg = 0x06;
+            seg.wnd = 0x0807;
+            seg.ts = 0x0C0B0A09;
+            seg.sn = 0x100F0E0D;
+            seg.una = 0x14131211;
+
+            // reset
+            seg.Reset();
+            Assert.That(seg.conv, Is.EqualTo(0));
+            Assert.That(seg.cmd, Is.EqualTo(0));
+            Assert.That(seg.frg, Is.EqualTo(0));
+            Assert.That(seg.wnd, Is.EqualTo(0));
+            Assert.That(seg.ts, Is.EqualTo(0));
+            Assert.That(seg.sn, Is.EqualTo(0));
+            Assert.That(seg.una, Is.EqualTo(0));
+            Assert.That(seg.rto, Is.EqualTo(0));
+            Assert.That(seg.xmit, Is.EqualTo(0));
+            Assert.That(seg.resendts, Is.EqualTo(0));
+            Assert.That(seg.fastack, Is.EqualTo(0));
+            Assert.That(seg.acked, Is.EqualTo(false));
+            Assert.That(seg.data, Is.EqualTo(null));
+        }
     }
 }

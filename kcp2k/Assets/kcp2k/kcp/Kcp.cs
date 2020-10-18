@@ -870,12 +870,11 @@ namespace kcp2k
         }
 
         // ikcp_setmtu
-        /// <summary>Change MTU (Maximum Transmission Unit) size. Default is 1200.</summary>
-        /// <param name="mtu">Maximum Transmission Unit size. Can't be lower than 50 and must be higher than reserved bytes.</param>
+        // Change MTU (Maximum Transmission Unit) size.
         public void SetMtu(uint mtu)
         {
-            if (mtu < 50)
-                throw new ArgumentException("MTU must be higher than 50.");
+            if (mtu < 50 || mtu < OVERHEAD)
+                throw new ArgumentException("MTU must be higher than 50 and higher than OVERHEAD");
 
             buffer = new byte[(mtu + OVERHEAD) * 3];
             this.mtu = mtu;

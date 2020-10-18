@@ -45,7 +45,7 @@ namespace kcp2k
         uint rcv_nxt;
         uint ssthresh;
         uint rx_rttval;
-        uint rx_srtt;
+        uint rx_srtt;     // smoothed round trip time
         uint rx_rto;
         uint rx_minrto;
         uint cwnd;        // congestion window

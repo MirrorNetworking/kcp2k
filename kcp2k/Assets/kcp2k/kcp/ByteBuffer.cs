@@ -27,10 +27,9 @@ namespace kcp2k
         {
             if (offset >= 0 && count > 0)
             {
-                int total = count + Position;
-                EnsureCapacity(total);
+                EnsureCapacity(Position + count);
                 Array.Copy(bytes, offset, RawBuffer, Position, count);
-                Position = total;
+                Position += count;
             }
         }
     }

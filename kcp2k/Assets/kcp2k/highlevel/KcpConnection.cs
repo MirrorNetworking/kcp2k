@@ -98,7 +98,7 @@ namespace kcp2k
 
         public void RawInput(byte[] buffer, int msgLength)
         {
-            kcp.Input(buffer, 0, msgLength, true, false);
+            kcp.Input(buffer, 0, msgLength, true);
 
             lastReceived = (uint)refTime.ElapsedMilliseconds;
         }
@@ -247,7 +247,7 @@ namespace kcp2k
                 try
                 {
                     Send(Goodby);
-                    kcp.Flush(false);
+                    kcp.Flush();
 
                     // call OnDisconnected event, even if we manually
                     // disconnected

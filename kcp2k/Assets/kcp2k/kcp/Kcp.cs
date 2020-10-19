@@ -433,8 +433,7 @@ namespace kcp2k
         /// <param name="index"></param>
         /// <param name="size"></param>
         /// <param name="regular">regular indicates a regular packet has received(not from FEC)</param>
-        /// <param name="ackNoDelay">will trigger immediate ACK, but surely it will not be efficient in bandwidth</param>
-        public int Input(byte[] data, int index, int size, bool regular, bool ackNoDelay)
+        public int Input(byte[] data, int index, int size, bool regular)
         {
             uint s_una = snd_una;
             if (size < OVERHEAD) return -1;
@@ -551,12 +550,6 @@ namespace kcp2k
             // cwnd update when packet arrived
             UpdateCwnd(s_una);
 
-            // ack immediately
-            if (ackNoDelay && acklist.Count > 0)
-            {
-                Flush(true);
-            }
-
             return 0;
         }
 
@@ -601,7 +594,7 @@ namespace kcp2k
 
         // ikcp_flush
         // flush remain ack segments
-        public void Flush(bool ackOnly)
+        public void Flush()
         {
             int offset = 0;    // buffer ptr in original C
             bool lost = false; // lost segments
@@ -644,13 +637,6 @@ namespace kcp2k
             }
 
             acklist.Clear();
-
-            // flush remain ack segments
-            if (ackOnly)
-            {
-                FlushBuffer();
-                return;
-            }
 
             // probe window size (if remote window size equals zero)
             if (rmt_wnd == 0)
@@ -870,7 +856,7 @@ namespace kcp2k
                 {
                     ts_flush = current + interval;
                 }
-                Flush(false);
+                Flush();
             }
         }
 

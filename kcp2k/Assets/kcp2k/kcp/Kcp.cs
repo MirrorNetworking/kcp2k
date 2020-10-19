@@ -740,11 +740,11 @@ namespace kcp2k
             int change = 0;
             foreach (Segment segment in snd_buf)
             {
-                bool needSend = false;
+                bool needsend = false;
                 // initial transmit
                 if (segment.xmit == 0)
                 {
-                    needSend = true;
+                    needsend = true;
                     segment.xmit++;
                     segment.rto = rx_rto;
                     segment.resendts = current + (uint)segment.rto + rtomin;
@@ -752,7 +752,7 @@ namespace kcp2k
                 // RTO
                 else if (Utils.TimeDiff(current, segment.resendts) >= 0)
                 {
-                    needSend = true;
+                    needsend = true;
                     segment.xmit++;
                     xmit++;
                     if (!nodelay)
@@ -774,7 +774,7 @@ namespace kcp2k
                 {
                     if (segment.xmit <= fastlimit || fastlimit <= 0)
                     {
-                        needSend = true;
+                        needsend = true;
                         segment.xmit++;
                         segment.fastack = 0;
                         segment.resendts = current + (uint)segment.rto;
@@ -782,7 +782,7 @@ namespace kcp2k
                     }
                 }
 
-                if (needSend)
+                if (needsend)
                 {
                     segment.ts = current;
                     segment.wnd = seg.wnd;

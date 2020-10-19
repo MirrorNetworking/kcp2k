@@ -626,16 +626,13 @@ namespace kcp2k
             seg.una = rcv_nxt;
 
             // flush acknowledges
-            for (int i = 0; i < acklist.Count; i++)
+            foreach (AckItem ack in acklist)
             {
                 MakeSpace(OVERHEAD);
-                AckItem ack = acklist[i];
-                if (ack.serialNumber >= rcv_nxt || acklist.Count - 1 == i)
-                {
-                    seg.sn = ack.serialNumber;
-                    seg.ts = ack.timestamp;
-                    offset += seg.Encode(buffer, offset);
-                }
+                // ikcp_ack_get assigns ack[i] to seg.sn, seg.ts
+                seg.sn = ack.serialNumber;
+                seg.ts = ack.timestamp;
+                offset += seg.Encode(buffer, offset);
             }
 
             acklist.Clear();

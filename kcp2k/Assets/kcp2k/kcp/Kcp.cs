@@ -307,12 +307,14 @@ namespace kcp2k
         // ikcp_parse_una
         void ParseUna(uint una)
         {
-            int count = 0;
+            int removed = 0;
             foreach (Segment seg in snd_buf)
             {
                 if (una > seg.sn)
                 {
-                    count++;
+                    // can't remove while iterating. remember how many to remove
+                    // and do it after the loop.
+                    ++removed;
                     Segment.Return(seg);
                 }
                 else
@@ -320,8 +322,7 @@ namespace kcp2k
                     break;
                 }
             }
-
-            snd_buf.RemoveRange(0, count);
+            snd_buf.RemoveRange(0, removed);
         }
 
         // ikcp_parse_fastack

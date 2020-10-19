@@ -54,7 +54,10 @@ namespace kcp2k
         {
             try
             {
-                lastReceived = kcp.CurrentMS;
+                // TODO MirorrNG KCP used to set lastReceived here. but this
+                // would make the below time check always true.
+                // should we set lastReceived after updating instead?
+                //lastReceived = kcp.CurrentMS;
 
                 if (open && kcp.CurrentMS < lastReceived + TIMEOUT)
                 {

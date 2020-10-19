@@ -705,7 +705,7 @@ namespace kcp2k
             // move data from snd_queue to snd_buf
             // sliding window, controlled by snd_nxt && sna_una+cwnd
             // TODO convert to while timediff like original C when using queues!
-            int newSegsCount = 0;
+            int removed = 0;
             for (int k = 0; k < snd_queue.Count; k++)
             {
                 // TODO original C uses this check in while with < 0
@@ -716,7 +716,7 @@ namespace kcp2k
                 Segment newseg = snd_queue[k];
                 // can't remove while iterating. remember how many to remove
                 // and do it after the loop.
-                newSegsCount++;
+                removed++;
 
                 newseg.conv = conv;
                 newseg.cmd = CMD_PUSH;
@@ -730,7 +730,7 @@ namespace kcp2k
                 newseg.xmit = 0;
                 snd_buf.Add(newseg);
             }
-            snd_queue.RemoveRange(0, newSegsCount);
+            snd_queue.RemoveRange(0, removed);
 
             // calculate resent
             uint resent = fastresend > 0 ? (uint)fastresend : 0xffffffff;

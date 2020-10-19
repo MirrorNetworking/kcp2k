@@ -599,7 +599,7 @@ namespace kcp2k
             int offset = 0; // buffer ptr in original C
 
             // helper functions
-            void makeSpace(int space)
+            void MakeSpace(int space)
             {
                 if (offset + space > mtu)
                 {
@@ -608,7 +608,7 @@ namespace kcp2k
                 }
             }
 
-            void flushBuffer()
+            void FlushBuffer()
             {
                 if (offset > 0)
                 {
@@ -628,7 +628,7 @@ namespace kcp2k
             // flush acknowledges
             for (int i = 0; i < acklist.Count; i++)
             {
-                makeSpace(OVERHEAD);
+                MakeSpace(OVERHEAD);
                 AckItem ack = acklist[i];
                 if (ack.serialNumber >= rcv_nxt || acklist.Count - 1 == i)
                 {
@@ -642,7 +642,7 @@ namespace kcp2k
             // flush remain ack segments
             if (ackOnly)
             {
-                flushBuffer();
+                FlushBuffer();
                 return;
             }
 
@@ -676,14 +676,14 @@ namespace kcp2k
             if ((probe & ASK_SEND) != 0)
             {
                 seg.cmd = CMD_WASK;
-                makeSpace(OVERHEAD);
+                MakeSpace(OVERHEAD);
                 offset += seg.Encode(buffer, offset);
             }
 
             if ((probe & ASK_TELL) != 0)
             {
                 seg.cmd = CMD_WINS;
-                makeSpace(OVERHEAD);
+                MakeSpace(OVERHEAD);
                 offset += seg.Encode(buffer, offset);
             }
 
@@ -760,7 +760,7 @@ namespace kcp2k
                     segment.una = seg.una;
 
                     int need = OVERHEAD + segment.data.Position;
-                    makeSpace(need);
+                    MakeSpace(need);
                     offset += segment.Encode(buffer, offset);
                     Buffer.BlockCopy(segment.data.RawBuffer, 0, buffer, offset, segment.data.Position);
                     offset += segment.data.Position;
@@ -775,7 +775,7 @@ namespace kcp2k
             }
 
             // flash remain segments
-            flushBuffer();
+            FlushBuffer();
 
             // cwnd update
             if (!nocwnd)

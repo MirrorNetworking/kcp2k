@@ -616,6 +616,9 @@ namespace kcp2k
                 }
             }
 
+            // 'ikcp_update' haven't been called.
+            if (!updated) return;
+
             Segment seg = Segment.Take();
             seg.conv = conv;
             seg.cmd = CMD_ACK;

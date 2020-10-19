@@ -108,7 +108,7 @@ namespace kcp2k
         //   returns  number of bytes read.
         //   returns -1 when there is no readable data.
         //   returns -2 if len(buffer) is smaller than kcp.PeekSize().
-        public int Receive(byte[] buffer, int index, int length)
+        public int Receive(byte[] buffer, int offset, int length)
         {
             int peekSize = PeekSize();
             if (peekSize < 0)
@@ -121,7 +121,7 @@ namespace kcp2k
 
             // merge fragment.
             int count = 0;
-            int n = index;
+            int n = offset;
 
             foreach (Segment seg in rcv_queue)
             {
@@ -164,7 +164,7 @@ namespace kcp2k
                 probe |= ASK_TELL;
             }
 
-            return n - index;
+            return n - offset;
         }
 
         // ikcp_peeksize

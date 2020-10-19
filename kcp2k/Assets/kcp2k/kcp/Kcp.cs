@@ -328,12 +328,12 @@ namespace kcp2k
         // ikcp_parse_fastack
         void ParseFastack(uint sn, uint ts)
         {
-            if (sn < snd_una || sn >= snd_nxt)
+            if (Utils.TimeDiff(sn, snd_una) < 0 || Utils.TimeDiff(sn, snd_nxt) >= 0)
                 return;
 
             foreach (Segment seg in snd_buf)
             {
-                if (sn < seg.sn)
+                if (Utils.TimeDiff(sn, seg.sn) < 0)
                 {
                     break;
                 }

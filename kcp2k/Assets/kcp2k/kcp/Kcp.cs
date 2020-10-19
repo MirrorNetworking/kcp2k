@@ -594,7 +594,7 @@ namespace kcp2k
 
         // ikcp_flush
         // flush remain ack segments
-        public uint Flush(bool ackOnly)
+        public void Flush(bool ackOnly)
         {
             int offset = 0; // buffer ptr in original C
 
@@ -640,7 +640,7 @@ namespace kcp2k
             if (ackOnly)
             {
                 flushBuffer();
-                return interval;
+                return;
             }
 
             // probe window size (if remote window size equals zero)
@@ -779,8 +779,6 @@ namespace kcp2k
             {
                 CwndUpdate(resent, change, lostSegs);
             }
-
-            return (uint)minrto;
         }
 
         void CwndUpdate(uint resent, ulong change, ulong lostSegs)

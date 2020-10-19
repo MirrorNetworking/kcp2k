@@ -598,12 +598,7 @@ namespace kcp2k
         {
             int offset = 0; // buffer ptr in original C
 
-            Segment seg = Segment.Take();
-            seg.conv = conv;
-            seg.cmd = CMD_ACK;
-            seg.wnd = WndUnused();
-            seg.una = rcv_nxt;
-
+            // helper functions
             void makeSpace(int space)
             {
                 if (offset + space > mtu)
@@ -620,6 +615,12 @@ namespace kcp2k
                     output(buffer, offset);
                 }
             }
+
+            Segment seg = Segment.Take();
+            seg.conv = conv;
+            seg.cmd = CMD_ACK;
+            seg.wnd = WndUnused();
+            seg.una = rcv_nxt;
 
             // flush acknowledges
             for (int i = 0; i < acklist.Count; i++)

@@ -680,6 +680,7 @@ namespace kcp2k
                 offset += seg.Encode(buffer, offset);
             }
 
+            // flush window probing commands
             if ((probe & ASK_TELL) != 0)
             {
                 seg.cmd = CMD_WINS;

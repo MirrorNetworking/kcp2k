@@ -696,6 +696,7 @@ namespace kcp2k
 
             // move data from snd_queue to snd_buf
             // sliding window, controlled by snd_nxt && sna_una+cwnd
+            // TODO convert to while timediff like original C when using queues!
             int newSegsCount = 0;
             for (int k = 0; k < snd_queue.Count; k++)
             {

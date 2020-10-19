@@ -864,38 +864,45 @@ namespace kcp2k
         public int Check()
         {
             uint ts_flush_ = ts_flush;
+            int tm_flush = 0x7fffffff;
             int tm_packet = 0x7fffffff;
 
             if (!updated)
+            {
+                // original C returns current. we return delta = 0.
                 return 0;
+            }
 
-            if (current >= ts_flush_ + 10000 || current < ts_flush_ - 10000)
+            if (Utils.TimeDiff(current, ts_flush_) >= 10000 ||
+                Utils.TimeDiff(current, ts_flush_) < -10000)
+            {
                 ts_flush_ = current;
+            }
 
-            if (current >= ts_flush_)
+            if (Utils.TimeDiff(current, ts_flush_) >= 0)
+            {
+                // original C returns current. we return delta = 0.
                 return 0;
+            }
 
-            int tm_flush_ = Utils.TimeDiff(ts_flush_, current);
+            tm_flush = Utils.TimeDiff(ts_flush_, current);
 
             foreach (Segment seg in snd_buf)
             {
                 int diff = Utils.TimeDiff(seg.resendts, current);
                 if (diff <= 0)
+                {
+                    // original C returns current. we return delta = 0.
                     return 0;
-                if (diff < tm_packet)
-                    tm_packet = diff;
+                }
+                if (diff < tm_packet) tm_packet = diff;
             }
 
-            int minimal = tm_packet;
-            if (tm_packet >= tm_flush_)
-                minimal = tm_flush_;
-            if (minimal >= interval)
-                minimal = (int)interval;
+            int minimal = tm_packet < tm_flush ? tm_packet : tm_flush;
+            if (minimal >= interval) minimal = (int)interval;
 
-            // NOTE: Original KCP returns current time + delta
-            // I changed it to only return delta
-
-            return  minimal;
+            // original C returns current + minimal. we return delta = minimal.
+            return minimal;
         }
 
         // ikcp_setmtu

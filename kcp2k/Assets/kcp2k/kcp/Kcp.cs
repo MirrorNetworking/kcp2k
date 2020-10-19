@@ -917,6 +917,14 @@ namespace kcp2k
             mss = mtu - OVERHEAD;
         }
 
+        // ikcp_interval
+        public void SetInterval(uint interval)
+        {
+            if (interval > 5000) interval = 5000;
+            else if (interval < 10) interval = 10;
+            this.interval = interval;
+        }
+
         // ikcp_nodelay
         //   Normal: false, 40, 0, 0
         //   Fast:   false, 30, 2, 1

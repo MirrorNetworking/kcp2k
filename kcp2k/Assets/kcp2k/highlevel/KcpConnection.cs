@@ -144,51 +144,61 @@ namespace kcp2k
                 // otherwise we would get BlockCopy ArgumentException anyway.
                 if (msgSize <= Kcp.MTU_DEF)
                 {
-                    kcp.Receive(buffer, msgSize);
-
-                    ArraySegment<byte> dataSegment = new ArraySegment<byte>(buffer, 0, msgSize);
-
-                    // not authenticated yet?
-                    if (!authenticated)
+                    int received = kcp.Receive(buffer, msgSize);
+                    if (received >= 0)
                     {
-                        // handshake message?
-                        if (SegmentsEqual(dataSegment, Hello))
+                        ArraySegment<byte> dataSegment = new ArraySegment<byte>(buffer, 0, msgSize);
+
+                        // not authenticated yet?
+                        if (!authenticated)
                         {
-                            // we are only connected if we received the handshake.
-                            // not just after receiving any first data.
-                            authenticated = true;
-                            //Debug.Log("KCP: received handshake");
-                            OnConnected?.Invoke();
+                            // handshake message?
+                            if (SegmentsEqual(dataSegment, Hello))
+                            {
+                                // we are only connected if we received the handshake.
+                                // not just after receiving any first data.
+                                authenticated = true;
+                                //Debug.Log("KCP: received handshake");
+                                OnConnected?.Invoke();
+                            }
+                            // otherwise it's random data from the internet, not
+                            // from a legitimate player.
+                            else
+                            {
+                                Debug.LogWarning("KCP: received random data before handshake. Disconnecting the connection.");
+                                open = false;
+                                OnDisconnected?.Invoke();
+                                break;
+                            }
                         }
-                        // otherwise it's random data from the internet, not
-                        // from a legitimate player.
+                        // authenticated.
                         else
                         {
-                            Debug.LogWarning("KCP: received random data before handshake. Disconnecting the connection.");
-                            open = false;
-                            OnDisconnected?.Invoke();
-                            break;
+                            // disconnect message?
+                            if (SegmentsEqual(dataSegment, Goodby))
+                            {
+                                // if we receive a disconnect message,  then close everything
+                                //Debug.Log("KCP: received disconnect message");
+                                open = false;
+                                OnDisconnected?.Invoke();
+                                break;
+                            }
+                            // otherwise regular message
+                            else
+                            {
+                                // only accept regular messages
+                                //Debug.LogWarning($"Kcp recv msg: {BitConverter.ToString(buffer, 0, msgSize)}");
+                                OnData?.Invoke(dataSegment);
+                            }
                         }
                     }
-                    // authenticated.
                     else
                     {
-                        // disconnect message?
-                        if (SegmentsEqual(dataSegment, Goodby))
-                        {
-                            // if we receive a disconnect message,  then close everything
-                            //Debug.Log("KCP: received disconnect message");
-                            open = false;
-                            OnDisconnected?.Invoke();
-                            break;
-                        }
-                        // otherwise regular message
-                        else
-                        {
-                            // only accept regular messages
-                            //Debug.LogWarning($"Kcp recv msg: {BitConverter.ToString(buffer, 0, msgSize)}");
-                            OnData?.Invoke(dataSegment);
-                        }
+                        // if receive failed, close everything
+                        Debug.LogWarning($"Receive failed with error={received}. closing connection.");
+                        open = false;
+                        OnDisconnected?.Invoke();
+                        break;
                     }
                 }
                 // we don't allow sending messages > Max, so this must be an

@@ -810,15 +810,6 @@ namespace kcp2k
             // flash remain segments
             FlushBuffer();
 
-            // cwnd update
-            if (!nocwnd)
-            {
-                CwndUpdate(resent, change, lost);
-            }
-        }
-
-        void CwndUpdate(uint resent, int change, bool lost)
-        {
             // update ssthresh
             // rate halving, https://tools.ietf.org/html/rfc6937
             if (change > 0)

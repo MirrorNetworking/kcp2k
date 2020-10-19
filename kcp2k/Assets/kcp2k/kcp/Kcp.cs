@@ -406,13 +406,15 @@ namespace kcp2k
         // move available data from rcv_buf -> rcv_queue
         void MoveReceiveBufferDataToReceiveQueue()
         {
-            int count = 0;
+            int removed = 0;
             foreach (Segment seg in rcv_buf)
             {
-                if (seg.sn == rcv_nxt && rcv_queue.Count + count < rcv_wnd)
+                if (seg.sn == rcv_nxt && rcv_queue.Count + removed < rcv_wnd)
                 {
                     rcv_nxt++;
-                    count++;
+                    // can't remove while iterating. remember how many to remove
+                    // and do it after the loop.
+                    ++removed;
                 }
                 else
                 {
@@ -420,9 +422,9 @@ namespace kcp2k
                 }
             }
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < removed; i++)
                 rcv_queue.Add(rcv_buf[i]);
-            rcv_buf.RemoveRange(0, count);
+            rcv_buf.RemoveRange(0, removed);
         }
 
         // ikcp_input

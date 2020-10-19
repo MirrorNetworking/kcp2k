@@ -596,13 +596,13 @@ namespace kcp2k
         // flush remain ack segments
         public uint Flush(bool ackOnly)
         {
+            int writeIndex = 0; // buffer ptr in original C
+
             Segment seg = Segment.Take();
             seg.conv = conv;
             seg.cmd = CMD_ACK;
             seg.wnd = WndUnused();
             seg.una = rcv_nxt;
-
-            int writeIndex = 0;
 
             void makeSpace(int space)
             {

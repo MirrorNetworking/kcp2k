@@ -694,6 +694,7 @@ namespace kcp2k
             uint cwnd_ = Math.Min(snd_wnd, rmt_wnd);
             if (!nocwnd) cwnd_ = Math.Min(cwnd, cwnd_);
 
+            // move data from snd_queue to snd_buf
             // sliding window, controlled by snd_nxt && sna_una+cwnd
             int newSegsCount = 0;
             for (int k = 0; k < snd_queue.Count; k++)

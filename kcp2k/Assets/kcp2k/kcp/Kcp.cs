@@ -738,9 +738,8 @@ namespace kcp2k
 
             // flush data segments
             int change = 0;
-            for (int k = 0; k < snd_buf.Count; k++)
+            foreach (Segment segment in snd_buf)
             {
-                Segment segment = snd_buf[k];
                 bool needSend = false;
                 // initial transmit
                 if (segment.xmit == 0)

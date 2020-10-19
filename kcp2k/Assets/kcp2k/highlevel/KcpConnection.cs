@@ -144,7 +144,7 @@ namespace kcp2k
                 // otherwise we would get BlockCopy ArgumentException anyway.
                 if (msgSize <= Kcp.MTU_DEF)
                 {
-                    kcp.Receive(buffer, 0, msgSize);
+                    kcp.Receive(buffer, msgSize);
 
                     ArraySegment<byte> dataSegment = new ArraySegment<byte>(buffer, 0, msgSize);
 

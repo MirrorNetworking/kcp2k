@@ -105,66 +105,83 @@ namespace kcp2k
 
         // ikcp_recv
         // receive data from kcp state machine
-        //   returns  number of bytes read.
-        //   returns -1 when there is no readable data.
-        //   returns -2 if len(buffer) is smaller than kcp.PeekSize().
-        public int Receive(byte[] buffer, int offset, int length)
+        //   returns number of bytes read.
+        //   returns negative on error.
+        // note: pass negative length to peek.
+        public int Receive(byte[] buffer, int len)
         {
-            int peekSize = PeekSize();
-            if (peekSize < 0)
+            bool ispeek = len < 0;
+
+            if (rcv_queue.Count == 0)
                 return -1;
 
-            if (peekSize > length)
+            if (len < 0) len = -len;
+
+            int peeksize = PeekSize();
+
+            if (peeksize < 0)
                 return -2;
 
-            bool fastRecover = rcv_queue.Count >= rcv_wnd;
+            if (peeksize > len)
+                return -3;
+
+            bool recover = rcv_queue.Count >= rcv_wnd;
 
             // merge fragment.
-            int count = 0;
-            int n = offset;
-
+            int offset = 0;
+            len = 0;
+            int removed = 0;
             foreach (Segment seg in rcv_queue)
             {
-                // copy fragment data into buffer.
-                Buffer.BlockCopy(seg.data.RawBuffer, 0, buffer, n, seg.data.Position);
-                n += seg.data.Position;
+                Buffer.BlockCopy(seg.data.RawBuffer, 0, buffer, offset, seg.data.Position);
+                offset += seg.data.Position;
 
-                count++;
+                len += seg.data.Position;
                 uint fragment = seg.frg;
-                Segment.Return(seg);
+
+                if (!ispeek)
+                {
+                    // can't remove while iterating. remember how many to remove
+                    // and do it after the loop.
+                    ++removed;
+                    Segment.Return(seg);
+                }
+
                 if (fragment == 0)
                     break;
             }
-
-            rcv_queue.RemoveRange(0, count);
+            rcv_queue.RemoveRange(0, removed);
 
             // move available data from rcv_buf -> rcv_queue
-            count = 0;
+            removed = 0;
             foreach (Segment seg in rcv_buf)
             {
                 if (seg.sn == rcv_nxt && rcv_queue.Count < rcv_wnd)
                 {
+                    // can't remove while iterating. remember how many to remove
+                    // and do it after the loop.
+                    // note: don't return segment. we only add it to rcv_queue
+                    ++removed;
+                    // add
                     rcv_queue.Add(seg);
                     rcv_nxt++;
-                    count++;
                 }
                 else
                 {
                     break;
                 }
             }
-
-            rcv_buf.RemoveRange(0, count);
+            rcv_buf.RemoveRange(0, removed);
 
             // fast recover
-            if (rcv_queue.Count < rcv_wnd && fastRecover)
+            if (rcv_queue.Count < rcv_wnd && recover)
             {
                 // ready to send back CMD_WINS in flush
                 // tell remote my window size
                 probe |= ASK_TELL;
             }
 
-            return n - offset;
+            return len;
         }
 
         // ikcp_peeksize

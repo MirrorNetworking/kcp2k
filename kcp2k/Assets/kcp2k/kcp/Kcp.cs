@@ -409,21 +409,19 @@ namespace kcp2k
             int removed = 0;
             foreach (Segment seg in rcv_buf)
             {
-                if (seg.sn == rcv_nxt && rcv_queue.Count + removed < rcv_wnd)
+                if (seg.sn == rcv_nxt && rcv_queue.Count < rcv_wnd)
                 {
-                    rcv_nxt++;
                     // can't remove while iterating. remember how many to remove
                     // and do it after the loop.
                     ++removed;
+                    rcv_queue.Add(seg);
+                    rcv_nxt++;
                 }
                 else
                 {
                     break;
                 }
             }
-
-            for (int i = 0; i < removed; i++)
-                rcv_queue.Add(rcv_buf[i]);
             rcv_buf.RemoveRange(0, removed);
         }
 

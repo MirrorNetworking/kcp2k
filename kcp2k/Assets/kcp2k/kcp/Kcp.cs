@@ -637,6 +637,7 @@ namespace kcp2k
                     offset += seg.Encode(buffer, offset);
                 }
             }
+
             acklist.Clear();
 
             // flush remain ack segments

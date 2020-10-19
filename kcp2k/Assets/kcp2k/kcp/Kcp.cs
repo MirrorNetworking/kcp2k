@@ -345,6 +345,7 @@ namespace kcp2k
         }
 
         // ikcp_ack_push
+        // appends an ack.
         void AckPush(uint sn, uint ts)
         {
             acklist.Add(new AckItem { serialNumber = sn, timestamp = ts });

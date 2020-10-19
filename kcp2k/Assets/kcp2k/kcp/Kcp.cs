@@ -362,7 +362,7 @@ namespace kcp2k
             MoveToReceiveQueue();
         }
 
-        private void InsertSegmentInReceiveBuffer(Segment newseg)
+        void InsertSegmentInReceiveBuffer(Segment newseg)
         {
             uint sn = newseg.sn;
             int n = rcv_buf.Count - 1;
@@ -394,7 +394,7 @@ namespace kcp2k
         }
 
         // move available data from rcv_buf -> rcv_queue
-        private void MoveToReceiveQueue()
+        void MoveToReceiveQueue()
         {
             int count = 0;
             foreach (Segment seg in rcv_buf)

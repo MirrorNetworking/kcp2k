@@ -699,7 +699,9 @@ namespace kcp2k
             int newSegsCount = 0;
             for (int k = 0; k < snd_queue.Count; k++)
             {
-                if (snd_nxt >= snd_una + cwnd_)
+                // TODO original C uses this check in while with < 0
+                // instead we want to STOP when the opposite happens, so >= 0!
+                if (Utils.TimeDiff(snd_nxt, snd_una + cwnd_) >= 0)
                     break;
 
                 Segment newseg = snd_queue[k];

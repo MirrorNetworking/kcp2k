@@ -370,9 +370,11 @@ namespace kcp2k
         void InsertSegmentInReceiveBuffer(Segment newseg)
         {
             uint sn = newseg.sn;
+            bool repeat = false;
+
+            // original C iterates backwards, so we need to do that as well.
             int n = rcv_buf.Count - 1;
             int insert_idx = 0;
-            bool repeat = false;
             for (int i = n; i >= 0; i--)
             {
                 Segment seg = rcv_buf[i];
@@ -381,10 +383,9 @@ namespace kcp2k
                     repeat = true;
                     break;
                 }
-
-                if (sn > seg.sn)
+                if (Utils.TimeDiff(sn, seg.sn) > 0)
                 {
-                    insert_idx = i + 1;
+                    insert_idx = i + 1; // TODO this is not in original C. and why +1?
                     break;
                 }
             }
@@ -395,6 +396,10 @@ namespace kcp2k
                     rcv_buf.Add(newseg);
                 else
                     rcv_buf.Insert(insert_idx, newseg);
+            }
+            else
+            {
+                // TODO original C deletes the segment. should we Return it to pool?
             }
         }
 

@@ -5,18 +5,18 @@ namespace kcp2k
     // KCP Segment Definition
     internal class Segment
     {
-        internal uint conv;
-        internal uint cmd;
-        internal uint frg;
-        internal uint wnd;
-        internal uint ts;
-        internal uint sn;
+        internal uint conv;     // conversation
+        internal uint cmd;      // command, e.g. Kcp.CMD_ACK etc.
+        internal uint frg;      // fragment
+        internal uint wnd;      // window
+        internal uint ts;       // timestamp
+        internal uint sn;       // serial number
         internal uint una;
         internal int rto;
         internal uint xmit;
-        internal uint resendts;
+        internal uint resendts; // resend timestamp
         internal uint fastack;
-        internal bool acked;
+        internal bool acked;    // acknowledged
         internal ByteBuffer data;
 
         // pool ////////////////////////////////////////////////////////////////

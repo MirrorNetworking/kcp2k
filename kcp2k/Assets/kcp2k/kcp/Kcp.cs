@@ -710,9 +710,11 @@ namespace kcp2k
                 newseg.sn = snd_nxt;
                 snd_buf.Add(newseg);
                 snd_nxt++;
+
+                // can't remove while iterating. remember how many to remove
+                // and do it after the loop.
                 newSegsCount++;
             }
-
             snd_queue.RemoveRange(0, newSegsCount);
 
             // calculate resent

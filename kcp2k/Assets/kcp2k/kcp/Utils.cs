@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace kcp2k
 {
     public static class Utils
@@ -56,6 +58,8 @@ namespace kcp2k
             return 4;
         }
 
+        // timediff was a macro in original Kcp. let's inline it if possible.
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int TimeDiff(uint later, uint earlier)
         {
             return (int)(later - earlier);

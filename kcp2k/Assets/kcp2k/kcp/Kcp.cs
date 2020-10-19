@@ -692,8 +692,7 @@ namespace kcp2k
 
             // calculate window size
             uint cwnd_ = Math.Min(snd_wnd, rmt_wnd);
-            if (!nocwnd)
-                cwnd_ = Math.Min(cwnd, cwnd_);
+            if (!nocwnd) cwnd_ = Math.Min(cwnd, cwnd_);
 
             // sliding window, controlled by snd_nxt && sna_una+cwnd
             int newSegsCount = 0;

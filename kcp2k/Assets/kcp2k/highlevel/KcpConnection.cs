@@ -1,8 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using Unity.Collections.LowLevel.Unsafe;
-using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace kcp2k
 {
@@ -20,6 +21,11 @@ namespace kcp2k
         // If we don't receive anything these many milliseconds
         // then consider us disconnected
         public const int TIMEOUT = 3000;
+
+        // internal time.
+        // StopWatch offers ElapsedMilliSeconds and should be more precise than
+        // Unity's time.deltaTime over long periods.
+        readonly Stopwatch refTime = new Stopwatch();
 
         // recv buffer to avoid allocations
         byte[] buffer = new byte[Kcp.MTU_DEF];
@@ -43,6 +49,7 @@ namespace kcp2k
         {
             kcp = new Kcp(0, RawSend);
             kcp.SetNoDelay(noDelay, interval);
+            refTime.Start();
             open = true;
 
             Tick();
@@ -54,14 +61,16 @@ namespace kcp2k
         {
             try
             {
+                uint time = (uint)refTime.ElapsedMilliseconds;
+
                 // TODO MirorrNG KCP used to set lastReceived here. but this
                 // would make the below time check always true.
                 // should we set lastReceived after updating instead?
-                //lastReceived = kcp.CurrentMS;
+                //lastReceived = time;
 
-                if (open && kcp.CurrentMS < lastReceived + TIMEOUT)
+                if (open && time < lastReceived + TIMEOUT)
                 {
-                    kcp.Update();
+                    kcp.Update(time);
 
                     int check = kcp.Check();
 
@@ -91,7 +100,7 @@ namespace kcp2k
         {
             kcp.Input(buffer, 0, msgLength, true, false);
 
-            lastReceived = kcp.CurrentMS;
+            lastReceived = (uint)refTime.ElapsedMilliseconds;
         }
 
         protected abstract void RawSend(byte[] data, int length);

@@ -2,7 +2,6 @@
 // Kept as close to original as possible.
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using UnityEngine;
 
 namespace kcp2k
@@ -62,6 +61,7 @@ namespace kcp2k
         uint ts_probe;      // timestamp probe
         uint probe_wait;
         uint incr;
+        internal uint current; // current time (milliseconds). set by Update.
 
         int fastresend;
         bool nocwnd;
@@ -74,13 +74,8 @@ namespace kcp2k
         byte[] buffer;
         readonly Action<byte[], int> output; // buffer, size
 
-
         // get how many packet is waiting to be sent
         public int WaitSnd => snd_buf.Count + snd_queue.Count;
-
-        // internal time.
-        readonly Stopwatch refTime = new Stopwatch();
-        public uint CurrentMS => (uint)refTime.ElapsedMilliseconds;
 
         // ikcp_create
         // create a new kcp control object, 'conv' must equal in two endpoint
@@ -100,7 +95,6 @@ namespace kcp2k
             ts_flush = INTERVAL;
             ssthresh = THRESH_INIT;
             buffer = new byte[(mtu + OVERHEAD) * 3];
-            refTime.Start();
         }
 
         // ikcp_recv
@@ -541,7 +535,6 @@ namespace kcp2k
             // ignore the FEC packet
             if (flag != 0 && regular)
             {
-                uint current = CurrentMS;
                 if (current >= latest)
                 {
                     UpdateAck(Utils.TimeDiff(current, latest));
@@ -650,11 +643,9 @@ namespace kcp2k
                 return interval;
             }
 
-            uint current = 0;
             // probe window size (if remote window size equals zero)
             if (rmt_wnd == 0)
             {
-                current = CurrentMS;
                 if (probe_wait == 0)
                 {
                     probe_wait = PROBE_INIT;
@@ -723,7 +714,6 @@ namespace kcp2k
             if (fastresend <= 0) resent = 0xffffffff;
 
             // check for retransmissions
-            current = CurrentMS;
             ulong change = 0; ulong lostSegs = 0;
             int minrto = (int)interval;
 
@@ -761,7 +751,6 @@ namespace kcp2k
 
                 if (needSend)
                 {
-                    current = CurrentMS;
                     segment.xmit++;
                     segment.ts = current;
                     segment.wnd = seg.wnd;
@@ -828,10 +817,12 @@ namespace kcp2k
         // ikcp_update
         // update state (call it repeatedly, every 10ms-100ms), or you can ask
         // Check() when to call it again (without Input/Send calling).
-        // 'current' - current timestamp in millisec.
-        public void Update()
+        //
+        // 'current' - current timestamp in millisec. pass it to Kcp so that
+        // Kcp doesn't have to do any stopwatch/deltaTime/etc. code
+        public void Update(uint currentTimeMilliSeconds)
         {
-            uint current = CurrentMS;
+            current = currentTimeMilliSeconds;
 
             if (!updated)
             {
@@ -850,8 +841,10 @@ namespace kcp2k
             if (slap >= 0)
             {
                 ts_flush += interval;
-                if (current >= ts_flush)
+                if (Utils.TimeDiff(current, ts_flush) >= 0)
+                {
                     ts_flush = current + interval;
+                }
                 Flush(false);
             }
         }
@@ -870,8 +863,6 @@ namespace kcp2k
         //       returns delta
         public int Check()
         {
-            uint current = CurrentMS;
-
             uint ts_flush_ = ts_flush;
             int tm_packet = 0x7fffffff;
 

@@ -824,7 +824,8 @@ namespace kcp2k
             // congestion control, https://tools.ietf.org/html/rfc5681
             if (lost)
             {
-                ssthresh = cwnd_ / 2; // original C uses 'cwnd', not kcp->cwnd!
+                // original C uses 'cwnd', not kcp->cwnd!
+                ssthresh = cwnd_ / 2;
                 if (ssthresh < THRESH_MIN)
                     ssthresh = THRESH_MIN;
                 cwnd = 1;

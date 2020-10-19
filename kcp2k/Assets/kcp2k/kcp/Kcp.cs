@@ -207,11 +207,7 @@ namespace kcp2k
         }
 
         // ikcp_send
-        /// <summary>Send
-        /// <para>user/upper level send</para></summary>
-        /// <param name="buffer"></param>
-        /// <param name="index"></param>
-        /// <param name="length"></param>
+        // sends byte[] to the other end.
         public void Send(byte[] buffer, int index, int length)
         {
             if (length == 0)

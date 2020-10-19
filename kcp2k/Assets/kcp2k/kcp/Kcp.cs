@@ -826,7 +826,9 @@ namespace kcp2k
         }
 
         // ikcp_update
-        // update state (call it repeatedly, every 10ms-100ms)
+        // update state (call it repeatedly, every 10ms-100ms), or you can ask
+        // Check() when to call it again (without Input/Send calling).
+        // 'current' - current timestamp in millisec.
         public void Update()
         {
             uint current = CurrentMS;

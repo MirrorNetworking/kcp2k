@@ -359,7 +359,7 @@ namespace kcp2k
             if (Utils.TimeDiff(sn, rcv_nxt + rcv_wnd) >= 0 ||
                 Utils.TimeDiff(sn, rcv_nxt) < 0)
             {
-                // TODO native C deletes the segment. should we Return it?
+                // TODO native C deletes the segment. should we Return it to pool?
                 return;
             }
 

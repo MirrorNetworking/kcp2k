@@ -712,9 +712,8 @@ namespace kcp2k
 
                 newseg.conv = conv;
                 newseg.cmd = CMD_PUSH;
-                newseg.sn = snd_nxt;
+                newseg.sn = snd_nxt++;
                 snd_buf.Add(newseg);
-                snd_nxt++;
             }
             snd_queue.RemoveRange(0, newSegsCount);
 

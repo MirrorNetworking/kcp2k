@@ -310,7 +310,7 @@ namespace kcp2k
             int removed = 0;
             foreach (Segment seg in snd_buf)
             {
-                if (una > seg.sn)
+                if (Utils.TimeDiff(una, seg.sn) > 0)
                 {
                     // can't remove while iterating. remember how many to remove
                     // and do it after the loop.

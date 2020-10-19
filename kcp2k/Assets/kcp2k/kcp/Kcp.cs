@@ -355,8 +355,13 @@ namespace kcp2k
         void ParseData(Segment newseg)
         {
             uint sn = newseg.sn;
-            if (sn >= rcv_nxt + rcv_wnd || sn < rcv_nxt)
+
+            if (Utils.TimeDiff(sn, rcv_nxt + rcv_wnd) >= 0 ||
+                Utils.TimeDiff(sn, rcv_nxt) < 0)
+            {
+                // TODO native C deletes the segment. should we Return it?
                 return;
+            }
 
             InsertSegmentInReceiveBuffer(newseg);
             MoveToReceiveQueue();

@@ -8,28 +8,29 @@ namespace kcp2k
 {
     public class Kcp
     {
-        public const int RTO_NDL = 30;         // no delay min rto
-        public const int RTO_MIN = 100;        // normal min rto
-        public const int RTO_DEF = 200;        // default RTO
-        public const int RTO_MAX = 60000;      // maximum RTO
-        public const int CMD_PUSH = 81;        // cmd: push data
-        public const int CMD_ACK  = 82;        // cmd: ack
-        public const int CMD_WASK = 83;        // cmd: window probe (ask)
-        public const int CMD_WINS = 84;        // cmd: window size (tell)
-        public const int ASK_SEND = 1;         // need to send CMD_WASK
-        public const int ASK_TELL = 2;         // need to send CMD_WINS
-        public const int WND_SND = 32;         // defualt send window
-        public const int WND_RCV = 128;        // default receive window. must be >= max fragment size
-        public const int MTU_DEF = 1200;       // default MTU (reduced to 1200 to fit all cases: https://en.wikipedia.org/wiki/Maximum_transmission_unit ; steam uses 1200 too!)
+        public const int RTO_NDL = 30;           // no delay min rto
+        public const int RTO_MIN = 100;          // normal min rto
+        public const int RTO_DEF = 200;          // default RTO
+        public const int RTO_MAX = 60000;        // maximum RTO
+        public const int CMD_PUSH = 81;          // cmd: push data
+        public const int CMD_ACK  = 82;          // cmd: ack
+        public const int CMD_WASK = 83;          // cmd: window probe (ask)
+        public const int CMD_WINS = 84;          // cmd: window size (tell)
+        public const int ASK_SEND = 1;           // need to send CMD_WASK
+        public const int ASK_TELL = 2;           // need to send CMD_WINS
+        public const int WND_SND = 32;           // defualt send window
+        public const int WND_RCV = 128;          // default receive window. must be >= max fragment size
+        public const int MTU_DEF = 1200;         // default MTU (reduced to 1200 to fit all cases: https://en.wikipedia.org/wiki/Maximum_transmission_unit ; steam uses 1200 too!)
         public const int ACK_FAST = 3;
         public const int INTERVAL = 100;
         public const int OVERHEAD = 24;
         public const int DEADLINK = 20;
         public const int THRESH_INIT = 2;
         public const int THRESH_MIN = 2;
-        public const int PROBE_INIT = 7000;    // 7 secs to probe window size
-        public const int PROBE_LIMIT = 120000; // up to 120 secs to probe window
-        public const int SN_OFFSET = 12;       // max times to trigger fastack
+        public const int PROBE_INIT = 7000;      // 7 secs to probe window size
+        public const int PROBE_LIMIT = 120000;   // up to 120 secs to probe window
+        public const int FASTACK_LIMIT = 5; // max times to trigger fastack
+        public const int SN_OFFSET = 12;         // max times to trigger fastack
 
         internal struct AckItem
         {
@@ -38,6 +39,7 @@ namespace kcp2k
         }
 
         // kcp members.
+        int state;
         readonly uint conv; // conversation
         uint mtu;
         uint mss;           // maximum segment size
@@ -56,14 +58,17 @@ namespace kcp2k
         uint probe;
         uint interval;
         uint ts_flush;
+        uint xmit;
         bool nodelay;
         bool updated;
         uint ts_probe;      // timestamp probe
         uint probe_wait;
+        uint dead_link;
         uint incr;
         uint current;       // current time (milliseconds). set by Update.
 
         int fastresend;
+        int fastlimit;
         bool nocwnd;
         internal readonly List<Segment> snd_queue = new List<Segment>(16); // send queue
         internal readonly List<Segment> rcv_queue = new List<Segment>(16); // receive queue
@@ -94,6 +99,8 @@ namespace kcp2k
             interval = INTERVAL;
             ts_flush = INTERVAL;
             ssthresh = THRESH_INIT;
+            fastlimit = FASTACK_LIMIT;
+            dead_link = DEADLINK;
             buffer = new byte[(mtu + OVERHEAD) * 3];
         }
 
@@ -596,7 +603,8 @@ namespace kcp2k
         // flush remain ack segments
         public void Flush(bool ackOnly)
         {
-            int offset = 0; // buffer ptr in original C
+            int offset = 0;    // buffer ptr in original C
+            bool lost = false; // lost segments
 
             // helper functions
             void MakeSpace(int space)
@@ -726,62 +734,76 @@ namespace kcp2k
 
             // calculate resent
             uint resent = fastresend > 0 ? (uint)fastresend : 0xffffffff;
+            uint rtomin = nodelay == false ? (uint)rx_rto >> 3 : 0;
 
-            // check for retransmissions
-            ulong change = 0; ulong lostSegs = 0;
-            int minrto = (int)interval;
-
+            // flush data segments
+            int change = 0;
             for (int k = 0; k < snd_buf.Count; k++)
             {
                 Segment segment = snd_buf[k];
                 bool needSend = false;
-                if (segment.acked)
-                    continue;
-                if (segment.xmit == 0)  // initial transmit
+                // initial transmit
+                if (segment.xmit == 0)
                 {
                     needSend = true;
+                    segment.xmit++;
                     segment.rto = rx_rto;
-                    segment.resendts = current + (uint)segment.rto; // TODO + rtomin in C???
+                    segment.resendts = current + (uint)segment.rto + rtomin;
                 }
-                else if (segment.fastack >= resent || segment.fastack > 0 && newSegsCount == 0 ) // fast retransmit
+                // RTO
+                else if (Utils.TimeDiff(current, segment.resendts) >= 0)
                 {
                     needSend = true;
-                    segment.fastack = 0;
-                    segment.rto = rx_rto;
-                    segment.resendts = current + (uint)segment.rto;
-                    change++;
-                }
-                else if (current >= segment.resendts) // RTO
-                {
-                    needSend = true;
+                    segment.xmit++;
+                    xmit++;
                     if (!nodelay)
-                        segment.rto += rx_rto;
+                    {
+                        segment.rto += Math.Max(segment.rto, rx_rto);
+                    }
                     else
-                        segment.rto += rx_rto / 2;
-                    segment.fastack = 0;
+                    {
+                        // original C has:
+                        // int step = (nodelay < 2) ? ((int)(segment.rto)) : rx_rto;
+                        // but nodelay is a bool and only ever 0 or 1, so use segment.rto
+                        segment.rto += segment.rto / 2;
+                    }
                     segment.resendts = current + (uint)segment.rto;
-                    lostSegs++;
+                    lost = true;
+                }
+                // fast retransmit
+                else if (segment.fastack >= resent)
+                {
+                    if (segment.xmit <= fastlimit || fastlimit <= 0)
+                    {
+                        needSend = true;
+                        segment.xmit++;
+                        segment.fastack = 0;
+                        segment.resendts = current + (uint)segment.rto;
+                        change++;
+                    }
                 }
 
                 if (needSend)
                 {
-                    segment.xmit++;
                     segment.ts = current;
                     segment.wnd = seg.wnd;
-                    segment.una = seg.una;
+                    segment.una = rcv_nxt;
 
                     int need = OVERHEAD + segment.data.Position;
                     MakeSpace(need);
-                    offset += segment.Encode(buffer, offset);
-                    Buffer.BlockCopy(segment.data.RawBuffer, 0, buffer, offset, segment.data.Position);
-                    offset += segment.data.Position;
-                }
 
-                // get the nearest rto
-                int _rto = Utils.TimeDiff(segment.resendts, current);
-                if (_rto > 0 && _rto < minrto)
-                {
-                    minrto = _rto;
+                    offset += segment.Encode(buffer, offset);
+
+                    if (segment.data.Position > 0)
+                    {
+                        Buffer.BlockCopy(segment.data.RawBuffer, 0, buffer, offset, segment.data.Position);
+                        offset += segment.data.Position;
+                    }
+
+                    if (segment.xmit >= dead_link)
+                    {
+                        state = -1;
+                    }
                 }
             }
 
@@ -791,11 +813,11 @@ namespace kcp2k
             // cwnd update
             if (!nocwnd)
             {
-                CwndUpdate(resent, change, lostSegs);
+                CwndUpdate(resent, change, lost);
             }
         }
 
-        void CwndUpdate(uint resent, ulong change, ulong lostSegs)
+        void CwndUpdate(uint resent, int change, bool lost)
         {
             // update ssthresh
             // rate halving, https://tools.ietf.org/html/rfc6937
@@ -810,7 +832,7 @@ namespace kcp2k
             }
 
             // congestion control, https://tools.ietf.org/html/rfc5681
-            if (lostSegs > 0)
+            if (lost)
             {
                 ssthresh = cwnd / 2;
                 if (ssthresh < THRESH_MIN)

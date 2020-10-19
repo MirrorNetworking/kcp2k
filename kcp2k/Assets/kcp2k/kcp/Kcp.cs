@@ -175,24 +175,19 @@ namespace kcp2k
         // check the size of next message in the recv queue
         public int PeekSize()
         {
-            if (rcv_queue.Count == 0)
-                return -1;
-
-            Segment seq = rcv_queue[0];
-
-            if (seq.frg == 0)
-                return seq.data.Position;
-
-            if (rcv_queue.Count < seq.frg + 1)
-                return -1;
-
             int length = 0;
 
-            foreach (Segment item in rcv_queue)
+            if (rcv_queue.Count == 0) return -1;
+
+            Segment seq = rcv_queue[0];
+            if (seq.frg == 0) return seq.data.Position;
+
+            if (rcv_queue.Count < seq.frg + 1) return -1;
+
+            foreach (Segment seg in rcv_queue)
             {
-                length += item.data.Position;
-                if (item.frg == 0)
-                    break;
+                length += seg.data.Position;
+                if (seg.frg == 0) break;
             }
 
             return length;

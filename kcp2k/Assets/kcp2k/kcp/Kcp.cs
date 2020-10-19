@@ -61,7 +61,7 @@ namespace kcp2k
         uint ts_probe;      // timestamp probe
         uint probe_wait;
         uint incr;
-        internal uint current; // current time (milliseconds). set by Update.
+        uint current;       // current time (milliseconds). set by Update.
 
         int fastresend;
         bool nocwnd;

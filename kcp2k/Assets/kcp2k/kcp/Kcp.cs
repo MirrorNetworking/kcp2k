@@ -706,15 +706,15 @@ namespace kcp2k
                     break;
 
                 Segment newseg = snd_queue[k];
+                // can't remove while iterating. remember how many to remove
+                // and do it after the loop.
+                newSegsCount++;
+
                 newseg.conv = conv;
                 newseg.cmd = CMD_PUSH;
                 newseg.sn = snd_nxt;
                 snd_buf.Add(newseg);
                 snd_nxt++;
-
-                // can't remove while iterating. remember how many to remove
-                // and do it after the loop.
-                newSegsCount++;
             }
             snd_queue.RemoveRange(0, newSegsCount);
 

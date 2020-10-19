@@ -593,8 +593,7 @@ namespace kcp2k
         }
 
         // ikcp_flush
-        /// <summary>Flush</summary>
-        /// <param name="ackOnly">flush remain ack segments</param>
+        // flush remain ack segments
         public uint Flush(bool ackOnly)
         {
             Segment seg = Segment.Take();

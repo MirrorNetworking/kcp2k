@@ -654,11 +654,13 @@ namespace kcp2k
                 }
                 else
                 {
-                    if (current >= ts_probe)
+                    if (Utils.TimeDiff(current, ts_probe) >= 0)
                     {
-                        probe_wait = Math.Max(probe_wait, PROBE_INIT);
+                        if (probe_wait < PROBE_INIT)
+                            probe_wait = PROBE_INIT;
                         probe_wait += probe_wait / 2;
-                        probe_wait = Math.Min(probe_wait, PROBE_LIMIT);
+                        if (probe_wait > PROBE_LIMIT)
+                            probe_wait = PROBE_LIMIT;
                         ts_probe = current + probe_wait;
                         probe |= ASK_SEND;
                     }

@@ -596,7 +596,7 @@ namespace kcp2k
         // flush remain ack segments
         public uint Flush(bool ackOnly)
         {
-            int writeIndex = 0; // buffer ptr in original C
+            int offset = 0; // buffer ptr in original C
 
             Segment seg = Segment.Take();
             seg.conv = conv;
@@ -606,18 +606,18 @@ namespace kcp2k
 
             void makeSpace(int space)
             {
-                if (writeIndex + space > mtu)
+                if (offset + space > mtu)
                 {
-                    output(buffer, writeIndex);
-                    writeIndex = 0;
+                    output(buffer, offset);
+                    offset = 0;
                 }
             }
 
             void flushBuffer()
             {
-                if (writeIndex > 0)
+                if (offset > 0)
                 {
-                    output(buffer, writeIndex);
+                    output(buffer, offset);
                 }
             }
 
@@ -630,7 +630,7 @@ namespace kcp2k
                 {
                     seg.sn = ack.serialNumber;
                     seg.ts = ack.timestamp;
-                    writeIndex += seg.Encode(buffer, writeIndex);
+                    offset += seg.Encode(buffer, offset);
                 }
             }
             acklist.Clear();
@@ -673,14 +673,14 @@ namespace kcp2k
             {
                 seg.cmd = CMD_WASK;
                 makeSpace(OVERHEAD);
-                writeIndex += seg.Encode(buffer, writeIndex);
+                offset += seg.Encode(buffer, offset);
             }
 
             if ((probe & ASK_TELL) != 0)
             {
                 seg.cmd = CMD_WINS;
                 makeSpace(OVERHEAD);
-                writeIndex += seg.Encode(buffer, writeIndex);
+                offset += seg.Encode(buffer, offset);
             }
 
             probe = 0;
@@ -757,9 +757,9 @@ namespace kcp2k
 
                     int need = OVERHEAD + segment.data.Position;
                     makeSpace(need);
-                    writeIndex += segment.Encode(buffer, writeIndex);
-                    Buffer.BlockCopy(segment.data.RawBuffer, 0, buffer, writeIndex, segment.data.Position);
-                    writeIndex += segment.data.Position;
+                    offset += segment.Encode(buffer, offset);
+                    Buffer.BlockCopy(segment.data.RawBuffer, 0, buffer, offset, segment.data.Position);
+                    offset += segment.data.Position;
                 }
 
                 // get the nearest rto

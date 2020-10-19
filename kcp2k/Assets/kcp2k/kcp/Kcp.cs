@@ -725,8 +725,7 @@ namespace kcp2k
             snd_queue.RemoveRange(0, newSegsCount);
 
             // calculate resent
-            uint resent = (uint)fastresend;
-            if (fastresend <= 0) resent = 0xffffffff;
+            uint resent = fastresend > 0 ? (uint)fastresend : 0xffffffff;
 
             // check for retransmissions
             ulong change = 0; ulong lostSegs = 0;

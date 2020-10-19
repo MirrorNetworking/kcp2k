@@ -47,6 +47,7 @@ namespace kcp2k
             data = new ByteBuffer();
         }
 
+        // ikcp_encode_seg
         // encode a segment into buffer
         internal int Encode(byte[] ptr, int offset)
         {

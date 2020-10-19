@@ -813,8 +813,8 @@ namespace kcp2k
             // rate halving, https://tools.ietf.org/html/rfc6937
             if (change > 0)
             {
-                uint inflght = snd_nxt - snd_una;
-                ssthresh = inflght / 2;
+                uint inflight = snd_nxt - snd_una;
+                ssthresh = inflight / 2;
                 if (ssthresh < THRESH_MIN)
                     ssthresh = THRESH_MIN;
                 cwnd = ssthresh + resent;

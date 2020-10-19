@@ -104,14 +104,10 @@ namespace kcp2k
         }
 
         // ikcp_recv
-        /// <summary>Receive
-        /// Receive data from kcp state machine
-        /// <para>Return number of bytes read.</para>
-        /// <para>Return -1 when there is no readable data.</para>
-        /// <para>Return -2 if len(buffer) is smaller than kcp.PeekSize().</para></summary>
-        /// <param name="buffer"></param>
-        /// <param name="index"></param>
-        /// <param name="length"></param>
+        // receive data from kcp state machine
+        //   returns  number of bytes read.
+        //   returns -1 when there is no readable data.
+        //   returns -2 if len(buffer) is smaller than kcp.PeekSize().
         public int Receive(byte[] buffer, int index, int length)
         {
             int peekSize = PeekSize();

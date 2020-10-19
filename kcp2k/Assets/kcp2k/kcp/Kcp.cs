@@ -208,36 +208,40 @@ namespace kcp2k
 
         // ikcp_send
         // sends byte[] to the other end.
-        public void Send(byte[] buffer, int index, int length)
+        public int Send(byte[] buffer, int offset, int len)
         {
-            if (length == 0)
-                throw new ArgumentException("You cannot send a packet with a length of 0.");
-
             int count;
-            if (length <= mss)
-                count = 1;
-            else
-                count = (int)((length + mss - 1) / mss);
 
-            if (count > 255)
-                throw new ArgumentException("Your packet is too big, please reduce its length or increase the MTU with SetMtu().");
+            if (len < 0) return -1;
 
-            if (count == 0)
-                count = 1;
+            // streaming mode: removed. we never want to send 'hello' and
+            // receive 'he' 'll' 'o'. we want to always receive 'hello'.
+
+            if (len <= mss) count = 1;
+            else count = (int)((len + mss - 1) / mss);
+
+            if (count >= WND_RCV) return -2;
+
+            if (count == 0) count = 1;
 
             // fragment
             for (int i = 0; i < count; i++)
             {
-                int size = Math.Min(length, (int)mss);
-
+                int size = len > (int)mss ? (int)mss : len;
                 Segment seg = Segment.Take();
-                seg.data.WriteBytes(buffer, index, size);
-                index += size;
-                length -= size;
 
+                if (len > 0)
+                {
+                    seg.data.WriteBytes(buffer, offset, size);
+                }
+                // seg.len = size: WriteBytes sets segment.Position!
                 seg.frg = (byte)(count - i - 1);
                 snd_queue.Add(seg);
+                offset += size;
+                len -= size;
             }
+
+            return 0;
         }
 
         // ikcp_update_ack

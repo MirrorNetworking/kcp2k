@@ -99,7 +99,11 @@ namespace kcp2k
             // other end won't process bigger messages anyway.
             if (data.Count <= Kcp.MTU_DEF)
             {
-                kcp.Send(data.Array, data.Offset, data.Count);
+                int sent = kcp.Send(data.Array, data.Offset, data.Count);
+                if (sent < 0)
+                {
+                    Debug.LogWarning($"Send failed with error={sent} for segment with length={data.Count}");
+                }
             }
             else Debug.LogError($"Failed to send message of size {data.Count} because it's larger than MaxMessageSize={Kcp.MTU_DEF}");
         }

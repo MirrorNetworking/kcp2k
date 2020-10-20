@@ -435,12 +435,7 @@ namespace kcp2k
         }
 
         // ikcp_input
-        /// <summary>Input
-        /// <para>Used when you receive a low level packet (eg. UDP packet)</para></summary>
-        /// <param name="data"></param>
-        /// <param name="index"></param>
-        /// <param name="size"></param>
-        /// <param name="regular">regular indicates a regular packet has received(not from FEC)</param>
+        /// used when you receive a low level packet (eg. UDP packet)
         public int Input(byte[] data, int index, int size, bool regular)
         {
             uint s_una = snd_una;

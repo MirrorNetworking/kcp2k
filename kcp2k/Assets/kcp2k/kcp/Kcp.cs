@@ -413,7 +413,7 @@ namespace kcp2k
 
         // inserts the segment at the right position in the receive buffer,
         // going through receive buffer in reverse order from last to first.
-        void InsertSegmentInReceiveBuffer(Segment newseg)
+        internal void InsertSegmentInReceiveBuffer(Segment newseg)
         {
             bool repeat = false;
 
@@ -425,6 +425,7 @@ namespace kcp2k
                 Segment seg = rcv_buf[i];
                 if (seg.sn == newseg.sn)
                 {
+                    // duplicate segment found. nothing will be added.
                     repeat = true;
                     break;
                 }
@@ -435,6 +436,7 @@ namespace kcp2k
                 }
             }
 
+            // no duplicate? then insert.
             if (!repeat)
             {
                 if (insert_idx == n + 1)
@@ -442,6 +444,7 @@ namespace kcp2k
                 else
                     rcv_buf.Insert(insert_idx, newseg);
             }
+            // duplicate. just delete it.
             else
             {
                 SegmentDelete(newseg);

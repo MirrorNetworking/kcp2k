@@ -38,8 +38,7 @@ namespace kcp2k
             Pool.Push(seg);
         }
         ////////////////////////////////////////////////////////////////////////
-        // private constructor to force usage of Take()
-        Segment()
+        internal Segment()
         {
             // allocate the ByteBuffer once.
             // note that we don't need to pool ByteBuffer, because Segment is

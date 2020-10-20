@@ -520,7 +520,7 @@ namespace kcp2k
                     if (Utils.TimeDiff(sn, rcv_nxt + rcv_wnd) < 0)
                     {
                         AckPush(sn, ts);
-                        if (sn >= rcv_nxt)
+                        if (Utils.TimeDiff(sn, rcv_nxt) >= 0)
                         {
                             Segment seg = Segment.Take();
                             seg.conv = conv_;

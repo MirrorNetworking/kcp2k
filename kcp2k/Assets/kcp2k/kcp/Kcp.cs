@@ -907,7 +907,7 @@ namespace kcp2k
         // ikcp_check
         // Determine when should you invoke update
         // Returns when you should invoke update in millisec, if there is no
-        // input/_send calling. you can call update in that time, instead of
+        // input/send calling. you can call update in that time, instead of
         // call update repeatly.
         //
         // Important to reduce unnecessary update invoking. use it to schedule

@@ -444,8 +444,7 @@ namespace kcp2k
             }
             else
             {
-                // TODO original C deletes the segment. should we do that?
-                // SegmentDelete(seg);
+                SegmentDelete(newseg);
             }
         }
 

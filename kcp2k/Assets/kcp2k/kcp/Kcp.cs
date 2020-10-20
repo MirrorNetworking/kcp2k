@@ -517,7 +517,7 @@ namespace kcp2k
                 }
                 else if (cmd == CMD_PUSH)
                 {
-                    if (sn < rcv_nxt + rcv_wnd)
+                    if (Utils.TimeDiff(sn, rcv_nxt + rcv_wnd) < 0)
                     {
                         AckPush(sn, ts);
                         if (sn >= rcv_nxt)

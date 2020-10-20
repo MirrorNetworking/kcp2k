@@ -435,6 +435,7 @@ namespace kcp2k
                 }
                 if (Utils.TimeDiff(newseg.sn, seg.sn) > 0)
                 {
+                    // this entry's sn is < newseg.sn, so let's stop
                     break;
                 }
             }

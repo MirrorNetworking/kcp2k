@@ -8,6 +8,9 @@ namespace kcp2k
 {
     public class Kcp
     {
+        // original Kcp has a define option, which is not defined by default:
+        // #define FASTACK_CONSERVE
+
         public const int RTO_NDL = 30;           // no delay min rto
         public const int RTO_MIN = 100;          // normal min rto
         public const int RTO_DEF = 200;          // default RTO
@@ -340,7 +343,12 @@ namespace kcp2k
                 }
                 else if (sn != seg.sn && seg.ts <= ts)
                 {
+#if !FASTACK_CONSERVE
                     seg.fastack++;
+# else
+                    if (Utils.TimeDiff(ts, seg.ts) >= 0)
+                        seg.fastack++;
+#endif
                 }
             }
         }

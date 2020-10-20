@@ -73,7 +73,7 @@ namespace kcp2k
         int fastlimit;
         bool nocwnd;
         internal readonly Queue<Segment> snd_queue = new Queue<Segment>(16); // send queue
-        internal readonly List<Segment> rcv_queue = new List<Segment>(16); // receive queue
+        internal readonly Queue<Segment> rcv_queue = new Queue<Segment>(16); // receive queue
         internal readonly List<Segment> snd_buf = new List<Segment>(16);   // send buffer
         internal readonly List<Segment> rcv_buf = new List<Segment>(16);   // receive buffer
         internal readonly List<AckItem> acklist = new List<AckItem>(16);
@@ -141,9 +141,16 @@ namespace kcp2k
             // merge fragment.
             int offset = 0;
             len = 0;
-            int removed = 0;
-            foreach (Segment seg in rcv_queue)
+            // original KCP iterates rcv_queue and deletes if !ispeek.
+            // removing from a c# queue while iterating is not possible, but
+            // we can change to 'while Count > 0' and remove every time.
+            // (we can remove every time because we removed ispeek support!)
+            while (rcv_queue.Count > 0)
             {
+                // unlike original kcp, we dequeue instead of just getting the
+                // entry. this is fine because we remove it in ANY case.
+                Segment seg = rcv_queue.Dequeue();
+
                 Buffer.BlockCopy(seg.data.RawBuffer, 0, buffer, offset, seg.data.Position);
                 offset += seg.data.Position;
 
@@ -152,18 +159,17 @@ namespace kcp2k
 
                 // note: ispeek is not supported in order to simplify this loop
 
-                // can't remove while iterating. remember how many to remove
-                // and do it after the loop.
-                ++removed;
+                // unlike original kcp, we don't need to remove seg from queue
+                // because we already dequeued it.
+                // simply return it to pool now.
                 Segment.Return(seg);
 
                 if (fragment == 0)
                     break;
             }
-            rcv_queue.RemoveRange(0, removed);
 
             // move available data from rcv_buf -> rcv_queue
-            removed = 0;
+            int removed = 0;
             foreach (Segment seg in rcv_buf)
             {
                 if (seg.sn == rcv_nxt && rcv_queue.Count < rcv_wnd)
@@ -173,7 +179,7 @@ namespace kcp2k
                     // note: don't return segment. we only add it to rcv_queue
                     ++removed;
                     // add
-                    rcv_queue.Add(seg);
+                    rcv_queue.Enqueue(seg);
                     rcv_nxt++;
                 }
                 else
@@ -202,7 +208,7 @@ namespace kcp2k
 
             if (rcv_queue.Count == 0) return -1;
 
-            Segment seq = rcv_queue[0];
+            Segment seq = rcv_queue.Peek();
             if (seq.frg == 0) return seq.data.Position;
 
             if (rcv_queue.Count < seq.frg + 1) return -1;
@@ -429,7 +435,7 @@ namespace kcp2k
                     // can't remove while iterating. remember how many to remove
                     // and do it after the loop.
                     ++removed;
-                    rcv_queue.Add(seg);
+                    rcv_queue.Enqueue(seg);
                     rcv_nxt++;
                 }
                 else

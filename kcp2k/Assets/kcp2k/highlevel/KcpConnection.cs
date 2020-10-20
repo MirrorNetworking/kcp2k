@@ -98,7 +98,7 @@ namespace kcp2k
 
         public void RawInput(byte[] buffer, int msgLength)
         {
-            kcp.Input(buffer, msgLength, true);
+            kcp.Input(buffer, msgLength);
 
             lastReceived = (uint)refTime.ElapsedMilliseconds;
         }

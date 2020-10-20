@@ -436,7 +436,7 @@ namespace kcp2k
 
         // ikcp_input
         /// used when you receive a low level packet (eg. UDP packet)
-        public int Input(byte[] data, int size, bool regular)
+        public int Input(byte[] data, int size)
         {
             uint prev_una = snd_una;
             uint latest_ts = 0;
@@ -479,11 +479,7 @@ namespace kcp2k
                     cmd != CMD_WASK && cmd != CMD_WINS)
                     return -3;
 
-                // only trust window updates from regular packets. i.e: latest update
-                if (regular)
-                {
-                    rmt_wnd = wnd;
-                }
+                rmt_wnd = wnd;
 
                 ParseUna(una);
                 ShrinkBuf();
@@ -534,8 +530,7 @@ namespace kcp2k
             }
 
             // update rtt with the latest ts
-            // ignore the FEC packet
-            if (flag != 0 && regular)
+            if (flag != 0)
             {
                 if (current >= latest_ts)
                 {

@@ -12,10 +12,10 @@ namespace kcp2k
         internal uint ts;       // timestamp
         internal uint sn;       // serial number
         internal uint una;
-        internal int rto;
-        internal uint xmit;
         internal uint resendts; // resend timestamp
+        internal int rto;
         internal uint fastack;
+        internal uint xmit;
         internal bool acked;    // acknowledged
         internal ByteBuffer data;
 

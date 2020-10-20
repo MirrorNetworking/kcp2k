@@ -32,8 +32,7 @@ namespace kcp2k
         public const int THRESH_MIN = 2;
         public const int PROBE_INIT = 7000;      // 7 secs to probe window size
         public const int PROBE_LIMIT = 120000;   // up to 120 secs to probe window
-        public const int FASTACK_LIMIT = 5; // max times to trigger fastack
-        public const int SN_OFFSET = 12;         // max times to trigger fastack
+        public const int FASTACK_LIMIT = 5;      // max times to trigger fastack
 
         internal struct AckItem
         {

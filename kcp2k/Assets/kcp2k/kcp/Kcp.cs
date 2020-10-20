@@ -458,8 +458,7 @@ namespace kcp2k
                 byte cmd = 0;
                 byte frg = 0;
 
-                // TODO if (size < OVERHEAD) break?
-                if (size - offset < OVERHEAD) break;
+                if (size < OVERHEAD) break;
 
                 offset += Utils.Decode32U(data, offset, ref conv_);
                 if (conv_ != conv) return -1;
@@ -472,9 +471,9 @@ namespace kcp2k
                 offset += Utils.Decode32U(data, offset, ref una);
                 offset += Utils.Decode32U(data, offset, ref len);
 
-                // TODO size -= OVERHEAD?
+                size -= OVERHEAD;
 
-                if (size - offset < len || len < 0) return -2;
+                if (size < len || len < 0) return -2;
 
                 if (cmd != CMD_PUSH && cmd != CMD_ACK &&
                     cmd != CMD_WASK && cmd != CMD_WINS)
@@ -554,7 +553,7 @@ namespace kcp2k
                 }
 
                 offset += (int)len;
-                // TODO size -= len?
+                size -= (int)len;
             }
 
             if (flag != 0)

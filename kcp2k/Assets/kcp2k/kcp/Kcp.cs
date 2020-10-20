@@ -450,7 +450,7 @@ namespace kcp2k
             {
                 uint ts = 0;
                 uint sn = 0;
-                uint length = 0;
+                uint len = 0;
                 uint una = 0;
                 uint conv_ = 0;
 
@@ -470,9 +470,9 @@ namespace kcp2k
                 offset += Utils.Decode32U(data, offset, ref ts);
                 offset += Utils.Decode32U(data, offset, ref sn);
                 offset += Utils.Decode32U(data, offset, ref una);
-                offset += Utils.Decode32U(data, offset, ref length);
+                offset += Utils.Decode32U(data, offset, ref len);
 
-                if (size - (offset - index) < length)
+                if (size - (offset - index) < len)
                     return -2;
 
                 switch (cmd)
@@ -517,7 +517,7 @@ namespace kcp2k
                             seg.ts = ts;
                             seg.sn = sn;
                             seg.una = una;
-                            seg.data.WriteBytes(data, offset, (int)length);
+                            seg.data.WriteBytes(data, offset, (int)len);
                             ParseData(seg);
                         }
                     }
@@ -537,7 +537,7 @@ namespace kcp2k
                     return -3;
                 }
 
-                offset += (int)length;
+                offset += (int)len;
             }
 
             // update rtt with the latest ts

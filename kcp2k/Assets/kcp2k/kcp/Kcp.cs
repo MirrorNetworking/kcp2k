@@ -72,7 +72,7 @@ namespace kcp2k
         int fastresend;
         int fastlimit;
         bool nocwnd;
-        internal readonly List<Segment> snd_queue = new List<Segment>(16); // send queue
+        internal readonly Queue<Segment> snd_queue = new Queue<Segment>(16); // send queue
         internal readonly List<Segment> rcv_queue = new List<Segment>(16); // receive queue
         internal readonly List<Segment> snd_buf = new List<Segment>(16);   // send buffer
         internal readonly List<Segment> rcv_buf = new List<Segment>(16);   // receive buffer
@@ -239,7 +239,7 @@ namespace kcp2k
                 }
                 // seg.len = size: WriteBytes sets segment.Position!
                 seg.frg = (byte)(count - i - 1);
-                snd_queue.Add(seg);
+                snd_queue.Enqueue(seg);
                 offset += size;
                 len -= size;
             }
@@ -696,19 +696,11 @@ namespace kcp2k
 
             // move data from snd_queue to snd_buf
             // sliding window, controlled by snd_nxt && sna_una+cwnd
-            // TODO convert to while timediff like original C when using queues!
-            int removed = 0;
-            for (int k = 0; k < snd_queue.Count; k++)
+            while (Utils.TimeDiff(snd_nxt, snd_una + cwnd_) < 0)
             {
-                // TODO original C uses this check in while with < 0
-                // instead we want to STOP when the opposite happens, so >= 0!
-                if (Utils.TimeDiff(snd_nxt, snd_una + cwnd_) >= 0)
-                    break;
+                if (snd_queue.Count == 0) break;
 
-                Segment newseg = snd_queue[k];
-                // can't remove while iterating. remember how many to remove
-                // and do it after the loop.
-                removed++;
+                Segment newseg = snd_queue.Dequeue();
 
                 newseg.conv = conv;
                 newseg.cmd = CMD_PUSH;
@@ -722,7 +714,6 @@ namespace kcp2k
                 newseg.xmit = 0;
                 snd_buf.Add(newseg);
             }
-            snd_queue.RemoveRange(0, removed);
 
             // calculate resent
             uint resent = fastresend > 0 ? (uint)fastresend : 0xffffffff;

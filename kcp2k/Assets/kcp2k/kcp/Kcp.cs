@@ -439,11 +439,12 @@ namespace kcp2k
         public int Input(byte[] data, int index, int size, bool regular)
         {
             uint prev_una = snd_una;
+            uint latest_ts = 0;
+            int flag = 0;
+
             if (size < OVERHEAD) return -1;
 
             int offset = index;
-            uint latest = 0;
-            int flag = 0;
 
             while (true)
             {
@@ -499,7 +500,7 @@ namespace kcp2k
                     ParseAck(sn);
                     ParseFastack(sn, ts);
                     flag |= 1;
-                    latest = ts;
+                    latest_ts = ts;
                 }
                 else if (CMD_PUSH == cmd)
                 {
@@ -543,9 +544,9 @@ namespace kcp2k
             // ignore the FEC packet
             if (flag != 0 && regular)
             {
-                if (current >= latest)
+                if (current >= latest_ts)
                 {
-                    UpdateAck(Utils.TimeDiff(current, latest));
+                    UpdateAck(Utils.TimeDiff(current, latest_ts));
                 }
             }
 

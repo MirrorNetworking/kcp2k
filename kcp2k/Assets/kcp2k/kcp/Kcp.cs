@@ -530,7 +530,10 @@ namespace kcp2k
                             seg.ts = ts;
                             seg.sn = sn;
                             seg.una = una;
-                            seg.data.WriteBytes(data, offset, (int)len);
+                            if (len > 0)
+                            {
+                                seg.data.WriteBytes(data, offset, (int)len);
+                            }
                             ParseData(seg);
                         }
                     }

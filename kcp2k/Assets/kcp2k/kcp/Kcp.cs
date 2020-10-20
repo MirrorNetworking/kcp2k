@@ -473,8 +473,7 @@ namespace kcp2k
 
                 // TODO size -= OVERHEAD?
 
-                if (size - offset < len)
-                    return -2;
+                if (size - offset < len || len < 0) return -2;
 
                 switch (cmd)
                 {

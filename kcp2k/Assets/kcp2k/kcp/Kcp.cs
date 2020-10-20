@@ -75,10 +75,8 @@ namespace kcp2k
         internal readonly Queue<Segment> snd_queue = new Queue<Segment>(16); // send queue
         internal readonly Queue<Segment> rcv_queue = new Queue<Segment>(16); // receive queue
         internal readonly Queue<Segment> snd_buf = new Queue<Segment>(16);   // send buffer
-        // note: can't change rcv_buf to Queue because InsertSegmentInReceiveBuffer
-        //       needs to iterate backwards, which Queue can't do without Linq.
-        //       can't use LinkedList<T> either because it allocates classes for
-        //       each node internally.
+        // rcv_buffer needs index insertions and backwards iteration.
+        // C# LinkedList allocates for each entry, so let's keep List for now.
         internal readonly List<Segment> rcv_buf = new List<Segment>(16);   // receive buffer
         internal readonly List<AckItem> acklist = new List<AckItem>(16);
 

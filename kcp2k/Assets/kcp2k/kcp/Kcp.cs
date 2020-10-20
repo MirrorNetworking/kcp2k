@@ -453,7 +453,6 @@ namespace kcp2k
                 uint len = 0;
                 uint una = 0;
                 uint conv_ = 0;
-
                 ushort wnd = 0;
                 byte cmd = 0;
                 byte frg = 0;

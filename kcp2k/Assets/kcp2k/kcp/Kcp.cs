@@ -557,13 +557,9 @@ namespace kcp2k
                 // TODO size -= len?
             }
 
-            // update rtt with the latest ts
             if (flag != 0)
             {
-                if (current >= latest_ts)
-                {
-                    UpdateAck(Utils.TimeDiff(current, latest_ts));
-                }
+                ParseFastack(maxack, latest_ts);
             }
 
             // cwnd update when packet arrived

@@ -74,10 +74,12 @@ namespace kcp2k
         bool nocwnd;
         internal readonly Queue<Segment> snd_queue = new Queue<Segment>(16); // send queue
         internal readonly Queue<Segment> rcv_queue = new Queue<Segment>(16); // receive queue
-        internal readonly Queue<Segment> snd_buf = new Queue<Segment>(16);   // send buffer
+        // snd_buffer needs index removals.
+        // C# LinkedList allocates for each entry, so let's keep List for now.
+        internal readonly List<Segment> snd_buf = new List<Segment>(16);   // send buffer
         // rcv_buffer needs index insertions and backwards iteration.
         // C# LinkedList allocates for each entry, so let's keep List for now.
-        internal readonly List<Segment> rcv_buf = new List<Segment>(16);   // receive buffer, sorted by serial number (sn)
+        internal readonly List<Segment> rcv_buf = new List<Segment>(16);   // receive buffer
         internal readonly List<AckItem> acklist = new List<AckItem>(16);
 
         byte[] buffer;
@@ -304,8 +306,7 @@ namespace kcp2k
         {
             if (snd_buf.Count > 0)
             {
-                // kcp only gets the entry. it does not dequeue it.
-                Segment seg = snd_buf.Peek();
+                Segment seg = snd_buf[0];
                 snd_una = seg.sn;
             }
             else
@@ -343,18 +344,14 @@ namespace kcp2k
         // ikcp_parse_una
         void ParseUna(uint una)
         {
-            // kcp removes while iterating.
-            // C# queue can't do that, so we need a 'while Count > 0' loop.
-            while (snd_buf.Count > 0)
+            int removed = 0;
+            foreach (Segment seg in snd_buf)
             {
-                // kcp only gets the entry without removing from queue
-                // (we only remove it IF the time check happens below, NOT in
-                //  all cases)
-                Segment seg = snd_buf.Peek();
                 if (Utils.TimeDiff(una, seg.sn) > 0)
                 {
-                    // now remove it
-                    snd_buf.Dequeue();
+                    // can't remove while iterating. remember how many to remove
+                    // and do it after the loop.
+                    ++removed;
                     SegmentDelete(seg);
                 }
                 else
@@ -362,6 +359,7 @@ namespace kcp2k
                     break;
                 }
             }
+            snd_buf.RemoveRange(0, removed);
         }
 
         // ikcp_parse_fastack
@@ -758,7 +756,7 @@ namespace kcp2k
                 newseg.rto = rx_rto;
                 newseg.fastack = 0;
                 newseg.xmit = 0;
-                snd_buf.Enqueue(newseg);
+                snd_buf.Add(newseg);
             }
 
             // calculate resent

@@ -483,14 +483,14 @@ namespace kcp2k
                 ParseUna(una);
                 ShrinkBuf();
 
-                if (CMD_ACK == cmd)
+                if (cmd == CMD_ACK)
                 {
                     ParseAck(sn);
                     ParseFastack(sn, ts);
                     flag |= 1;
                     latest_ts = ts;
                 }
-                else if (CMD_PUSH == cmd)
+                else if (cmd == CMD_PUSH)
                 {
                     if (sn < rcv_nxt + rcv_wnd)
                     {
@@ -510,13 +510,13 @@ namespace kcp2k
                         }
                     }
                 }
-                else if (CMD_WASK == cmd)
+                else if (cmd == CMD_WASK)
                 {
                     // ready to send back CMD_WINS in flush
                     // tell remote my window size
                     probe |= ASK_TELL;
                 }
-                else if (CMD_WINS == cmd)
+                else if (cmd == CMD_WINS)
                 {
                     // do nothing
                 }

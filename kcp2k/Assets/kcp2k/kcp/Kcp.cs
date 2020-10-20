@@ -663,8 +663,11 @@ namespace kcp2k
             // 'ikcp_update' haven't been called.
             if (!updated) return;
 
-            // kcp creates segment on the stack here. in C# it's a class, so we
-            // still need to call SegmentNew().
+            // kcp only stack allocs a segment here for performance, leaving
+            // its data buffer null because this segment's data buffer is never
+            // used. that's fine in C, but in C# our segment is class so we need
+            // to allocate and most importantly, not forget to deallocate it
+            // before returning.
             Segment seg = SegmentNew();
             seg.conv = conv;
             seg.cmd = CMD_ACK;

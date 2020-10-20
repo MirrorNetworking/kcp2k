@@ -436,7 +436,7 @@ namespace kcp2k
 
         // ikcp_input
         /// used when you receive a low level packet (eg. UDP packet)
-        public int Input(byte[] data, int index, int size, bool regular)
+        public int Input(byte[] data, int size, bool regular)
         {
             uint prev_una = snd_una;
             uint latest_ts = 0;
@@ -444,7 +444,7 @@ namespace kcp2k
 
             if (data == null || size < OVERHEAD) return -1;
 
-            int offset = index;
+            int offset = 0;
 
             while (true)
             {
@@ -458,7 +458,7 @@ namespace kcp2k
                 byte frg = 0;
 
                 // TODO if (size < OVERHEAD) break?
-                if (size - (offset - index) < OVERHEAD) break;
+                if (size - offset < OVERHEAD) break;
 
                 offset += Utils.Decode32U(data, offset, ref conv_);
 
@@ -472,7 +472,7 @@ namespace kcp2k
                 offset += Utils.Decode32U(data, offset, ref una);
                 offset += Utils.Decode32U(data, offset, ref len);
 
-                if (size - (offset - index) < len)
+                if (size - offset < len)
                     return -2;
 
                 switch (cmd)

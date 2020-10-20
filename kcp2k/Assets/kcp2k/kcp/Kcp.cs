@@ -480,7 +480,6 @@ namespace kcp2k
                     return -3;
 
                 rmt_wnd = wnd;
-
                 ParseUna(una);
                 ShrinkBuf();
 

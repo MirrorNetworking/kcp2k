@@ -317,7 +317,7 @@ namespace kcp2k
         // ikcp_parse_ack
         void ParseAck(uint sn)
         {
-            if (sn < snd_una || sn >= snd_nxt)
+            if (Utils.TimeDiff(sn, snd_una) < 0 || Utils.TimeDiff(sn, snd_nxt) >= 0)
                 return;
 
             foreach (Segment seg in snd_buf)

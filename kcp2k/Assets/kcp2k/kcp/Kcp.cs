@@ -421,8 +421,8 @@ namespace kcp2k
             bool repeat = false;
 
             // original C iterates backwards, so we need to do that as well.
-            int insert_idx = 0;
-            for (int i = rcv_buf.Count - 1; i >= 0; i--)
+            int i;
+            for (i = rcv_buf.Count - 1; i >= 0; i--)
             {
                 Segment seg = rcv_buf[i];
                 if (seg.sn == newseg.sn)
@@ -433,7 +433,6 @@ namespace kcp2k
                 }
                 if (Utils.TimeDiff(newseg.sn, seg.sn) > 0)
                 {
-                    insert_idx = i + 1; // TODO this is not in original C. and why +1?
                     break;
                 }
             }
@@ -441,12 +440,12 @@ namespace kcp2k
             // no duplicate? then insert.
             if (!repeat)
             {
-                // insert at the end
-                if (insert_idx == rcv_buf.Count)
+                // insert at the end? then add
+                if (i == rcv_buf.Count - 1)
                     rcv_buf.Add(newseg);
-                // insert inbetween
+                // insert inbetween? then at i + 1
                 else
-                    rcv_buf.Insert(insert_idx, newseg);
+                    rcv_buf.Insert(i + 1, newseg);
             }
             // duplicate. just delete it.
             else

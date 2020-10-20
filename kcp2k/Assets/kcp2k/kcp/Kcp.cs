@@ -414,6 +414,8 @@ namespace kcp2k
         // inserts the segment into rcv_buf, ordered by seg.sn.
         // drops the segment if one with the same seg.sn already exists.
         // goes through receive buffer in reverse order for performance.
+        //
+        // note: see KcpTests.InsertSegmentInReceiveBuffer test!
         internal void InsertSegmentInReceiveBuffer(Segment newseg)
         {
             bool repeat = false;
@@ -441,7 +443,9 @@ namespace kcp2k
             if (!repeat)
             {
                 if (insert_idx == n + 1)
+                // insert at the end
                     rcv_buf.Add(newseg);
+                // insert inbetween
                 else
                     rcv_buf.Insert(insert_idx, newseg);
             }

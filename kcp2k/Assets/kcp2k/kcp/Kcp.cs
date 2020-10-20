@@ -333,7 +333,7 @@ namespace kcp2k
                     seg.acked = true;
                     break;
                 }
-                if (sn < seg.sn)
+                if (Utils.TimeDiff(sn, seg.sn) < 0)
                 {
                     break;
                 }

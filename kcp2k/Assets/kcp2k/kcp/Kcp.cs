@@ -416,9 +416,11 @@ namespace kcp2k
         // goes through receive buffer in reverse order for performance.
         //
         // note: see KcpTests.InsertSegmentInReceiveBuffer test!
+        // note: 'insert or delete' can be done in different ways, but let's
+        //       keep consistency with original C kcp.
         internal void InsertSegmentInReceiveBuffer(Segment newseg)
         {
-            bool repeat = false;
+            bool repeat = false; // 'duplicate'
 
             // original C iterates backwards, so we need to do that as well.
             int i;

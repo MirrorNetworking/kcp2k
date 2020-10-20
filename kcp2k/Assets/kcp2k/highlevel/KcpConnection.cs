@@ -98,9 +98,12 @@ namespace kcp2k
 
         public void RawInput(byte[] buffer, int msgLength)
         {
-            kcp.Input(buffer, msgLength);
-
-            lastReceived = (uint)refTime.ElapsedMilliseconds;
+            int input = kcp.Input(buffer, msgLength);
+            if (input == 0)
+            {
+                lastReceived = (uint)refTime.ElapsedMilliseconds;
+            }
+            else Debug.LogWarning($"Input failed with error={input} for buffer with length={msgLength}");
         }
 
         protected abstract void RawSend(byte[] data, int length);

@@ -442,12 +442,7 @@ namespace kcp2k
             // no duplicate? then insert.
             if (!repeat)
             {
-                // insert at the end? then add
-                if (i == rcv_buf.Count - 1)
-                    rcv_buf.Add(newseg);
-                // insert inbetween? then at i + 1
-                else
-                    rcv_buf.Insert(i + 1, newseg);
+                rcv_buf.Insert(i + 1, newseg);
             }
             // duplicate. just delete it.
             else

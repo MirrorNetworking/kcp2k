@@ -485,6 +485,10 @@ namespace kcp2k
 
                 if (cmd == CMD_ACK)
                 {
+                    if (Utils.TimeDiff(current, ts) >= 0)
+                    {
+                        UpdateAck(Utils.TimeDiff(current, ts));
+                    }
                     ParseAck(sn);
                     ParseFastack(sn, ts);
                     flag |= 1;

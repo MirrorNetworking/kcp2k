@@ -108,6 +108,14 @@ namespace kcp2k
             buffer = new byte[(mtu + OVERHEAD) * 3];
         }
 
+        // ikcp_segment_new
+        // we keep the original function and add our pooling to it.
+        // this way we'll never miss it anywhere.
+        static Segment SegmentNew()
+        {
+            return Segment.Take();
+        }
+
         // ikcp_segment_delete
         // we keep the original function and add our pooling to it.
         // this way we'll never miss it anywhere.
@@ -254,7 +262,7 @@ namespace kcp2k
             for (int i = 0; i < count; i++)
             {
                 int size = len > (int)mss ? (int)mss : len;
-                Segment seg = Segment.Take();
+                Segment seg = SegmentNew();
 
                 if (len > 0)
                 {
@@ -551,7 +559,7 @@ namespace kcp2k
                         AckPush(sn, ts);
                         if (Utils.TimeDiff(sn, rcv_nxt) >= 0)
                         {
-                            Segment seg = Segment.Take();
+                            Segment seg = SegmentNew();
                             seg.conv = conv_;
                             seg.cmd = cmd;
                             seg.frg = frg;
@@ -657,7 +665,9 @@ namespace kcp2k
             // 'ikcp_update' haven't been called.
             if (!updated) return;
 
-            Segment seg = Segment.Take();
+            // kcp creates segment on the stack here. in C# it's a class, so we
+            // still need to call SegmentNew().
+            Segment seg = SegmentNew();
             seg.conv = conv;
             seg.cmd = CMD_ACK;
             seg.wnd = WndUnused();

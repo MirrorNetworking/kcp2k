@@ -55,8 +55,6 @@ namespace kcp2k
             Tick();
         }
 
-        // TODO respect check result.
-        // for now let's call every update.
         public void Tick()
         {
             try
@@ -72,7 +70,13 @@ namespace kcp2k
                 {
                     kcp.Update(time);
 
-                    uint check = kcp.Check();
+                    // check can be used to skip updates IF:
+                    // - time < what check returned
+                    // - AND send / recv haven't been called in that time
+                    // (see Check() comments)
+                    //
+                    // for now, let's just always update and not call check.
+                    //uint check = kcp.Check();
                 }
             }
             catch (SocketException)

@@ -461,8 +461,7 @@ namespace kcp2k
                 if (size - offset < OVERHEAD) break;
 
                 offset += Utils.Decode32U(data, offset, ref conv_);
-
-                if (conv != conv_) return -1;
+                if (conv_ != conv) return -1;
 
                 offset += Utils.Decode8u(data, offset, ref cmd);
                 offset += Utils.Decode8u(data, offset, ref frg);

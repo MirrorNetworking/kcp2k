@@ -563,40 +563,33 @@ namespace kcp2k
             }
 
             // cwnd update when packet arrived
-            UpdateCwnd(prev_una);
-
-            return 0;
-        }
-
-        void UpdateCwnd(uint prev_una)
-        {
-            if (!nocwnd && snd_una > prev_una && cwnd < rmt_wnd)
+            if (Utils.TimeDiff(snd_una, prev_una) > 0)
             {
-                if (cwnd < ssthresh)
+                if (cwnd < rmt_wnd)
                 {
-                    cwnd++;
-                    incr += mss;
-                }
-                else
-                {
-                    incr = Math.Max(incr, mss);
-
-                    incr += mss * mss / incr + mss / 16;
-
-                    if ((cwnd + 1) * mss <= incr)
+                    if (cwnd < ssthresh)
                     {
-                        cwnd = incr + mss - 1;
-
-                        if (mss > 0)
-                            cwnd /= mss;
+                        cwnd++;
+                        incr += mss;
+                    }
+                    else
+                    {
+                        if (incr < mss) incr = mss;
+                        incr += (mss * mss) / incr + (mss / 16);
+                        if ((cwnd + 1) * mss <= incr)
+                        {
+                            cwnd = (incr + mss - 1) / ((mss > 0) ? mss : 1);
+                        }
+                    }
+                    if (cwnd > rmt_wnd)
+                    {
+                        cwnd = rmt_wnd;
+                        incr = rmt_wnd * mss;
                     }
                 }
-                if (cwnd > rmt_wnd)
-                {
-                    cwnd = rmt_wnd;
-                    incr = rmt_wnd * mss;
-                }
             }
+
+            return 0;
         }
 
         // ikcp_wnd_unused

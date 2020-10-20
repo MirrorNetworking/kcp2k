@@ -438,7 +438,7 @@ namespace kcp2k
         /// used when you receive a low level packet (eg. UDP packet)
         public int Input(byte[] data, int index, int size, bool regular)
         {
-            uint s_una = snd_una;
+            uint prev_una = snd_una;
             if (size < OVERHEAD) return -1;
 
             int offset = index;
@@ -550,14 +550,14 @@ namespace kcp2k
             }
 
             // cwnd update when packet arrived
-            UpdateCwnd(s_una);
+            UpdateCwnd(prev_una);
 
             return 0;
         }
 
-        void UpdateCwnd(uint s_una)
+        void UpdateCwnd(uint prev_una)
         {
-            if (!nocwnd && snd_una > s_una && cwnd < rmt_wnd)
+            if (!nocwnd && snd_una > prev_una && cwnd < rmt_wnd)
             {
                 if (cwnd < ssthresh)
                 {

@@ -411,8 +411,9 @@ namespace kcp2k
             MoveReceiveBufferDataToReceiveQueue();
         }
 
-        // inserts the segment at the right position in the receive buffer,
-        // going through receive buffer in reverse order from last to first.
+        // inserts the segment into rcv_buf, ordered by seg.sn.
+        // drops the segment if one with the same seg.sn already exists.
+        // goes through receive buffer in reverse order for performance.
         internal void InsertSegmentInReceiveBuffer(Segment newseg)
         {
             bool repeat = false;

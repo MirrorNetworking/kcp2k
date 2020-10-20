@@ -398,7 +398,6 @@ namespace kcp2k
 
         void InsertSegmentInReceiveBuffer(Segment newseg)
         {
-            uint sn = newseg.sn;
             bool repeat = false;
 
             // original C iterates backwards, so we need to do that as well.
@@ -407,12 +406,12 @@ namespace kcp2k
             for (int i = n; i >= 0; i--)
             {
                 Segment seg = rcv_buf[i];
-                if (seg.sn == sn)
+                if (seg.sn == newseg.sn)
                 {
                     repeat = true;
                     break;
                 }
-                if (Utils.TimeDiff(sn, seg.sn) > 0)
+                if (Utils.TimeDiff(newseg.sn, seg.sn) > 0)
                 {
                     insert_idx = i + 1; // TODO this is not in original C. and why +1?
                     break;

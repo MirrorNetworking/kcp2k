@@ -471,6 +471,8 @@ namespace kcp2k
                 offset += Utils.Decode32U(data, offset, ref una);
                 offset += Utils.Decode32U(data, offset, ref len);
 
+                // TODO size -= OVERHEAD?
+
                 if (size - offset < len)
                     return -2;
 

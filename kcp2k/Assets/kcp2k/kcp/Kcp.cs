@@ -439,6 +439,7 @@ namespace kcp2k
         public int Input(byte[] data, int size)
         {
             uint prev_una = snd_una;
+            uint maxack = 0;
             uint latest_ts = 0;
             int flag = 0;
 
@@ -490,9 +491,29 @@ namespace kcp2k
                         UpdateAck(Utils.TimeDiff(current, ts));
                     }
                     ParseAck(sn);
-                    ParseFastack(sn, ts);
-                    flag |= 1;
-                    latest_ts = ts;
+                    ShrinkBuf();
+                    if (flag == 0)
+                    {
+                        flag = 1;
+                        maxack = sn;
+                        latest_ts = ts;
+                    }
+                    else
+                    {
+                        if (Utils.TimeDiff(sn, maxack) > 0)
+                        {
+#if !FASTACK_CONSERVE
+                            maxack = sn;
+                            latest_ts = ts;
+#else
+                            if (Utils.TimeDiff(ts, latest_ts) > 0)
+                            {
+                                maxack = sn;
+                                latest_ts = ts;
+                            }
+#endif
+                        }
+                    }
                 }
                 else if (cmd == CMD_PUSH)
                 {

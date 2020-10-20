@@ -526,6 +526,7 @@ namespace kcp2k
                 }
 
                 offset += (int)len;
+                // TODO size -= len?
             }
 
             // update rtt with the latest ts

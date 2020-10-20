@@ -457,6 +457,7 @@ namespace kcp2k
                 byte cmd = 0;
                 byte frg = 0;
 
+                // TODO if (size < OVERHEAD) break?
                 if (size - (offset - index) < OVERHEAD) break;
 
                 offset += Utils.Decode32U(data, offset, ref conv_);

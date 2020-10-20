@@ -113,7 +113,15 @@ namespace kcp2k
         // note: pass negative length to peek.
         public int Receive(byte[] buffer, int len)
         {
-            bool ispeek = len < 0;
+            // kcp's ispeek feature is not supported.
+            // this makes 'merge fragment' code significantly easier because
+            // we can iterate while queue.Count > 0 and dequeue each time.
+            // if we had to consider ispeek then count would always be > 0 and
+            // we would have to remove only after the loop.
+            //
+            //bool ispeek = len < 0;
+            if (len < 0)
+                throw new NotSupportedException("Receive ispeek for negative len is not supported!");
 
             if (rcv_queue.Count == 0)
                 return -1;
@@ -142,13 +150,12 @@ namespace kcp2k
                 len += seg.data.Position;
                 uint fragment = seg.frg;
 
-                if (!ispeek)
-                {
-                    // can't remove while iterating. remember how many to remove
-                    // and do it after the loop.
-                    ++removed;
-                    Segment.Return(seg);
-                }
+                // note: ispeek is not supported in order to simplify this loop
+
+                // can't remove while iterating. remember how many to remove
+                // and do it after the loop.
+                ++removed;
+                Segment.Return(seg);
 
                 if (fragment == 0)
                     break;

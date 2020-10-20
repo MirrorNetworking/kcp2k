@@ -396,6 +396,8 @@ namespace kcp2k
             MoveReceiveBufferDataToReceiveQueue();
         }
 
+        // inserts the segment at the right position in the receive buffer,
+        // going through receive buffer in reverse order from last to first.
         void InsertSegmentInReceiveBuffer(Segment newseg)
         {
             bool repeat = false;

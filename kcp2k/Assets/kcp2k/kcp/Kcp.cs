@@ -421,9 +421,8 @@ namespace kcp2k
             bool repeat = false;
 
             // original C iterates backwards, so we need to do that as well.
-            int n = rcv_buf.Count - 1;
             int insert_idx = 0;
-            for (int i = n; i >= 0; i--)
+            for (int i = rcv_buf.Count - 1; i >= 0; i--)
             {
                 Segment seg = rcv_buf[i];
                 if (seg.sn == newseg.sn)
@@ -442,8 +441,8 @@ namespace kcp2k
             // no duplicate? then insert.
             if (!repeat)
             {
-                if (insert_idx == n + 1)
                 // insert at the end
+                if (insert_idx == rcv_buf.Count)
                     rcv_buf.Add(newseg);
                 // insert inbetween
                 else

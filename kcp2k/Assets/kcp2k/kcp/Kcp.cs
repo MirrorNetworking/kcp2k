@@ -108,6 +108,14 @@ namespace kcp2k
             buffer = new byte[(mtu + OVERHEAD) * 3];
         }
 
+        // ikcp_segment_delete
+        // we keep the original function and add our pooling to it.
+        // this way we'll never miss it anywhere.
+        static void SegmentDelete(Segment seg)
+        {
+            Segment.Return(seg);
+        }
+
         // ikcp_recv
         // receive data from kcp state machine
         //   returns number of bytes read.
@@ -163,8 +171,8 @@ namespace kcp2k
 
                 // unlike original kcp, we don't need to remove seg from queue
                 // because we already dequeued it.
-                // simply return it to pool now.
-                Segment.Return(seg);
+                // simply delete it
+                SegmentDelete(seg);
 
                 if (fragment == 0)
                     break;
@@ -313,6 +321,7 @@ namespace kcp2k
                     // and wait until `una` to delete this, then we don't
                     // have to shift the segments behind forward,
                     // which is an expensive operation for large window
+                    // SegmentDelete(seg);
                     seg.acked = true;
                     break;
                 }
@@ -336,9 +345,9 @@ namespace kcp2k
                 Segment seg = snd_buf.Peek();
                 if (Utils.TimeDiff(una, seg.sn) > 0)
                 {
-                    // now remove it and return to pool
+                    // now remove it
                     snd_buf.Dequeue();
-                    Segment.Return(seg);
+                    SegmentDelete(seg);
                 }
                 else
                 {
@@ -386,7 +395,8 @@ namespace kcp2k
             if (Utils.TimeDiff(sn, rcv_nxt + rcv_wnd) >= 0 ||
                 Utils.TimeDiff(sn, rcv_nxt) < 0)
             {
-                // TODO native C deletes the segment. should we Return it to pool?
+                // TODO native C deletes the segment. should we do that?
+                // SegmentDelete(seg);
                 return;
             }
 
@@ -427,7 +437,8 @@ namespace kcp2k
             }
             else
             {
-                // TODO original C deletes the segment. should we Return it to pool?
+                // TODO original C deletes the segment. should we do that?
+                // SegmentDelete(seg);
             }
         }
 

@@ -442,7 +442,7 @@ namespace kcp2k
             uint latest_ts = 0;
             int flag = 0;
 
-            if (size < OVERHEAD) return -1;
+            if (data == null || size < OVERHEAD) return -1;
 
             int offset = index;
 

@@ -831,6 +831,11 @@ namespace kcp2k
                 }
             }
 
+            // kcp stackallocs 'seg'. our C# segment is a class though, so we
+            // need to properly delete and return it to the pool now that we are
+            // done with it.
+            SegmentDelete(seg);
+
             // flash remain segments
             FlushBuffer();
 

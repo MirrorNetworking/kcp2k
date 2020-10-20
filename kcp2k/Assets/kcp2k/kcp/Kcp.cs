@@ -913,9 +913,6 @@ namespace kcp2k
         // Important to reduce unnecessary update invoking. use it to schedule
         // update (eg. implementing an epoll-like mechanism, or optimize update
         // when handling massive kcp connections).
-        //
-        // NOTE: Standard KCP returns time as current + delta. This version
-        //       returns delta
         public uint Check()
         {
             uint ts_flush_ = ts_flush;
@@ -924,8 +921,7 @@ namespace kcp2k
 
             if (!updated)
             {
-                // original C returns current. we return delta = 0.
-                return 0;
+                return current;
             }
 
             if (Utils.TimeDiff(current, ts_flush_) >= 10000 ||
@@ -936,8 +932,7 @@ namespace kcp2k
 
             if (Utils.TimeDiff(current, ts_flush_) >= 0)
             {
-                // original C returns current. we return delta = 0.
-                return 0;
+                return current;
             }
 
             tm_flush = Utils.TimeDiff(ts_flush_, current);
@@ -947,8 +942,7 @@ namespace kcp2k
                 int diff = Utils.TimeDiff(seg.resendts, current);
                 if (diff <= 0)
                 {
-                    // original C returns current. we return delta = 0.
-                    return 0;
+                    return current;
                 }
                 if (diff < tm_packet) tm_packet = diff;
             }
@@ -956,8 +950,7 @@ namespace kcp2k
             uint minimal = (uint)(tm_packet < tm_flush ? tm_packet : tm_flush);
             if (minimal >= interval) minimal = interval;
 
-            // original C returns current + minimal. we return delta = minimal.
-            return minimal;
+            return current + minimal;
         }
 
         // ikcp_setmtu

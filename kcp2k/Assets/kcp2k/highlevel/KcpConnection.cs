@@ -72,11 +72,7 @@ namespace kcp2k
                 {
                     kcp.Update(time);
 
-                    int check = kcp.Check();
-
-                    // call every 10 ms unless check says we can wait longer
-                    if (check < 10)
-                        check = 10;
+                    uint check = kcp.Check();
                 }
             }
             catch (SocketException)

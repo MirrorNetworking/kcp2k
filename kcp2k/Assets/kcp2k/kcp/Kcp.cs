@@ -916,7 +916,7 @@ namespace kcp2k
         //
         // NOTE: Standard KCP returns time as current + delta. This version
         //       returns delta
-        public int Check()
+        public uint Check()
         {
             uint ts_flush_ = ts_flush;
             int tm_flush = 0x7fffffff;
@@ -953,8 +953,8 @@ namespace kcp2k
                 if (diff < tm_packet) tm_packet = diff;
             }
 
-            int minimal = tm_packet < tm_flush ? tm_packet : tm_flush;
-            if (minimal >= interval) minimal = (int)interval;
+            uint minimal = (uint)(tm_packet < tm_flush ? tm_packet : tm_flush);
+            if (minimal >= interval) minimal = interval;
 
             // original C returns current + minimal. we return delta = minimal.
             return minimal;

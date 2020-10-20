@@ -475,16 +475,9 @@ namespace kcp2k
 
                 if (size - offset < len || len < 0) return -2;
 
-                switch (cmd)
-                {
-                    case CMD_PUSH:
-                    case CMD_ACK:
-                    case CMD_WASK:
-                    case CMD_WINS:
-                        break;
-                    default:
-                        return -3;
-                }
+                if (cmd != CMD_PUSH && cmd != CMD_ACK &&
+                    cmd != CMD_WASK && cmd != CMD_WINS)
+                    return -3;
 
                 // only trust window updates from regular packets. i.e: latest update
                 if (regular)

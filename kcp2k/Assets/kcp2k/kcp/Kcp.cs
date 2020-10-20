@@ -77,7 +77,7 @@ namespace kcp2k
         internal readonly Queue<Segment> snd_buf = new Queue<Segment>(16);   // send buffer
         // rcv_buffer needs index insertions and backwards iteration.
         // C# LinkedList allocates for each entry, so let's keep List for now.
-        internal readonly List<Segment> rcv_buf = new List<Segment>(16);   // receive buffer
+        internal readonly List<Segment> rcv_buf = new List<Segment>(16);   // receive buffer, sorted by serial number (sn)
         internal readonly List<AckItem> acklist = new List<AckItem>(16);
 
         byte[] buffer;

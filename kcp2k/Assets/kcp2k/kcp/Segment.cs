@@ -38,7 +38,7 @@ namespace kcp2k
             Pool.Push(seg);
         }
         ////////////////////////////////////////////////////////////////////////
-
+        // private constructor to force usage of Take()
         Segment()
         {
             // allocate the ByteBuffer once.

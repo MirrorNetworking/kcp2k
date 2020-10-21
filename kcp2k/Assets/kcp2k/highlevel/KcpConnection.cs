@@ -48,7 +48,7 @@ namespace kcp2k
         protected void SetupKcp(bool noDelay, uint interval = Kcp.INTERVAL)
         {
             kcp = new Kcp(0, RawSend);
-            kcp.SetNoDelay(noDelay, interval);
+            kcp.SetNoDelay(noDelay ? 1u : 0u, interval);
             refTime.Start();
             open = true;
 

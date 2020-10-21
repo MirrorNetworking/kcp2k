@@ -61,7 +61,7 @@ namespace kcp2k
         internal uint interval;
         internal uint ts_flush;
         internal uint xmit;
-        internal bool nodelay;
+        internal uint nodelay;       // not a bool. original Kcp has '<2 else' check.
         internal bool updated;
         internal uint ts_probe;      // timestamp probe
         internal uint probe_wait;
@@ -759,7 +759,7 @@ namespace kcp2k
 
             // calculate resent
             uint resent = fastresend > 0 ? (uint)fastresend : 0xffffffff;
-            uint rtomin = nodelay == false ? (uint)rx_rto >> 3 : 0;
+            uint rtomin = nodelay == 0 ? (uint)rx_rto >> 3 : 0;
 
             // flush data segments
             int change = 0;
@@ -780,16 +780,14 @@ namespace kcp2k
                     needsend = true;
                     segment.xmit++;
                     xmit++;
-                    if (!nodelay)
+                    if (nodelay == 0)
                     {
                         segment.rto += Math.Max(segment.rto, rx_rto);
                     }
                     else
                     {
-                        // original C has:
-                        // int step = (nodelay < 2) ? ((int)(segment.rto)) : rx_rto;
-                        // but nodelay is a bool and only ever 0 or 1, so use segment.rto
-                        segment.rto += segment.rto / 2;
+                        int step = (nodelay < 2) ? segment.rto : rx_rto;
+                        segment.rto += step / 2;
                     }
                     segment.resendts = current + (uint)segment.rto;
                     lost = true;
@@ -978,10 +976,10 @@ namespace kcp2k
         //   Fast:   false, 30, 2, 1
         //   Fast2:   true, 20, 2, 1
         //   Fast3:   true, 10, 2, 1
-        public void SetNoDelay(bool nodelay, uint interval = INTERVAL, int resend = 0, bool nocwnd = false)
+        public void SetNoDelay(uint nodelay, uint interval = INTERVAL, int resend = 0, bool nocwnd = false)
         {
             this.nodelay = nodelay;
-            if (nodelay)
+            if (nodelay != 0)
             {
                 rx_minrto = RTO_NDL;
             }

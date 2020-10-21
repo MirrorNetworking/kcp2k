@@ -252,5 +252,33 @@ namespace kcp2k.Tests
             kcp.SetInterval(9999);
             Assert.That(kcp.interval, Is.EqualTo(5000));
         }
+
+        [Test]
+        public void SetWindowSize()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // set an allowed window size
+            kcp.SetWindowSize(42, 512);
+            Assert.That(kcp.snd_wnd, Is.EqualTo(42));
+            Assert.That(kcp.rcv_wnd, Is.EqualTo(512));
+        }
+
+        [Test]
+        public void SetWindowSizeWithTooSmallReceiveWindow()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // set window size with receive window < max fragment size (WND_RCV)
+            kcp.SetWindowSize(42, Kcp.WND_RCV - 1);
+            Assert.That(kcp.snd_wnd, Is.EqualTo(42));
+            Assert.That(kcp.rcv_wnd, Is.EqualTo(Kcp.WND_RCV));
+        }
     }
 }

@@ -911,7 +911,7 @@ namespace kcp2k
         // Important to reduce unnecessary update invoking. use it to schedule
         // update (eg. implementing an epoll-like mechanism, or optimize update
         // when handling massive kcp connections).
-        public uint Check()
+        public uint Check(uint current_)
         {
             uint ts_flush_ = ts_flush;
             int tm_flush = 0x7fffffff;
@@ -919,28 +919,28 @@ namespace kcp2k
 
             if (!updated)
             {
-                return current;
+                return current_;
             }
 
-            if (Utils.TimeDiff(current, ts_flush_) >= 10000 ||
-                Utils.TimeDiff(current, ts_flush_) < -10000)
+            if (Utils.TimeDiff(current_, ts_flush_) >= 10000 ||
+                Utils.TimeDiff(current_, ts_flush_) < -10000)
             {
-                ts_flush_ = current;
+                ts_flush_ = current_;
             }
 
-            if (Utils.TimeDiff(current, ts_flush_) >= 0)
+            if (Utils.TimeDiff(current_, ts_flush_) >= 0)
             {
-                return current;
+                return current_;
             }
 
-            tm_flush = Utils.TimeDiff(ts_flush_, current);
+            tm_flush = Utils.TimeDiff(ts_flush_, current_);
 
             foreach (Segment seg in snd_buf)
             {
-                int diff = Utils.TimeDiff(seg.resendts, current);
+                int diff = Utils.TimeDiff(seg.resendts, current_);
                 if (diff <= 0)
                 {
-                    return current;
+                    return current_;
                 }
                 if (diff < tm_packet) tm_packet = diff;
             }
@@ -948,7 +948,7 @@ namespace kcp2k
             uint minimal = (uint)(tm_packet < tm_flush ? tm_packet : tm_flush);
             if (minimal >= interval) minimal = interval;
 
-            return current + minimal;
+            return current_ + minimal;
         }
 
         // ikcp_setmtu

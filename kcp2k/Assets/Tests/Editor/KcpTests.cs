@@ -304,13 +304,15 @@ namespace kcp2k.Tests
             // setup KCP
             Kcp kcp = new Kcp(0, Output);
 
-            // update once
-            uint time = 42;
-            kcp.Update(time);
+            // update at time = 1
+            kcp.Update(1);
 
-            // there is nothing to do, so check should return time + interval
-            uint next = kcp.Check();
-            Assert.That(next, Is.EqualTo(time + kcp.interval));
+            // check at time = 2
+            uint next = kcp.Check(2);
+
+            // check returns 'ts_flush + interval', or in other words,
+            // 'interval' seconds after UPDATE was called. so 1+100 = 101.
+            Assert.That(next, Is.EqualTo(1 + kcp.interval));
         }
     }
 }

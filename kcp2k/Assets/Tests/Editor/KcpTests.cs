@@ -280,5 +280,20 @@ namespace kcp2k.Tests
             Assert.That(kcp.snd_wnd, Is.EqualTo(42));
             Assert.That(kcp.rcv_wnd, Is.EqualTo(Kcp.WND_RCV));
         }
+
+        [Test]
+        public void SetMtu()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // double MTU
+            uint mtu = kcp.mtu * 2;
+            kcp.SetMtu(mtu);
+            Assert.That(kcp.mtu, Is.EqualTo(mtu));
+            Assert.That(kcp.buffer.Length, Is.GreaterThanOrEqualTo(mtu));
+        }
     }
 }

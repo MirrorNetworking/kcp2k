@@ -82,7 +82,7 @@ namespace kcp2k
         internal readonly List<Segment> rcv_buf = new List<Segment>(16);   // receive buffer
         internal readonly List<AckItem> acklist = new List<AckItem>(16);
 
-        byte[] buffer;
+        internal byte[] buffer;
         readonly Action<byte[], int> output; // buffer, size
 
         // get how many packet is waiting to be sent

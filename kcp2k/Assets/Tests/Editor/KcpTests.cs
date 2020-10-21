@@ -182,5 +182,36 @@ namespace kcp2k.Tests
             // WaitSnd should be send buffer + queue
             Assert.That(kcp.WaitSnd, Is.EqualTo(3));
         }
+
+        [Test]
+        public void ShrinkBufFilledSendBuffer()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // add some to send buffer and send queue
+            kcp.snd_buf.Add(new Segment{sn=2});
+            kcp.snd_buf.Add(new Segment{sn=3});
+
+            // ShrinkBuf should set snd_una to first send buffer element's 'sn'
+            kcp.ShrinkBuf();
+            Assert.That(kcp.snd_una, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void ShrinkBufEmptySendBuffer()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // ShrinkBuf with empty send buffer should set snd_una to snd_nxt
+            kcp.snd_nxt = 42;
+            kcp.ShrinkBuf();
+            Assert.That(kcp.snd_una, Is.EqualTo(42));
+        }
     }
 }

@@ -302,7 +302,7 @@ namespace kcp2k
         }
 
         // ikcp_shrink_buf
-        void ShrinkBuf()
+        internal void ShrinkBuf()
         {
             if (snd_buf.Count > 0)
             {

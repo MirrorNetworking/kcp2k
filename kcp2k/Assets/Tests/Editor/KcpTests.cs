@@ -59,5 +59,111 @@ namespace kcp2k.Tests
             Assert.That(kcp.rcv_buf[2], Is.EqualTo(two));
             Assert.That(kcp.rcv_buf[3], Is.EqualTo(three));
         }
+
+        [Test]
+        public void ParseAckFirst()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // insert three segments into send buffer
+            Segment one = new Segment{sn=1};
+            kcp.snd_buf.Add(one);
+            Segment two = new Segment{sn=2};
+            kcp.snd_buf.Add(two);
+            Segment three = new Segment{sn=3};
+            kcp.snd_buf.Add(three);
+
+            // parse ack only removes if sn < snd_nxt
+            kcp.snd_nxt = 999;
+
+            // parse ack with sn == 3, should remove the last segment
+            kcp.ParseAck(1);
+            Assert.That(kcp.snd_buf.Count, Is.EqualTo(2));
+            Assert.That(kcp.snd_buf[0], Is.EqualTo(two));
+            Assert.That(kcp.snd_buf[1], Is.EqualTo(three));
+        }
+
+        [Test]
+        public void ParseAckMiddle()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // insert three segments into send buffer
+            Segment one = new Segment{sn=1};
+            kcp.snd_buf.Add(one);
+            Segment two = new Segment{sn=2};
+            kcp.snd_buf.Add(two);
+            Segment three = new Segment{sn=3};
+            kcp.snd_buf.Add(three);
+
+            // parse ack only removes if sn < snd_nxt
+            kcp.snd_nxt = 999;
+
+            // parse ack with sn == 2, should remove the middle segment
+            kcp.ParseAck(2);
+            Assert.That(kcp.snd_buf.Count, Is.EqualTo(2));
+            Assert.That(kcp.snd_buf[0], Is.EqualTo(one));
+            Assert.That(kcp.snd_buf[1], Is.EqualTo(three));
+        }
+
+        [Test]
+        public void ParseAckLast()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // insert three segments into send buffer
+            Segment one = new Segment{sn=1};
+            kcp.snd_buf.Add(one);
+            Segment two = new Segment{sn=2};
+            kcp.snd_buf.Add(two);
+            Segment three = new Segment{sn=3};
+            kcp.snd_buf.Add(three);
+
+            // parse ack only removes if sn < snd_nxt
+            kcp.snd_nxt = 999;
+
+            // parse ack with sn == 3, should remove the last segment
+            kcp.ParseAck(3);
+            Assert.That(kcp.snd_buf.Count, Is.EqualTo(2));
+            Assert.That(kcp.snd_buf[0], Is.EqualTo(one));
+            Assert.That(kcp.snd_buf[1], Is.EqualTo(two));
+        }
+
+        [Test]
+        public void ParseAckSndNxtSmaller()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // insert three segments into send buffer
+            Segment one = new Segment{sn=1};
+            kcp.snd_buf.Add(one);
+            Segment two = new Segment{sn=2};
+            kcp.snd_buf.Add(two);
+            Segment three = new Segment{sn=3};
+            kcp.snd_buf.Add(three);
+
+            // parse ack only removes if sn < snd_nxt.
+            // it should do nothing if snd_nxt is <= sn
+            kcp.snd_nxt = 1;
+
+            // parse ack with sn == 3, should remove the last segment
+            kcp.ParseAck(1);
+            Assert.That(kcp.snd_buf.Count, Is.EqualTo(3));
+            Assert.That(kcp.snd_buf[0], Is.EqualTo(one));
+            Assert.That(kcp.snd_buf[1], Is.EqualTo(two));
+            Assert.That(kcp.snd_buf[2], Is.EqualTo(three));
+        }
     }
 }

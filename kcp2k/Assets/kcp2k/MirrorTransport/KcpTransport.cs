@@ -105,8 +105,14 @@ namespace Mirror.KCP
 
         public override void ClientDisconnect()
         {
-            clientConnection?.Disconnect();
-            clientConnection = null;
+            // only if connected
+            // otherwise we end up in a deadlock because of an open Mirror bug:
+            // https://github.com/vis2k/Mirror/issues/2353
+            if (clientConnected)
+            {
+                clientConnection?.Disconnect();
+                clientConnection = null;
+            }
         }
 
         HashSet<int> connectionsToRemove = new HashSet<int>();

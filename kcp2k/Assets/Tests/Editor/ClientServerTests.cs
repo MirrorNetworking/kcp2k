@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -203,6 +204,36 @@ namespace kcp2k.Tests
             byte[] message2 = {0x03, 0x04};
             LogAssert.Expect(LogType.Log, new Regex($"KCP: OnServerDataReceived(.*, {BitConverter.ToString(message2)})"));
             SendClientToServerBlocking(new ArraySegment<byte>(message2));
+        }
+
+        // send multiple large messages before calling update.
+        // this way kcp is forced to buffer / queue them.
+        [Test]
+        public void ClientToServerMultipleMaxSizedMessagesAtOnce()
+        {
+            server.StartServer();
+            ConnectClientBlocking();
+
+            // prepare 10 different MTU sized messages.
+            // each of them with unique content so we can guarantee arrival.
+            List<byte[]> messages = new List<byte[]>();
+            for (int i = 0; i < 10; ++i)
+            {
+                // create message, fill with unique data (j+i & 0xff)
+                byte[] message = new byte[Kcp.MTU_DEF];
+                for (int j = 0; j < Kcp.MTU_DEF; ++j)
+                    message[j] = (byte)((j + i) & 0xFF);
+                messages.Add(message);
+            }
+
+            // send each one without updating server or client yet
+            foreach (byte[] message in messages)
+                client.Send(new ArraySegment<byte>(message));
+
+            // now update everyone and expect a log for each one
+            foreach (byte[] message in messages)
+                LogAssert.Expect(LogType.Log, new Regex($"KCP: OnServerDataReceived(.*, {BitConverter.ToString(message)})"));
+            UpdateSeveralTimes();
         }
 
         [Test]

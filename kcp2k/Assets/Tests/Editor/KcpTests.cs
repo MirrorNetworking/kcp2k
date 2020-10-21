@@ -213,5 +213,44 @@ namespace kcp2k.Tests
             kcp.ShrinkBuf();
             Assert.That(kcp.snd_una, Is.EqualTo(42));
         }
+
+        [Test]
+        public void SetIntervalTooSmall()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // setting a too small interval should limit it to 10
+            kcp.SetInterval(0);
+            Assert.That(kcp.interval, Is.EqualTo(10));
+        }
+
+        [Test]
+        public void SetInterval()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // set interval
+            kcp.SetInterval(2500);
+            Assert.That(kcp.interval, Is.EqualTo(2500));
+        }
+
+        [Test]
+        public void SetIntervalTooBig()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // setting a too big interval should limit it to 5000
+            kcp.SetInterval(9999);
+            Assert.That(kcp.interval, Is.EqualTo(5000));
+        }
     }
 }

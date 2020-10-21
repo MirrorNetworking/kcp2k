@@ -115,7 +115,6 @@ namespace kcp2k.Tests
             Assert.That(seg.xmit, Is.EqualTo(0));
             Assert.That(seg.resendts, Is.EqualTo(0));
             Assert.That(seg.fastack, Is.EqualTo(0));
-            Assert.That(seg.acked, Is.EqualTo(false));
             Assert.That(seg.data.Position, Is.EqualTo(0));
         }
     }

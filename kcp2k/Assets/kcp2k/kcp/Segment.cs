@@ -16,7 +16,6 @@ namespace kcp2k
         internal int rto;
         internal uint fastack;
         internal uint xmit;
-        internal bool acked;    // acknowledged
         internal ByteBuffer data;
 
         // pool ////////////////////////////////////////////////////////////////
@@ -77,7 +76,6 @@ namespace kcp2k
             xmit = 0;
             resendts = 0;
             fastack = 0;
-            acked = false;
 
             // keep buffer for next pool usage, but reset position
             data.Position = 0;

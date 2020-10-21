@@ -321,17 +321,14 @@ namespace kcp2k
             if (Utils.TimeDiff(sn, snd_una) < 0 || Utils.TimeDiff(sn, snd_nxt) >= 0)
                 return;
 
-            foreach (Segment seg in snd_buf)
+            // for-int so we can erase while iterating
+            for (int i = 0; i < snd_buf.Count; ++i)
             {
+                Segment seg = snd_buf[i];
                 if (sn == seg.sn)
                 {
-                    // TODO this is different from native C
-                    // mark and free space, but leave the segment here,
-                    // and wait until `una` to delete this, then we don't
-                    // have to shift the segments behind forward,
-                    // which is an expensive operation for large window
-                    // SegmentDelete(seg);
-                    seg.acked = true;
+                    snd_buf.RemoveAt(i);
+                    SegmentDelete(seg);
                     break;
                 }
                 if (Utils.TimeDiff(sn, seg.sn) < 0)

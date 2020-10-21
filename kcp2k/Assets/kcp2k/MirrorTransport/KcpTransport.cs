@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using UnityEngine;
+using kcp2k;
 
 namespace Mirror.KCP
 {
@@ -41,10 +42,11 @@ namespace Mirror.KCP
         // use same Kcp configuration on server and client
         void ConfigureKcpConnection(KcpConnection connection)
         {
-            // NoDelay=false doesn't scale past ~1000 monsters. let's force enable it.
             // TODO consider lower interval IF interval matters in nodelay mode
-            //connection.kcp.SetNoDelay(true);
-            // PUMP those numbers up.
+
+            // we did this in previous test
+            //connection.kcp.SetNoDelay(true, 10, 2, true);
+
             // this works for 4k:
             //connection.kcp.SetWindowSize(128, 128);
             // this works for 10k:
@@ -88,7 +90,7 @@ namespace Mirror.KCP
             clientConnection.Connect(address, Port, NoDelay, Interval);
 
             // configure connection for max scale
-            //ConfigureKcpConnection(clientConnection);
+            ConfigureKcpConnection(clientConnection);
         }
         public override bool ClientSend(int channelId, ArraySegment<byte> segment)
         {
@@ -125,7 +127,7 @@ namespace Mirror.KCP
                     connection = new KcpServerConnection(serverSocket, serverNewClientEP, NoDelay, Interval);
 
                     // configure connection for max scale
-                    //ConfigureKcpConnection(connection);
+                    ConfigureKcpConnection(connection);
 
                     //acceptedConnections.Writer.TryWrite(connection);
                     connections.Add(connectionId, connection);
@@ -276,13 +278,13 @@ namespace Mirror.KCP
         }
 
         int GetTotalSendQueue() =>
-            connections.Values.Sum(conn => conn.kcp.sendQueue.Count);
+            connections.Values.Sum(conn => conn.kcp.snd_queue.Count);
         int GetTotalReceiveQueue() =>
-            connections.Values.Sum(conn => conn.kcp.receiveQueue.Count);
+            connections.Values.Sum(conn => conn.kcp.rcv_queue.Count);
         int GetTotalSendBuffer() =>
-            connections.Values.Sum(conn => conn.kcp.sendBuffer.Count);
+            connections.Values.Sum(conn => conn.kcp.snd_buf.Count);
         int GetTotalReceiveBuffer() =>
-            connections.Values.Sum(conn => conn.kcp.sendBuffer.Count);
+            connections.Values.Sum(conn => conn.kcp.rcv_buf.Count);
 
         void OnGUI()
         {
@@ -303,10 +305,10 @@ namespace Mirror.KCP
             {
                 GUILayout.BeginVertical("Box");
                 GUILayout.Label("CLIENT");
-                GUILayout.Label("  SendQueue: " + clientConnection.kcp.sendQueue.Count);
-                GUILayout.Label("  ReceiveQueue: " + clientConnection.kcp.receiveQueue.Count);
-                GUILayout.Label("  SendQBuffer: " + clientConnection.kcp.sendBuffer.Count);
-                GUILayout.Label("  ReceiveQBuffer: " + clientConnection.kcp.receiveBuffer.Count);
+                GUILayout.Label("  SendQueue: " + clientConnection.kcp.snd_queue.Count);
+                GUILayout.Label("  ReceiveQueue: " + clientConnection.kcp.rcv_queue.Count);
+                GUILayout.Label("  SendQBuffer: " + clientConnection.kcp.snd_buf.Count);
+                GUILayout.Label("  ReceiveQBuffer: " + clientConnection.kcp.rcv_buf.Count);
                 GUILayout.EndVertical();
             }
 

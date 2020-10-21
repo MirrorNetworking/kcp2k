@@ -316,6 +316,7 @@ namespace kcp2k
         }
 
         // ikcp_parse_ack
+        // removes the segment with 'sn' from send buffer
         void ParseAck(uint sn)
         {
             if (Utils.TimeDiff(sn, snd_una) < 0 || Utils.TimeDiff(sn, snd_nxt) >= 0)

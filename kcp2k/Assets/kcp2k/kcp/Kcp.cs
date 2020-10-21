@@ -43,35 +43,35 @@ namespace kcp2k
         // kcp members.
         int state;
         readonly uint conv; // conversation
-        uint mtu;
-        uint mss;           // maximum segment size
-        uint snd_una;       // unacknowledged
-        uint snd_nxt;
-        uint rcv_nxt;
-        uint ssthresh;      // slow start threshold
-        int rx_rttval;
-        int rx_srtt;        // smoothed round trip time
-        int rx_rto;
-        int rx_minrto;
-        uint snd_wnd;       // send window
-        uint rcv_wnd;       // receive window
-        uint rmt_wnd;       // remote window
-        uint cwnd;          // congestion window
-        uint probe;
-        uint interval;
-        uint ts_flush;
-        uint xmit;
-        bool nodelay;
-        bool updated;
-        uint ts_probe;      // timestamp probe
-        uint probe_wait;
-        uint dead_link;
-        uint incr;
-        uint current;       // current time (milliseconds). set by Update.
+        internal uint mtu;
+        internal uint mss;           // maximum segment size
+        internal uint snd_una;       // unacknowledged
+        internal uint snd_nxt;
+        internal uint rcv_nxt;
+        internal uint ssthresh;      // slow start threshold
+        internal int rx_rttval;
+        internal int rx_srtt;        // smoothed round trip time
+        internal int rx_rto;
+        internal int rx_minrto;
+        internal uint snd_wnd;       // send window
+        internal uint rcv_wnd;       // receive window
+        internal uint rmt_wnd;       // remote window
+        internal uint cwnd;          // congestion window
+        internal uint probe;
+        internal uint interval;
+        internal uint ts_flush;
+        internal uint xmit;
+        internal bool nodelay;
+        internal bool updated;
+        internal uint ts_probe;      // timestamp probe
+        internal uint probe_wait;
+        internal uint dead_link;
+        internal uint incr;
+        internal uint current;       // current time (milliseconds). set by Update.
 
-        int fastresend;
-        int fastlimit;
-        bool nocwnd;
+        internal int fastresend;
+        internal int fastlimit;
+        internal bool nocwnd;
         internal readonly Queue<Segment> snd_queue = new Queue<Segment>(16); // send queue
         internal readonly Queue<Segment> rcv_queue = new Queue<Segment>(16); // receive queue
         // snd_buffer needs index removals.
@@ -317,7 +317,7 @@ namespace kcp2k
 
         // ikcp_parse_ack
         // removes the segment with 'sn' from send buffer
-        void ParseAck(uint sn)
+        internal void ParseAck(uint sn)
         {
             if (Utils.TimeDiff(sn, snd_una) < 0 || Utils.TimeDiff(sn, snd_nxt) >= 0)
                 return;

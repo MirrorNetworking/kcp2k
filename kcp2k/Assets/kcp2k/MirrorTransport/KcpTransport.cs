@@ -270,10 +270,7 @@ namespace Mirror.KCP
         }
 
         // common
-        public override void Shutdown()
-        {
-            throw new NotImplementedException();
-        }
+        public override void Shutdown() {}
 
         // MTU
         public override ushort GetMaxPacketSize() => Kcp.MTU_DEF;

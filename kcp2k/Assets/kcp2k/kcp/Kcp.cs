@@ -21,7 +21,7 @@ namespace kcp2k
         public const int CMD_WINS = 84;          // cmd: window size (tell)
         public const int ASK_SEND = 1;           // need to send CMD_WASK
         public const int ASK_TELL = 2;           // need to send CMD_WINS
-        public const int WND_SND = 32;           // defualt send window
+        public const int WND_SND = 32;           // default send window
         public const int WND_RCV = 128;          // default receive window. must be >= max fragment size
         public const int MTU_DEF = 1200;         // default MTU (reduced to 1200 to fit all cases: https://en.wikipedia.org/wiki/Maximum_transmission_unit ; steam uses 1200 too!)
         public const int ACK_FAST = 3;
@@ -42,7 +42,7 @@ namespace kcp2k
 
         // kcp members.
         int state;
-        readonly uint conv; // conversation
+        readonly uint conv;          // conversation
         internal uint mtu;
         internal uint mss;           // maximum segment size
         internal uint snd_una;       // unacknowledged

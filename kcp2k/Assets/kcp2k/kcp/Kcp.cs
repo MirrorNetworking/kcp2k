@@ -372,7 +372,7 @@ namespace kcp2k
                 {
                     break;
                 }
-                else if (sn != seg.sn && seg.ts <= ts)
+                else if (sn != seg.sn)
                 {
 #if !FASTACK_CONSERVE
                     seg.fastack++;

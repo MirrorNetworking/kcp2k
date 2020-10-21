@@ -376,7 +376,7 @@ namespace kcp2k
                 {
 #if !FASTACK_CONSERVE
                     seg.fastack++;
-# else
+#else
                     if (Utils.TimeDiff(ts, seg.ts) >= 0)
                         seg.fastack++;
 #endif

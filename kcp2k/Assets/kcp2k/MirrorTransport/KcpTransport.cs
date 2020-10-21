@@ -56,7 +56,6 @@ namespace Mirror.KCP
         }
 
         // client
-        // TODO connected only after OnConnected was called
         public override bool ClientConnected() => clientConnection != null;
         public override void ClientConnect(string address)
         {

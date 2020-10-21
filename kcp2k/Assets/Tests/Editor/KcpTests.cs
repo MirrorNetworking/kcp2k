@@ -165,5 +165,22 @@ namespace kcp2k.Tests
             Assert.That(kcp.snd_buf[1], Is.EqualTo(two));
             Assert.That(kcp.snd_buf[2], Is.EqualTo(three));
         }
+
+        [Test]
+        public void WaitSnd()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // add some to send buffer and send queue
+            kcp.snd_buf.Add(new Segment());
+            kcp.snd_buf.Add(new Segment());
+            kcp.snd_queue.Enqueue(new Segment());
+
+            // WaitSnd should be send buffer + queue
+            Assert.That(kcp.WaitSnd, Is.EqualTo(3));
+        }
     }
 }

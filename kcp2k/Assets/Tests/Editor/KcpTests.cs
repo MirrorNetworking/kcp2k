@@ -295,5 +295,22 @@ namespace kcp2k.Tests
             Assert.That(kcp.mtu, Is.EqualTo(mtu));
             Assert.That(kcp.buffer.Length, Is.GreaterThanOrEqualTo(mtu));
         }
+
+        [Test]
+        public void Check()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // update once
+            uint time = 42;
+            kcp.Update(time);
+
+            // there is nothing to do, so check should return time + interval
+            uint next = kcp.Check();
+            Assert.That(next, Is.EqualTo(time + kcp.interval));
+        }
     }
 }

@@ -298,8 +298,8 @@ namespace Mirror.KCP
                 GUILayout.Label("SERVER");
                 GUILayout.Label("  SendQueue: " + GetTotalSendQueue());
                 GUILayout.Label("  ReceiveQueue: " + GetTotalReceiveQueue());
-                GUILayout.Label("  SendQBuffer: " + GetTotalSendBuffer());
-                GUILayout.Label("  ReceiveQBuffer: " + GetTotalReceiveBuffer());
+                GUILayout.Label("  SendBuffer: " + GetTotalSendBuffer());
+                GUILayout.Label("  ReceiveBuffer: " + GetTotalReceiveBuffer());
                 GUILayout.EndVertical();
             }
 
@@ -309,8 +309,8 @@ namespace Mirror.KCP
                 GUILayout.Label("CLIENT");
                 GUILayout.Label("  SendQueue: " + clientConnection.kcp.snd_queue.Count);
                 GUILayout.Label("  ReceiveQueue: " + clientConnection.kcp.rcv_queue.Count);
-                GUILayout.Label("  SendQBuffer: " + clientConnection.kcp.snd_buf.Count);
-                GUILayout.Label("  ReceiveQBuffer: " + clientConnection.kcp.rcv_buf.Count);
+                GUILayout.Label("  SendBuffer: " + clientConnection.kcp.snd_buf.Count);
+                GUILayout.Label("  ReceiveBuffer: " + clientConnection.kcp.rcv_buf.Count);
                 GUILayout.EndVertical();
             }
 

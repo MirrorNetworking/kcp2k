@@ -512,7 +512,7 @@ namespace kcp2k
 
                 size -= OVERHEAD;
 
-                if (size < len || len < 0) return -2;
+                if (size < (int)len || (int)len < 0) return -2;
 
                 if (cmd != CMD_PUSH && cmd != CMD_ACK &&
                     cmd != CMD_WASK && cmd != CMD_WINS)

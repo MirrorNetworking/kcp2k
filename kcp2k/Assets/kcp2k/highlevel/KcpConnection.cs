@@ -235,7 +235,7 @@ namespace kcp2k
         public void Handshake()
         {
             // send a greeting and see if the server replies
-            Debug.LogWarning("KcpConnection: sending Handshake to other end!");
+            Debug.Log("KcpConnection: sending Handshake to other end!");
             Send(Hello);
         }
 

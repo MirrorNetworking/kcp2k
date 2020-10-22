@@ -256,6 +256,10 @@ namespace kcp2k
             if (len <= mss) count = 1;
             else count = (int)((len + mss - 1) / mss);
 
+            // this might be a kcp bug.
+            // it's possible that we should check 'count >= rcv_wnd' instead of
+            // the constant here.
+            // see also: https://github.com/skywind3000/kcp/pull/291/files
             if (count >= WND_RCV) return -2;
 
             if (count == 0) count = 1;

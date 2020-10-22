@@ -244,13 +244,26 @@ namespace kcp2k
         /// </summary>
         public virtual void Disconnect()
         {
+            // do nothing if already closed
+            if (!open) return;
+
+            // set as closed BEFORE calling OnDisconnected event.
+            // this avoids potential deadlocks like this Mirror bug:
+            // https://github.com/vis2k/Mirror/issues/2357
+            // where OnDisconnected->Mirror.OnDisconnected->ServerDisconnect->
+            //       Connection.Disconnect->Kcp.Disconnect->OnDisconnected->
+            //       DEADLOCK
+            open = false;
+
             // send a disconnect message and disconnect
-            if (open && socket.Connected)
+            if (socket.Connected)
             {
                 try
                 {
                     Send(Goodby);
                     kcp.Flush();
+
+                    // set as not open
 
                     // call OnDisconnected event, even if we manually
                     // disconnected
@@ -270,10 +283,6 @@ namespace kcp2k
                     // were disconnected
                 }
             }
-            open = false;
-
-            // EOF is now available
-            //dataAvailable?.TrySetResult();
         }
 
         // get remote endpoint

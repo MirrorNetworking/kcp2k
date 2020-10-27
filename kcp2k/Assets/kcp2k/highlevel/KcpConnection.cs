@@ -33,7 +33,7 @@ namespace kcp2k
         volatile uint lastReceived;
 
         internal static readonly ArraySegment<byte> Hello = new ArraySegment<byte>(new byte[] { 0 });
-        private static readonly ArraySegment<byte> Goodby = new ArraySegment<byte>(new byte[] { 1 });
+        private static readonly ArraySegment<byte> Goodbye = new ArraySegment<byte>(new byte[] { 1 });
 
         // a connection is authenticated after sending the correct handshake.
         // useful to protect against random data from the internet.
@@ -190,7 +190,7 @@ namespace kcp2k
                         else
                         {
                             // disconnect message?
-                            if (SegmentsEqual(dataSegment, Goodby))
+                            if (SegmentsEqual(dataSegment, Goodbye))
                             {
                                 // if we receive a disconnect message,  then close everything
                                 //Debug.Log("KCP: received disconnect message");
@@ -256,7 +256,7 @@ namespace kcp2k
             {
                 try
                 {
-                    Send(Goodby);
+                    Send(Goodbye);
                     kcp.Flush();
 
                     // set as not open

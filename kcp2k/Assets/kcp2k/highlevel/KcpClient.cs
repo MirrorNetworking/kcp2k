@@ -83,12 +83,10 @@ namespace kcp2k
             // tick client connection
             if (connection != null)
             {
-                // recv on socket
+                // recv on socket first
                 connection.RawReceive();
-                // now update
+                // then update
                 connection.Tick();
-                // recv on kcp
-                connection.Receive();
             }
         }
     }

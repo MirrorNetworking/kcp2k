@@ -134,9 +134,6 @@ namespace kcp2k
                         Debug.Log($"KCP: OnServerDisconnected({connectionId})");
                         OnDisconnected.Invoke(connectionId);
                     };
-
-                    // send handshake
-                    connection.Handshake();
                 }
 
                 connection.RawInput(buffer, msgLength);
@@ -146,7 +143,6 @@ namespace kcp2k
             foreach (KcpServerConnection connection in connections.Values)
             {
                 connection.Tick();
-                connection.Receive();
             }
 
             // remove disconnected connections

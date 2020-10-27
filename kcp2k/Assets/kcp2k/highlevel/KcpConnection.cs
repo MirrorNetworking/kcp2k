@@ -7,12 +7,17 @@ using Debug = UnityEngine.Debug;
 
 namespace kcp2k
 {
+    enum KcpState { Connected, Handshake, Authenticated, Disconnected }
+
     public abstract class KcpConnection
     {
         protected Socket socket;
         protected EndPoint remoteEndpoint;
         internal Kcp kcp;
-        bool open;
+
+        // kcp can have several different states, let's use a state machine
+        KcpState state = KcpState.Disconnected;
+        KcpState lastState = KcpState.Disconnected;
 
         public event Action OnConnected;
         public event Action<ArraySegment<byte>> OnData;
@@ -30,14 +35,8 @@ namespace kcp2k
         // recv buffer to avoid allocations
         byte[] buffer = new byte[Kcp.MTU_DEF];
 
-        uint lastReceived;
-
         internal static readonly ArraySegment<byte> Hello = new ArraySegment<byte>(new byte[] { 0 });
         private static readonly ArraySegment<byte> Goodbye = new ArraySegment<byte>(new byte[] { 1 });
-
-        // a connection is authenticated after sending the correct handshake.
-        // useful to protect against random data from the internet.
-        bool authenticated;
 
         // if we send more than kcp can handle, we will get ever growing
         // send/recv buffers and queues and minutes of latency.
@@ -56,63 +55,175 @@ namespace kcp2k
             kcp = new Kcp(0, RawSend);
             kcp.SetNoDelay(noDelay ? 1u : 0u, interval);
             refTime.Start();
-            open = true;
+            state = KcpState.Connected;
 
             Tick();
         }
 
-        public void Tick()
+        bool IsChoked(out int total)
         {
-            try
+            // disconnect connections that can't process the load.
+            // see QueueSizeDisconnect comments.
+            total = kcp.rcv_queue.Count + kcp.snd_queue.Count +
+                    kcp.rcv_buf.Count + kcp.snd_buf.Count;
+            return total >= QueueDisconnectThreshold;
+        }
+
+        // reads the next message from connection.
+        bool ReceiveNext(out ArraySegment<byte> message)
+        {
+            // read only one message
+            int msgSize = kcp.PeekSize();
+            if (msgSize > 0)
             {
-                uint time = (uint)refTime.ElapsedMilliseconds;
-
-                // TODO MirorrNG KCP used to set lastReceived here. but this
-                // would make the below time check always true.
-                // should we set lastReceived after updating instead?
-                //lastReceived = time;
-
-                if (open && time < lastReceived + TIMEOUT)
+                // only allow receiving up to MaxMessageSize sized messages.
+                // otherwise we would get BlockCopy ArgumentException anyway.
+                if (msgSize <= Kcp.MTU_DEF)
                 {
-                    kcp.Update(time);
-
-                    // disconnect connections that can't process the load.
-                    // see QueueSizeDisconnect comments.
-                    int total = kcp.rcv_queue.Count + kcp.snd_queue.Count +
-                                kcp.rcv_buf.Count + kcp.snd_buf.Count;
-                    if (total >= QueueDisconnectThreshold)
+                    int received = kcp.Receive(buffer, msgSize);
+                    if (received >= 0)
                     {
-                        Debug.LogWarning($"KCP: disconnecting connection because it can't process data fast enough.\n" +
-                                         $"Queue total {total}>{QueueDisconnectThreshold}. rcv_queue={kcp.rcv_queue.Count} snd_queue={kcp.snd_queue.Count} rcv_buf={kcp.rcv_buf.Count} snd_buf={kcp.snd_buf.Count}\n" +
-                                         $"* Try to Enable NoDelay, decrease INTERVAL, increase SEND/RECV WINDOW or compress data.\n" +
-                                         $"* Or perhaps the network is simply too slow on our end, or on the other end.\n");
+                        message = new ArraySegment<byte>(buffer, 0, msgSize);
+                        return true;
+                    }
+                    else
+                    {
+                        // if receive failed, close everything
+                        Debug.LogWarning($"Receive failed with error={received}. closing connection.");
                         Disconnect();
                     }
+                }
+                // we don't allow sending messages > Max, so this must be an
+                // attacker. let's disconnect to avoid allocation attacks etc.
+                else
+                {
+                    Debug.LogWarning($"KCP: possible allocation attack for msgSize {msgSize} > max {Kcp.MTU_DEF}. Disconnecting the connection.");
+                    Disconnect();
+                }
+            }
+            return false;
+        }
 
-                    // check can be used to skip updates IF:
-                    // - time < what check returned
-                    // - AND send / recv haven't been called in that time
-                    // (see Check() comments)
-                    //
-                    // for now, let's just always update and not call check.
-                    //uint check = kcp.Check();
+        public void Tick()
+        {
+            uint time = (uint)refTime.ElapsedMilliseconds;
+
+            try
+            {
+                switch (state)
+                {
+                    case KcpState.Connected:
+                    {
+                        kcp.Update(time);
+                        // send handshake to the other end, wait for a reply
+                        // note that server & client connections both send the
+                        // handshake immediately. there is no particular order.
+                        Debug.Log("KcpConnection: sending Handshake to other end!");
+                        Send(Hello);
+                        state = KcpState.Handshake;
+                        break;
+                    }
+                    case KcpState.Handshake:
+                    {
+                        kcp.Update(time);
+
+                        // any message received?
+                        if (ReceiveNext(out ArraySegment<byte> message))
+                        {
+                            // handshake message?
+                            if (SegmentsEqual(message, Hello))
+                            {
+                                Debug.Log("KCP: received handshake");
+                                state = KcpState.Authenticated;
+                                OnConnected?.Invoke();
+                            }
+                            // otherwise it's random data from the internet, not
+                            // from a legitimate player. disconnect.
+                            else
+                            {
+                                Debug.LogWarning("KCP: received random data before handshake. Disconnecting the connection.");
+                                Disconnect();
+                            }
+                        }
+
+                        break;
+                    }
+                    case KcpState.Authenticated:
+                    {
+                        kcp.Update(time);
+
+                        // we can only send to authenticated connections.
+                        // so we need to detect chocked connections here.
+                        if (IsChoked(out int total))
+                        {
+                            Debug.LogWarning($"KCP: disconnecting connection because it can't process data fast enough.\n" +
+                                             $"Queue total {total}>{QueueDisconnectThreshold}. rcv_queue={kcp.rcv_queue.Count} snd_queue={kcp.snd_queue.Count} rcv_buf={kcp.rcv_buf.Count} snd_buf={kcp.snd_buf.Count}\n" +
+                                             $"* Try to Enable NoDelay, decrease INTERVAL, increase SEND/RECV WINDOW or compress data.\n" +
+                                             $"* Or perhaps the network is simply too slow on our end, or on the other end.\n");
+                            Disconnect();
+                            break;
+                        }
+
+                        // process all received messages
+                        while (ReceiveNext(out ArraySegment<byte> message))
+                        {
+                            // disconnect message?
+                            if (SegmentsEqual(message, Goodbye))
+                            {
+                                Debug.Log("KCP: received disconnect message");
+                                Disconnect();
+                                break;
+                            }
+                            // otherwise regular message
+                            else
+                            {
+                                // only accept regular messages
+                                //Debug.LogWarning($"Kcp recv msg: {BitConverter.ToString(buffer, 0, msgSize)}");
+                                OnData?.Invoke(message);
+                            }
+                        }
+
+                        break;
+                    }
+                    case KcpState.Disconnected:
+                    {
+                        // don't update while disconnected
+
+                        // TODO keep updating while disconnected so everything
+                        // is flushed out?
+                        // or use a Disconnecting state for a second or so
+
+                        // not disconnected before?
+                        // then call OnDisconnected
+                        if (lastState != KcpState.Disconnected)
+                        {
+                            Debug.Log("KCP Connection: Disconnected.");
+                            OnDisconnected?.Invoke();
+                        }
+
+                        break;
+                    }
                 }
             }
             catch (SocketException)
             {
                 // this is ok, the connection was closed
-                open = false;
+                state = KcpState.Disconnected;
             }
             catch (ObjectDisposedException)
             {
-                // fine,  socket was closed,  no more ticking needed
-                open = false;
+                // fine, socket was closed, no more ticking needed
+                state = KcpState.Disconnected;
             }
             catch (Exception ex)
             {
-                open = false;
+                // unexpected
+                state = KcpState.Disconnected;
                 Debug.LogException(ex);
             }
+
+            // remember previous state
+            lastState = state;
         }
 
         public void RawInput(byte[] buffer, int msgLength)
@@ -120,7 +231,7 @@ namespace kcp2k
             int input = kcp.Input(buffer, msgLength);
             if (input == 0)
             {
-                lastReceived = (uint)refTime.ElapsedMilliseconds;
+                //lastReceived = (uint)refTime.ElapsedMilliseconds;
             }
             else Debug.LogWarning($"Input failed with error={input} for buffer with length={msgLength}");
         }
@@ -161,118 +272,20 @@ namespace kcp2k
         }
 
         /// <summary>
-        ///     reads a message from connection
-        /// </summary>
-        /// <param name="buffer">buffer where the message will be written</param>
-        /// <returns>true if we got a message, false if we got disconnected</returns>
-        public void Receive()
-        {
-            if (!open)
-            {
-                OnDisconnected?.Invoke();
-                Debug.LogWarning("DISCO a");
-                return;
-            }
-
-            // read as long as we have things to read
-            int msgSize;
-            while ((msgSize = kcp.PeekSize()) > 0)
-            {
-                // only allow receiving up to MaxMessageSize sized messages.
-                // otherwise we would get BlockCopy ArgumentException anyway.
-                if (msgSize <= Kcp.MTU_DEF)
-                {
-                    int received = kcp.Receive(buffer, msgSize);
-                    if (received >= 0)
-                    {
-                        ArraySegment<byte> dataSegment = new ArraySegment<byte>(buffer, 0, msgSize);
-
-                        // not authenticated yet?
-                        if (!authenticated)
-                        {
-                            // handshake message?
-                            if (SegmentsEqual(dataSegment, Hello))
-                            {
-                                // we are only connected if we received the handshake.
-                                // not just after receiving any first data.
-                                authenticated = true;
-                                //Debug.Log("KCP: received handshake");
-                                OnConnected?.Invoke();
-                            }
-                            // otherwise it's random data from the internet, not
-                            // from a legitimate player.
-                            else
-                            {
-                                Debug.LogWarning("KCP: received random data before handshake. Disconnecting the connection.");
-                                open = false;
-                                OnDisconnected?.Invoke();
-                                break;
-                            }
-                        }
-                        // authenticated.
-                        else
-                        {
-                            // disconnect message?
-                            if (SegmentsEqual(dataSegment, Goodbye))
-                            {
-                                // if we receive a disconnect message,  then close everything
-                                //Debug.Log("KCP: received disconnect message");
-                                open = false;
-                                OnDisconnected?.Invoke();
-                                break;
-                            }
-                            // otherwise regular message
-                            else
-                            {
-                                // only accept regular messages
-                                //Debug.LogWarning($"Kcp recv msg: {BitConverter.ToString(buffer, 0, msgSize)}");
-                                OnData?.Invoke(dataSegment);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // if receive failed, close everything
-                        Debug.LogWarning($"Receive failed with error={received}. closing connection.");
-                        open = false;
-                        OnDisconnected?.Invoke();
-                        break;
-                    }
-                }
-                // we don't allow sending messages > Max, so this must be an
-                // attacker. let's disconnect to avoid allocation attacks etc.
-                else
-                {
-                    Debug.LogWarning($"KCP: possible allocation attack for msgSize {msgSize} > max {Kcp.MTU_DEF}. Disconnecting the connection.");
-                    open = false;
-                    OnDisconnected?.Invoke();
-                    break;
-                }
-            }
-        }
-
-        public void Handshake()
-        {
-            // send a greeting and see if the server replies
-            Debug.Log("KcpConnection: sending Handshake to other end!");
-            Send(Hello);
-        }
-
-        /// <summary>
         ///     Disconnect this connection
         /// </summary>
         public virtual void Disconnect()
         {
-            // do nothing if already closed
-            if (!open) return;
+            // do nothing if already disconnected
+            if (state == KcpState.Disconnected) return;
 
-            // set as closed BEFORE calling OnDisconnected event.
+            // set as Disconnected BEFORE calling OnDisconnected event.
             // this avoids potential deadlocks like this Mirror bug:
             // https://github.com/vis2k/Mirror/issues/2357
             // where OnDisconnected->Mirror.OnDisconnected->ServerDisconnect->
             //       Connection.Disconnect->Kcp.Disconnect->OnDisconnected->
             //       DEADLOCK
-            open = false;
+            state = KcpState.Disconnected;
 
             // send a disconnect message and disconnect
             if (socket.Connected)

@@ -21,8 +21,6 @@ namespace kcp2k
             SetupKcp(noDelay, interval);
 
             RawReceive();
-
-            Handshake();
         }
 
         // call from transport update

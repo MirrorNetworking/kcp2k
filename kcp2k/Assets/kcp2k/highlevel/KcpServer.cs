@@ -99,44 +99,82 @@ namespace kcp2k
                 // is this a new connection?
                 if (!connections.TryGetValue(connectionId, out KcpServerConnection connection))
                 {
-                    // add it to a queue
+                    // create a new KcpConnection
                     connection = new KcpServerConnection(socket, newClientEP, NoDelay, Interval);
 
-                    //acceptedConnections.Writer.TryWrite(connection);
-                    connections.Add(connectionId, connection);
-                    Debug.Log($"KCP: server added connection {newClientEP}");
+                    // DO NOT add to connections yet. only if the first message
+                    // is actually the kcp handshake. otherwise it's either:
+                    // * random data from the internet
+                    // * or from a client connection that we just disconnected
+                    //   but that hasn't realized it yet, still sending data
+                    //   from last session that we should absolutely ignore.
+                    //
+                    //
+                    // TODO this allocates a new KcpConnection for each new
+                    // internet connection. not ideal, but C# UDP Receive
+                    // already allocated anyway.
+                    //
+                    // expecting a MAGIC byte[] would work, but sending the raw
+                    // UDP message without kcp's reliability will have low
+                    // probability of being received.
+                    //
+                    // for now, this is fine.
 
-                    // setup connected event
+                    // setup connected event that also adds to connections
                     connection.OnConnected += () =>
                     {
-                        // call mirror event
+                        // OnConnected is only called after handshake.
+                        // that's when we add to connections, not earlier.
+                        connections.Add(connectionId, connection);
+                        Debug.Log($"KCP: server added connection {newClientEP}");
+
+                        // setup Data + Disconnected events only AFTER the
+                        // handshake. we don't want to fire OnServerDisconnected
+                        // every time we receive invalid random data from the
+                        // internet.
+
+                        // setup data event
+                        connection.OnData += (message) =>
+                        {
+                            // call mirror event
+                            //Debug.Log($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)})");
+                            OnData.Invoke(connectionId, message);
+                        };
+
+                        // setup disconnected event
+                        connection.OnDisconnected += () =>
+                        {
+                            // flag for removal
+                            // (can't remove directly because connection is updated
+                            //  and event is called while iterating all connections)
+                            connectionsToRemove.Add(connectionId);
+
+                            // call mirror event
+                            Debug.Log($"KCP: OnServerDisconnected({connectionId})");
+                            OnDisconnected.Invoke(connectionId);
+                        };
+
+                        // finally, call mirror OnConnected event
                         Debug.Log($"KCP: OnServerConnected({connectionId})");
                         OnConnected.Invoke(connectionId);
                     };
 
-                    // setup data event
-                    connection.OnData += (message) =>
-                    {
-                        // call mirror event
-                        //Debug.Log($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)})");
-                        OnData.Invoke(connectionId, message);
-                    };
+                    // now input the message & tick
+                    // connected event was set up.
+                    // tick will process the first message and adds the
+                    // connection if it was the handshake.
+                    connection.RawInput(buffer, msgLength);
+                    connection.Tick();
 
-                    // setup disconnected event
-                    connection.OnDisconnected += () =>
-                    {
-                        // flag for removal
-                        // (can't remove directly because connection is updated
-                        //  and event is called while iterating all connections)
-                        connectionsToRemove.Add(connectionId);
-
-                        // call mirror event
-                        Debug.Log($"KCP: OnServerDisconnected({connectionId})");
-                        OnDisconnected.Invoke(connectionId);
-                    };
+                    // again, do not add to connections.
+                    // if the first message wasn't the kcp handshake then
+                    // connection will simply be garbage collected.
                 }
-
-                connection.RawInput(buffer, msgLength);
+                // existing connection: simply input the message into kcp
+                else
+                {
+                    connection.RawInput(buffer, msgLength);
+                }
             }
 
             // tick all server connections

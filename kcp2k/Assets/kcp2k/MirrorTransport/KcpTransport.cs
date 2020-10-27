@@ -16,10 +16,8 @@ namespace Mirror.KCP
         [Tooltip("KCP internal update interval. 100ms is KCP default, but a lower interval is recommended to minimize latency and to scale to more networked entities.")]
         public uint Interval = 10;
 
-        // server
+        // server & client
         KcpServer server;
-
-        // client
         KcpClient client;
 
         // debugging

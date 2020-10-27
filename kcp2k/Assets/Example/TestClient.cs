@@ -42,6 +42,7 @@ namespace kcp2k.Examples
             {
                 Debug.Log($"KCP: OnClientDisconnected");
                 connected = false;
+                clientConnection = null;
             };
 
             // connect

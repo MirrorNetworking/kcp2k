@@ -82,6 +82,7 @@ namespace Mirror.KCP
             {
                 Debug.Log($"KCP: OnClientDisconnected");
                 clientConnected = false;
+                clientConnection = null;
                 OnClientDisconnected.Invoke();
             };
 

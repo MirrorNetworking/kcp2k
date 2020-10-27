@@ -34,7 +34,7 @@ namespace kcp2k
             connection = new KcpClientConnection();
 
             // setup events
-            connection.OnConnected += () =>
+            connection.OnAuthenticated += () =>
             {
                 Debug.Log($"KCP: OnClientConnected");
                 connected = true;

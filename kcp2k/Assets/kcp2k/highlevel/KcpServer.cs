@@ -120,10 +120,10 @@ namespace kcp2k
                     //
                     // for now, this is fine.
 
-                    // setup connected event that also adds to connections
-                    connection.OnConnected += () =>
+                    // setup authenticated event that also adds to connections
+                    connection.OnAuthenticated += () =>
                     {
-                        // OnConnected is only called after handshake.
+                        // OnAuthenticated is only called after handshake.
                         // that's when we add to connections, not earlier.
                         connections.Add(connectionId, connection);
                         Debug.Log($"KCP: server added connection {newClientEP}");

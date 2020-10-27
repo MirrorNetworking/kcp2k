@@ -17,7 +17,7 @@ namespace kcp2k
         // kcp can have several different states, let's use a state machine
         KcpState state = KcpState.Disconnected;
 
-        public event Action OnConnected;
+        public event Action OnAuthenticated;
         public event Action<ArraySegment<byte>> OnData;
         public event Action OnDisconnected;
 
@@ -125,7 +125,7 @@ namespace kcp2k
                 {
                     Debug.Log("KCP: received handshake");
                     state = KcpState.Authenticated;
-                    OnConnected?.Invoke();
+                    OnAuthenticated?.Invoke();
                 }
                 // otherwise it's random data from the internet, not
                 // from a legitimate player. disconnect.

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 
 namespace kcp2k
 {
@@ -16,7 +17,10 @@ namespace kcp2k
         internal int rto;
         internal uint fastack;
         internal uint xmit;
-        internal ByteBuffer data;
+        // we need a auto scaling byte[] with a WriteBytes function.
+        // MemoryStream does that perfectly, no need to reinvent the wheel.
+        // note: no need to pool it, because Segment is already pooled.
+        internal MemoryStream data = new MemoryStream();
 
         // pool ////////////////////////////////////////////////////////////////
         internal static readonly Stack<Segment> Pool = new Stack<Segment>(32);
@@ -37,13 +41,6 @@ namespace kcp2k
             Pool.Push(seg);
         }
         ////////////////////////////////////////////////////////////////////////
-        internal Segment()
-        {
-            // allocate the ByteBuffer once.
-            // note that we don't need to pool ByteBuffer, because Segment is
-            // already pooled.
-            data = new ByteBuffer();
-        }
 
         // ikcp_encode_seg
         // encode a segment into buffer
@@ -77,8 +74,8 @@ namespace kcp2k
             resendts = 0;
             fastack = 0;
 
-            // keep buffer for next pool usage, but reset position
-            data.Position = 0;
+            // keep buffer for next pool usage, but reset length (= bytes written)
+            data.SetLength(0);
         }
     }
 }

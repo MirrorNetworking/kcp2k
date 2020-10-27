@@ -171,10 +171,10 @@ namespace kcp2k
                 // entry. this is fine because we remove it in ANY case.
                 Segment seg = rcv_queue.Dequeue();
 
-                Buffer.BlockCopy(seg.data.RawBuffer, 0, buffer, offset, seg.data.Position);
-                offset += seg.data.Position;
+                Buffer.BlockCopy(seg.data.GetBuffer(), 0, buffer, offset, (int)seg.data.Position);
+                offset += (int)seg.data.Position;
 
-                len += seg.data.Position;
+                len += (int)seg.data.Position;
                 uint fragment = seg.frg;
 
                 // note: ispeek is not supported in order to simplify this loop
@@ -229,13 +229,13 @@ namespace kcp2k
             if (rcv_queue.Count == 0) return -1;
 
             Segment seq = rcv_queue.Peek();
-            if (seq.frg == 0) return seq.data.Position;
+            if (seq.frg == 0) return (int)seq.data.Position;
 
             if (rcv_queue.Count < seq.frg + 1) return -1;
 
             foreach (Segment seg in rcv_queue)
             {
-                length += seg.data.Position;
+                length += (int)seg.data.Position;
                 if (seg.frg == 0) break;
             }
 
@@ -272,7 +272,7 @@ namespace kcp2k
 
                 if (len > 0)
                 {
-                    seg.data.WriteBytes(buffer, offset, size);
+                    seg.data.Write(buffer, offset, size);
                 }
                 // seg.len = size: WriteBytes sets segment.Position!
                 seg.frg = (byte)(count - i - 1);
@@ -571,7 +571,7 @@ namespace kcp2k
                             seg.una = una;
                             if (len > 0)
                             {
-                                seg.data.WriteBytes(data, offset, (int)len);
+                                seg.data.Write(data, offset, (int)len);
                             }
                             ParseData(seg);
                         }
@@ -815,15 +815,15 @@ namespace kcp2k
                     segment.wnd = seg.wnd;
                     segment.una = rcv_nxt;
 
-                    int need = OVERHEAD + segment.data.Position;
+                    int need = OVERHEAD + (int)segment.data.Position;
                     MakeSpace(need);
 
                     offset += segment.Encode(buffer, offset);
 
                     if (segment.data.Position > 0)
                     {
-                        Buffer.BlockCopy(segment.data.RawBuffer, 0, buffer, offset, segment.data.Position);
-                        offset += segment.data.Position;
+                        Buffer.BlockCopy(segment.data.GetBuffer(), 0, buffer, offset, (int)segment.data.Position);
+                        offset += (int)segment.data.Position;
                     }
 
                     if (segment.xmit >= dead_link)

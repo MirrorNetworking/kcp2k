@@ -25,7 +25,7 @@ namespace kcp2k
             Handshake();
         }
 
-        // TODO call from transport update
+        // call from transport update
         public void RawReceive()
         {
             try
@@ -38,15 +38,10 @@ namespace kcp2k
                         //Debug.Log($"KCP: client raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
                         RawInput(buffer, msgLength);
                     }
-
-                    // wait a few MS to poll again
-                    //await UniTask.Delay(2);
                 }
             }
-            catch (SocketException)
-            {
-                // this is fine,  the socket might have been closed in the other end
-            }
+            // this is fine, the socket might have been closed in the other end
+            catch (SocketException) {}
         }
 
         protected override void Dispose()

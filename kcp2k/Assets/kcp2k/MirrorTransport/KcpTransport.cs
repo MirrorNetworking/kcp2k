@@ -27,11 +27,15 @@ namespace Mirror.KCP
         Dictionary<int, KcpServerConnection> connections = new Dictionary<int, KcpServerConnection>();
 
         // client
-        KcpClientConnection clientConnection;
-        bool clientConnected;
+        KcpClient client;
 
         void Awake()
         {
+            client = new KcpClient(
+                () => OnClientConnected.Invoke(),
+                (message) => OnClientDataReceived.Invoke(message),
+                () => OnClientDisconnected.Invoke()
+            );
             Debug.Log("KcpTransport initialized!");
         }
 
@@ -45,75 +49,32 @@ namespace Mirror.KCP
             // TODO consider lower interval IF interval matters in nodelay mode
 
             // we did this in previous test
-            //connection.kcp.SetNoDelay(true, 10, 2, true);
+            connection.kcp.SetNoDelay(1, 10, 2, true);
 
             // this works for 4k:
             //connection.kcp.SetWindowSize(128, 128);
             // this works for 10k:
-            //connection.kcp.SetWindowSize(512, 512);
+            connection.kcp.SetWindowSize(512, 512);
             // this works for 20k:
             //connection.kcp.SetWindowSize(8192, 8192);
         }
 
         // client
-        public override bool ClientConnected() => clientConnected;
+        public override bool ClientConnected() => client.connected;
         public override void ClientConnect(string address)
         {
-            if (clientConnected)
-            {
-                Debug.LogWarning("KCP: client already connected!");
-                return;
-            }
-
-            clientConnection = new KcpClientConnection();
-            // setup events
-            clientConnection.OnConnected += () =>
-            {
-                Debug.Log($"KCP: OnClientConnected");
-                clientConnected = true;
-                OnClientConnected.Invoke();
-            };
-            clientConnection.OnData += (message) =>
-            {
-                //Debug.Log($"KCP: OnClientDataReceived({BitConverter.ToString(message.Array, message.Offset, message.Count)})");
-                OnClientDataReceived.Invoke(message);
-            };
-            clientConnection.OnDisconnected += () =>
-            {
-                Debug.Log($"KCP: OnClientDisconnected");
-                clientConnected = false;
-                clientConnection = null;
-                OnClientDisconnected.Invoke();
-            };
-
-            // connect
-            clientConnection.Connect(address, Port, NoDelay, Interval);
+            client.Connect(address, Port, NoDelay, Interval);
 
             // configure connection for max scale
-            ConfigureKcpConnection(clientConnection);
+            ConfigureKcpConnection(client.connection);
         }
         public override bool ClientSend(int channelId, ArraySegment<byte> segment)
         {
-            if (clientConnection != null)
-            {
-                clientConnection.Send(segment);
-                return true;
-            }
-            Debug.LogWarning("KCP: can't send because client not connected!");
-            return false;
+            client.Send(segment);
+            return true;
         }
 
-        public override void ClientDisconnect()
-        {
-            // only if connected
-            // otherwise we end up in a deadlock because of an open Mirror bug:
-            // https://github.com/vis2k/Mirror/issues/2353
-            if (clientConnected)
-            {
-                clientConnection?.Disconnect();
-                clientConnection = null;
-            }
-        }
+        public override void ClientDisconnect() => client.Disconnect();
 
         HashSet<int> connectionsToRemove = new HashSet<int>();
         void UpdateServer()
@@ -192,19 +153,6 @@ namespace Mirror.KCP
             connectionsToRemove.Clear();
         }
 
-        void UpdateClient()
-        {
-            // tick client connection
-            if (clientConnection != null)
-            {
-                clientConnection.Tick();
-                // recv on socket
-                clientConnection.RawReceive();
-                // recv on kcp
-                clientConnection.Receive();
-            }
-        }
-
         // IMPORTANT: set script execution order to >1000 to call Transport's
         //            LateUpdate after all others. Fixes race condition where
         //            e.g. in uSurvival Transport would apply Cmds before
@@ -219,7 +167,7 @@ namespace Mirror.KCP
                 return;
 
             UpdateServer();
-            UpdateClient();
+            client.Tick();
         }
 
         // server
@@ -308,10 +256,10 @@ namespace Mirror.KCP
             {
                 GUILayout.BeginVertical("Box");
                 GUILayout.Label("CLIENT");
-                GUILayout.Label("  SendQueue: " + clientConnection.kcp.snd_queue.Count);
-                GUILayout.Label("  ReceiveQueue: " + clientConnection.kcp.rcv_queue.Count);
-                GUILayout.Label("  SendBuffer: " + clientConnection.kcp.snd_buf.Count);
-                GUILayout.Label("  ReceiveBuffer: " + clientConnection.kcp.rcv_buf.Count);
+                GUILayout.Label("  SendQueue: " + client.connection.kcp.snd_queue.Count);
+                GUILayout.Label("  ReceiveQueue: " + client.connection.kcp.rcv_queue.Count);
+                GUILayout.Label("  SendBuffer: " + client.connection.kcp.snd_buf.Count);
+                GUILayout.Label("  ReceiveBuffer: " + client.connection.kcp.rcv_buf.Count);
                 GUILayout.EndVertical();
             }
 

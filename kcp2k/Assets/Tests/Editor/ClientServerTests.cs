@@ -12,16 +12,30 @@ namespace kcp2k.Tests
 {
     public class ClientServerTests
     {
-        // use the TestServer + LogAssert.Expect. simple and stupid.
+        // force NoDelay and minimum interval.
+        // this way UpdateSeveralTimes() doesn't need to wait very long and
+        // tests run a lot faster.
+        const ushort Port = 7777;
+        const bool NoDelay = true;
+        const uint Interval = 1; // 1ms so at interval code at least runs.
+
+
         TestServer server;
-        TestClient client;
+        KcpClient client;
 
         // setup ///////////////////////////////////////////////////////////////
         [SetUp]
         public void SetUp()
         {
             server = new TestServer();
-            client = new TestClient();
+            server.NoDelay = NoDelay;
+            server.Interval = Interval;
+
+            client = new KcpClient(
+                () => {},
+                (message) => Debug.Log($"KCP: OnClientDataReceived({BitConverter.ToString(message.Array, message.Offset, message.Count)})"),
+                () => {}
+            );
         }
 
         [TearDown]
@@ -30,11 +44,6 @@ namespace kcp2k.Tests
             client.Disconnect();
             server.StopServer();
 
-            // force NoDelay and minimum interval.
-            // this way UpdateSeveralTimes() doesn't need to wait very long and
-            // tests run a lot faster.
-            server.NoDelay = client.NoDelay = true;
-            server.Interval = client.Interval = 1; // 1ms so at interval code at least runs.
         }
 
         // helpers /////////////////////////////////////////////////////////////
@@ -51,7 +60,7 @@ namespace kcp2k.Tests
             // (otherwise we get flaky tests)
             for (int i = 0; i < 50; ++i)
             {
-                client.LateUpdate();
+                client.Tick();
                 server.LateUpdate();
                 Thread.Sleep(10);
             }
@@ -60,7 +69,7 @@ namespace kcp2k.Tests
         // connect and give it enough time to handle
         void ConnectClientBlocking()
         {
-            client.Connect("127.0.0.1");
+            client.Connect("127.0.0.1", Port, NoDelay, Interval);
             UpdateSeveralTimes();
         }
 
@@ -123,12 +132,12 @@ namespace kcp2k.Tests
             server.StartServer();
             ConnectClientBlocking();
 
-            Assert.That(client.Connected(), Is.True);
+            Assert.That(client.connected, Is.True);
             Assert.That(server.connections.Count, Is.EqualTo(1));
 
             // disconnect
             DisconnectClientBlocking();
-            Assert.That(client.Connected(), Is.False);
+            Assert.That(client.connected, Is.False);
             Assert.That(server.connections.Count, Is.EqualTo(0));
         }
 
@@ -142,11 +151,11 @@ namespace kcp2k.Tests
             for (int i = 0; i < 10; ++i)
             {
                 ConnectClientBlocking();
-                Assert.That(client.Connected(), Is.True);
+                Assert.That(client.connected, Is.True);
                 Assert.That(server.connections.Count, Is.EqualTo(1));
 
                 DisconnectClientBlocking();
-                Assert.That(client.Connected(), Is.False);
+                Assert.That(client.connected, Is.False);
                 Assert.That(server.connections.Count, Is.EqualTo(0));
             }
 
@@ -303,11 +312,11 @@ namespace kcp2k.Tests
         {
             server.StartServer();
             ConnectClientBlocking();
-            Assert.That(client.Connected(), Is.True);
+            Assert.That(client.connected, Is.True);
             Assert.That(server.connections.Count, Is.EqualTo(1));
 
             DisconnectClientBlocking();
-            Assert.That(client.Connected(), Is.False);
+            Assert.That(client.connected, Is.False);
             Assert.That(server.connections.Count, Is.EqualTo(0));
         }
 
@@ -319,11 +328,11 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
-            Assert.That(client.Connected(), Is.True);
+            Assert.That(client.connected, Is.True);
             Assert.That(server.connections.Count, Is.EqualTo(1));
 
             KickClientBlocking(connectionId);
-            Assert.That(client.Connected(), Is.False);
+            Assert.That(client.connected, Is.False);
             Assert.That(server.connections.Count, Is.EqualTo(0));
         }
 

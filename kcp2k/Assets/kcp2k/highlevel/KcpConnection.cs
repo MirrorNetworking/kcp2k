@@ -174,29 +174,6 @@ namespace kcp2k
 
         void TickDisconnecting(uint time)
         {
-            // send a disconnect message and disconnect
-            if (socket.Connected)
-            {
-                try
-                {
-                    Send(Goodbye);
-                    kcp.Flush();
-                }
-                catch (SocketException)
-                {
-                    // this is ok,  the connection was already closed
-                }
-                catch (ObjectDisposedException)
-                {
-                    // this is normal when we stop the server
-                    // the socket is stopped so we can't send anything anymore
-                    // to the clients
-
-                    // the clients will eventually timeout and realize they
-                    // were disconnected
-                }
-            }
-
             // call OnDisconnected, then go to Disconnected.
             // (instead of calling it in every Disconnected tick)
             // (this is easier than comparing lastState)
@@ -303,6 +280,29 @@ namespace kcp2k
         {
             // set as disconnecting. update will send the Bye message etc.
             state = KcpState.Disconnecting;
+
+            // send a disconnect message
+            if (socket.Connected)
+            {
+                try
+                {
+                    Send(Goodbye);
+                    kcp.Flush();
+                }
+                catch (SocketException)
+                {
+                    // this is ok,  the connection was already closed
+                }
+                catch (ObjectDisposedException)
+                {
+                    // this is normal when we stop the server
+                    // the socket is stopped so we can't send anything anymore
+                    // to the clients
+
+                    // the clients will eventually timeout and realize they
+                    // were disconnected
+                }
+            }
         }
 
         // get remote endpoint

@@ -347,5 +347,24 @@ namespace kcp2k.Tests
 
             Assert.That(server.GetClientAddress(connectionId), Is.EqualTo("::ffff:127.0.0.1"));
         }
+
+        [Test]
+        public void ChokeConnectionAutoDisconnects()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+
+            // fill send queue with > QueueDisconnectThreshold messages
+            byte[] message = {0x03, 0x04};
+            for (int i = 0; i < KcpConnection.QueueDisconnectThreshold + 1; ++i)
+            {
+                server.Send(connectionId, new ArraySegment<byte>(message));
+            }
+
+            // update should disconnect the connection
+            LogAssert.Expect(LogType.Warning, new Regex("KCP: disconnecting connection because it can't process data fast enough.*"));
+            UpdateSeveralTimes();
+        }
     }
 }

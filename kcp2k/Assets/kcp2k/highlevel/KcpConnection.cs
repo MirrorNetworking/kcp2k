@@ -34,7 +34,7 @@ namespace kcp2k
         byte[] buffer = new byte[Kcp.MTU_DEF];
 
         internal static readonly ArraySegment<byte> Hello = new ArraySegment<byte>(new byte[] { 0 });
-        private static readonly ArraySegment<byte> Goodbye = new ArraySegment<byte>(new byte[] { 1 });
+        static readonly ArraySegment<byte> Goodbye = new ArraySegment<byte>(new byte[] { 1 });
 
         // if we send more than kcp can handle, we will get ever growing
         // send/recv buffers and queues and minutes of latency.

@@ -1,9 +1,6 @@
 #if MIRROR
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Sockets;
 using UnityEngine;
 using kcp2k;
 
@@ -18,23 +15,31 @@ namespace Mirror.KCP
         public bool NoDelay = true;
         [Tooltip("KCP internal update interval. 100ms is KCP default, but a lower interval is recommended to minimize latency and to scale to more networked entities.")]
         public uint Interval = 10;
-        readonly byte[] buffer = new byte[Kcp.MTU_DEF];
 
         // server
-        Socket serverSocket;
-        EndPoint serverNewClientEP = new IPEndPoint(IPAddress.IPv6Any, 0);
-        // connections <connectionId, connection> where connectionId is EndPoint.GetHashCode
-        Dictionary<int, KcpServerConnection> connections = new Dictionary<int, KcpServerConnection>();
+        KcpServer server;
 
         // client
         KcpClient client;
 
         void Awake()
         {
+            // TODO simplify after converting Mirror Transport events to Action
             client = new KcpClient(
                 () => OnClientConnected.Invoke(),
                 (message) => OnClientDataReceived.Invoke(message),
                 () => OnClientDisconnected.Invoke()
+            );
+            // TODO simplify after converting Mirror Transport events to Action
+            server = new KcpServer(
+                (connectionId) => {
+                    ConfigureKcpConnection(server.connections[connectionId]);
+                    OnServerConnected.Invoke(connectionId);
+                },
+                (connectionId, message) => OnServerDataReceived.Invoke(connectionId, message),
+                (connectionId) => OnServerDisconnected.Invoke(connectionId),
+                NoDelay,
+                Interval
             );
             Debug.Log("KcpTransport initialized!");
         }
@@ -73,85 +78,7 @@ namespace Mirror.KCP
             client.Send(segment);
             return true;
         }
-
         public override void ClientDisconnect() => client.Disconnect();
-
-        HashSet<int> connectionsToRemove = new HashSet<int>();
-        void UpdateServer()
-        {
-            while (serverSocket != null && serverSocket.Poll(0, SelectMode.SelectRead))
-            {
-                int msgLength = serverSocket.ReceiveFrom(buffer, 0, buffer.Length, SocketFlags.None, ref serverNewClientEP);
-                //Debug.Log($"KCP: server raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
-
-                // calculate connectionId from endpoint
-                int connectionId = serverNewClientEP.GetHashCode();
-
-                // is this a new connection?
-                if (!connections.TryGetValue(connectionId, out KcpServerConnection connection))
-                {
-                    // add it to a queue
-                    connection = new KcpServerConnection(serverSocket, serverNewClientEP, NoDelay, Interval);
-
-                    // configure connection for max scale
-                    ConfigureKcpConnection(connection);
-
-                    //acceptedConnections.Writer.TryWrite(connection);
-                    connections.Add(connectionId, connection);
-                    Debug.Log($"KCP: server added connection {serverNewClientEP}");
-
-                    // setup connected event
-                    connection.OnConnected += () =>
-                    {
-                        // call mirror event
-                        Debug.Log($"KCP: OnServerConnected({connectionId})");
-                        OnServerConnected.Invoke(connectionId);
-                    };
-
-                    // setup data event
-                    connection.OnData += (message) =>
-                    {
-                        // call mirror event
-                        //Debug.Log($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)})");
-                        OnServerDataReceived.Invoke(connectionId, message);
-                    };
-
-                    // setup disconnected event
-                    connection.OnDisconnected += () =>
-                    {
-                        // flag for removal
-                        // (can't remove directly because connection is updated
-                        //  and event is called while iterating all connections)
-                        connectionsToRemove.Add(connectionId);
-
-                        // call mirror event
-                        Debug.Log($"KCP: OnServerDisconnected({connectionId})");
-                        OnServerDisconnected.Invoke(connectionId);
-                    };
-
-                    // send handshake
-                    connection.Handshake();
-                }
-
-                connection.RawInput(buffer, msgLength);
-            }
-
-            // tick all server connections
-            foreach (KcpServerConnection connection in connections.Values)
-            {
-                connection.Tick();
-                connection.Receive();
-            }
-
-            // remove disconnected connections
-            // (can't do it in connection.OnDisconnected because Tick is called
-            //  while iterating connections)
-            foreach (int connectionId in connectionsToRemove)
-            {
-                connections.Remove(connectionId);
-            }
-            connectionsToRemove.Clear();
-        }
 
         // IMPORTANT: set script execution order to >1000 to call Transport's
         //            LateUpdate after all others. Fixes race condition where
@@ -166,56 +93,25 @@ namespace Mirror.KCP
             if (!enabled)
                 return;
 
-            UpdateServer();
+            server.Tick();
             client.Tick();
         }
 
         // server
-        public override bool ServerActive() => serverSocket != null;
-        public override void ServerStart()
-        {
-            // only start once
-            if (serverSocket != null)
-            {
-                Debug.LogWarning("KCP: server already started!");
-            }
-
-            // listen
-            serverSocket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
-            serverSocket.DualMode = true;
-            serverSocket.Bind(new IPEndPoint(IPAddress.IPv6Any, Port));
-        }
+        public override bool ServerActive() => server.IsActive();
+        public override void ServerStart() => server.Start(Port);
         public override bool ServerSend(int connectionId, int channelId, ArraySegment<byte> segment)
         {
-            if (connections.TryGetValue(connectionId, out KcpServerConnection connection))
-            {
-                connection.Send(segment);
-                return true;
-            }
-            return false;
+            server.Send(connectionId, segment);
+            return true;
         }
         public override bool ServerDisconnect(int connectionId)
         {
-            if (connections.TryGetValue(connectionId, out KcpServerConnection connection))
-            {
-                connection.Disconnect();
-                return true;
-            }
-            return false;
+            server.Disconnect(connectionId);
+            return true;
         }
-        public override string ServerGetClientAddress(int connectionId)
-        {
-            if (connections.TryGetValue(connectionId, out KcpServerConnection connection))
-            {
-                return (connection.GetRemoteEndPoint() as IPEndPoint).Address.ToString();
-            }
-            return "";
-        }
-        public override void ServerStop()
-        {
-            serverSocket?.Close();
-            serverSocket = null;
-        }
+        public override string ServerGetClientAddress(int connectionId) => server.GetClientAddress(connectionId);
+        public override void ServerStop() => server.Stop();
 
         // common
         public override void Shutdown() {}
@@ -229,13 +125,13 @@ namespace Mirror.KCP
         }
 
         int GetTotalSendQueue() =>
-            connections.Values.Sum(conn => conn.kcp.snd_queue.Count);
+            server.connections.Values.Sum(conn => conn.kcp.snd_queue.Count);
         int GetTotalReceiveQueue() =>
-            connections.Values.Sum(conn => conn.kcp.rcv_queue.Count);
+            server.connections.Values.Sum(conn => conn.kcp.rcv_queue.Count);
         int GetTotalSendBuffer() =>
-            connections.Values.Sum(conn => conn.kcp.snd_buf.Count);
+            server.connections.Values.Sum(conn => conn.kcp.snd_buf.Count);
         int GetTotalReceiveBuffer() =>
-            connections.Values.Sum(conn => conn.kcp.rcv_buf.Count);
+            server.connections.Values.Sum(conn => conn.kcp.rcv_buf.Count);
 
         void OnGUI()
         {

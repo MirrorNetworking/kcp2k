@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using NUnit.Framework;
-using kcp2k.Examples;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -19,15 +18,20 @@ namespace kcp2k.Tests
         const bool NoDelay = true;
         const uint Interval = 1; // 1ms so at interval code at least runs.
 
-
-        TestServer server;
+        KcpServer server;
         KcpClient client;
 
         // setup ///////////////////////////////////////////////////////////////
         [SetUp]
         public void SetUp()
         {
-            server = new TestServer();
+            server = new KcpServer(
+                (connectionId) => {},
+                (connectionId, message) => Debug.Log($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)})"),
+                (connectionId) => {},
+                NoDelay,
+                Interval
+            );
             server.NoDelay = NoDelay;
             server.Interval = Interval;
 
@@ -42,8 +46,7 @@ namespace kcp2k.Tests
         public void TearDown()
         {
             client.Disconnect();
-            server.StopServer();
-
+            server.Stop();
         }
 
         // helpers /////////////////////////////////////////////////////////////
@@ -61,7 +64,7 @@ namespace kcp2k.Tests
             for (int i = 0; i < 50; ++i)
             {
                 client.Tick();
-                server.LateUpdate();
+                server.Tick();
                 Thread.Sleep(10);
             }
         }
@@ -104,16 +107,16 @@ namespace kcp2k.Tests
         public void ServerUpdateOnce()
         {
             // just see if we can tick the server after it started
-            server.LateUpdate();
+            server.Tick();
         }
 
         [Test]
         public void ServerStartStop()
         {
-            server.StartServer();
-            Assert.That(server.Active, Is.True);
-            server.StopServer();
-            Assert.That(server.Active, Is.False);
+            server.Start(Port);
+            Assert.That(server.IsActive(), Is.True);
+            server.Stop();
+            Assert.That(server.IsActive(), Is.False);
         }
 
         [Test]
@@ -129,7 +132,7 @@ namespace kcp2k.Tests
         public void ConnectAndDisconnectClient()
         {
             // connect
-            server.StartServer();
+            server.Start(Port);
             ConnectClientBlocking();
 
             Assert.That(client.connected, Is.True);
@@ -146,7 +149,7 @@ namespace kcp2k.Tests
         [Test]
         public void ConnectAndDisconnectClientMultipleTimes()
         {
-            server.StartServer();
+            server.Start(Port);
 
             for (int i = 0; i < 10; ++i)
             {
@@ -159,13 +162,13 @@ namespace kcp2k.Tests
                 Assert.That(server.connections.Count, Is.EqualTo(0));
             }
 
-            server.StopServer();
+            server.Stop();
         }
 
         [Test]
         public void ClientToServerMessage()
         {
-            server.StartServer();
+            server.Start(Port);
             ConnectClientBlocking();
 
             byte[] message = {0x01, 0x02};
@@ -177,7 +180,7 @@ namespace kcp2k.Tests
         [Test]
         public void ClientToServerMaxSizedMessage()
         {
-            server.StartServer();
+            server.Start(Port);
             ConnectClientBlocking();
 
             byte[] message = new byte[Kcp.MTU_DEF];
@@ -191,7 +194,7 @@ namespace kcp2k.Tests
         [Test]
         public void ClientToServerTooLargeMessage()
         {
-            server.StartServer();
+            server.Start(Port);
             ConnectClientBlocking();
 
             byte[] message = new byte[Kcp.MTU_DEF + 1];
@@ -203,7 +206,7 @@ namespace kcp2k.Tests
         [Test]
         public void ClientToServerTwoMessages()
         {
-            server.StartServer();
+            server.Start(Port);
             ConnectClientBlocking();
 
             byte[] message = {0x01, 0x02};
@@ -220,7 +223,7 @@ namespace kcp2k.Tests
         [Test]
         public void ClientToServerMultipleMaxSizedMessagesAtOnce()
         {
-            server.StartServer();
+            server.Start(Port);
             ConnectClientBlocking();
 
             // prepare 10 different MTU sized messages.
@@ -248,7 +251,7 @@ namespace kcp2k.Tests
         [Test]
         public void ServerToClientMessage()
         {
-            server.StartServer();
+            server.Start(Port);
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
@@ -261,7 +264,7 @@ namespace kcp2k.Tests
         [Test]
         public void ServerToClientMaxSizedMessage()
         {
-            server.StartServer();
+            server.Start(Port);
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
@@ -277,7 +280,7 @@ namespace kcp2k.Tests
         [Test]
         public void ServerToClientTooLargeMessage()
         {
-            server.StartServer();
+            server.Start(Port);
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
@@ -290,7 +293,7 @@ namespace kcp2k.Tests
         [Test]
         public void ServerToClientTwoMessages()
         {
-            server.StartServer();
+            server.Start(Port);
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
@@ -303,14 +306,14 @@ namespace kcp2k.Tests
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message2));
 
             client.Disconnect();
-            server.StopServer();
+            server.Stop();
         }
 
         // client disconnecting by himself should disconnect on both ends
         [Test]
         public void ClientVoluntaryDisconnect()
         {
-            server.StartServer();
+            server.Start(Port);
             ConnectClientBlocking();
             Assert.That(client.connected, Is.True);
             Assert.That(server.connections.Count, Is.EqualTo(1));
@@ -324,7 +327,7 @@ namespace kcp2k.Tests
         [Test]
         public void ClientInvoluntaryDisconnect()
         {
-            server.StartServer();
+            server.Start(Port);
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
@@ -339,11 +342,11 @@ namespace kcp2k.Tests
         [Test]
         public void ServerGetClientAddress()
         {
-            server.StartServer();
+            server.Start(Port);
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
-            Assert.That(server.GetAddress(connectionId), Is.EqualTo("::ffff:127.0.0.1"));
+            Assert.That(server.GetClientAddress(connectionId), Is.EqualTo("::ffff:127.0.0.1"));
         }
     }
 }

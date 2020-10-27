@@ -57,15 +57,14 @@ namespace kcp2k.Tests
 
         void UpdateSeveralTimes()
         {
-            // update serveral times
-            // Kcp default interval is 100ms.
-            // let's update for 500ms to give messages enough time to pass.
-            // (otherwise we get flaky tests)
+            // update serveral times to avoid flaky tests.
             for (int i = 0; i < 50; ++i)
             {
                 client.Tick();
                 server.Tick();
-                Thread.Sleep(10);
+                // update 'interval' milliseconds.
+                // the lower the interval, the faster the tests will run.
+                Thread.Sleep((int)Interval);
             }
         }
 

@@ -7,7 +7,7 @@ using Debug = UnityEngine.Debug;
 
 namespace kcp2k
 {
-    enum KcpState { Connected, Handshake, Authenticated, Disconnected }
+    enum KcpState { Connected, Handshake, Authenticated, Disconnecting, Disconnected }
 
     public abstract class KcpConnection
     {
@@ -17,7 +17,6 @@ namespace kcp2k
 
         // kcp can have several different states, let's use a state machine
         KcpState state = KcpState.Disconnected;
-        KcpState lastState = KcpState.Disconnected;
 
         public event Action OnConnected;
         public event Action<ArraySegment<byte>> OnData;
@@ -174,6 +173,16 @@ namespace kcp2k
             }
         }
 
+        void TickDisconnecting(uint time)
+        {
+            // call OnDisconnected once, then go to Disconnected.
+            // (instead of calling it in every Disconnected tick)
+            // (this is easier than comparing lastState)
+            Debug.Log("KCP Connection: Disconnected.");
+            OnDisconnected?.Invoke();
+            state = KcpState.Disconnected;
+        }
+
         void TickDisconnected(uint time)
         {
             // don't update while disconnected
@@ -181,14 +190,6 @@ namespace kcp2k
             // TODO keep updating while disconnected so everything
             // is flushed out?
             // or use a Disconnecting state for a second or so
-
-            // not disconnected before?
-            // then call OnDisconnected
-            if (lastState != KcpState.Disconnected)
-            {
-                Debug.Log("KCP Connection: Disconnected.");
-                OnDisconnected?.Invoke();
-            }
         }
 
         public void Tick()
@@ -214,6 +215,11 @@ namespace kcp2k
                         TickAuthenticated(time);
                         break;
                     }
+                    case KcpState.Disconnecting:
+                    {
+                        TickDisconnecting(time);
+                        break;
+                    }
                     case KcpState.Disconnected:
                     {
                         TickDisconnected(time);
@@ -237,9 +243,6 @@ namespace kcp2k
                 Debug.LogException(ex);
                 Disconnect();
             }
-
-            // remember previous state
-            lastState = state;
         }
 
         public void RawInput(byte[] buffer, int msgLength)
@@ -293,13 +296,13 @@ namespace kcp2k
             // do nothing if already disconnected
             if (state == KcpState.Disconnected) return;
 
-            // set as Disconnected BEFORE calling OnDisconnected event.
+            // set as Disconnecting BEFORE calling OnDisconnected event.
             // this avoids potential deadlocks like this Mirror bug:
             // https://github.com/vis2k/Mirror/issues/2357
             // where OnDisconnected->Mirror.OnDisconnected->ServerDisconnect->
             //       Connection.Disconnect->Kcp.Disconnect->OnDisconnected->
             //       DEADLOCK
-            state = KcpState.Disconnected;
+            state = KcpState.Disconnecting;
 
             // send a disconnect message and disconnect
             if (socket.Connected)

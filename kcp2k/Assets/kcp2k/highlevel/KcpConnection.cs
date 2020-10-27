@@ -224,18 +224,18 @@ namespace kcp2k
             catch (SocketException)
             {
                 // this is ok, the connection was closed
-                state = KcpState.Disconnected;
+                Disconnect();
             }
             catch (ObjectDisposedException)
             {
-                // fine, socket was closed, no more ticking needed
-                state = KcpState.Disconnected;
+                // fine, socket was closed
+                Disconnect();
             }
             catch (Exception ex)
             {
                 // unexpected
-                state = KcpState.Disconnected;
                 Debug.LogException(ex);
+                Disconnect();
             }
 
             // remember previous state

@@ -73,8 +73,10 @@ namespace kcp2k
             // https://github.com/vis2k/Mirror/issues/2353
             if (connected)
             {
+                // call Disconnect and let the connection handle it.
+                // DO NOT set it to null yet. it needs to be updated a few more
+                // times first. let the connection handle it!
                 connection?.Disconnect();
-                connection = null;
             }
         }
 

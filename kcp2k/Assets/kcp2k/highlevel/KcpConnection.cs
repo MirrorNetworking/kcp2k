@@ -287,10 +287,8 @@ namespace kcp2k
             return false;
         }
 
-        /// <summary>
-        ///     Disconnect this connection
-        /// </summary>
-        public virtual void Disconnect()
+        // disconnect this connection
+        public void Disconnect()
         {
             // do nothing if already disconnected
             if (state == KcpState.Disconnected) return;

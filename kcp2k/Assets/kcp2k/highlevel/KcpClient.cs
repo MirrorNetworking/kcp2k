@@ -83,9 +83,10 @@ namespace kcp2k
             // tick client connection
             if (connection != null)
             {
-                connection.Tick();
                 // recv on socket
                 connection.RawReceive();
+                // now update
+                connection.Tick();
                 // recv on kcp
                 connection.Receive();
             }

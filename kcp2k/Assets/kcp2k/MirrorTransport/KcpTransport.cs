@@ -22,6 +22,9 @@ namespace Mirror.KCP
         // client
         KcpClient client;
 
+        // debugging
+        public bool debugGUI;
+
         void Awake()
         {
             // TODO simplify after converting Mirror Transport events to Action
@@ -135,6 +138,8 @@ namespace Mirror.KCP
 
         void OnGUI()
         {
+            if (!debugGUI) return;
+
             GUILayout.BeginArea(new Rect(5, 100, 300, 300));
 
             if (ServerActive())

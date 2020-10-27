@@ -30,7 +30,7 @@ namespace kcp2k
         // recv buffer to avoid allocations
         byte[] buffer = new byte[Kcp.MTU_DEF];
 
-        volatile uint lastReceived;
+        uint lastReceived;
 
         internal static readonly ArraySegment<byte> Hello = new ArraySegment<byte>(new byte[] { 0 });
         private static readonly ArraySegment<byte> Goodbye = new ArraySegment<byte>(new byte[] { 1 });

@@ -39,10 +39,6 @@ namespace kcp2k
         // useful to protect against random data from the internet.
         bool authenticated;
 
-        protected KcpConnection()
-        {
-        }
-
         // NoDelay & interval are the most important configurations.
         // let's force require the parameters so we don't forget it anywhere.
         protected void SetupKcp(bool noDelay, uint interval = Kcp.INTERVAL)

@@ -12,7 +12,7 @@ namespace kcp2k
         protected Socket socket;
         protected EndPoint remoteEndpoint;
         internal Kcp kcp;
-        volatile bool open;
+        bool open;
 
         public event Action OnConnected;
         public event Action<ArraySegment<byte>> OnData;

@@ -280,8 +280,6 @@ namespace kcp2k
                     Send(Goodbye);
                     kcp.Flush();
 
-                    // set as not open
-
                     // call OnDisconnected event, even if we manually
                     // disconnected
                     OnDisconnected?.Invoke();

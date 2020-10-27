@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
-using Unity.Collections.LowLevel.Unsafe;
 using Debug = UnityEngine.Debug;
 
 namespace kcp2k
@@ -122,7 +121,7 @@ namespace kcp2k
             if (ReceiveNext(out ArraySegment<byte> message))
             {
                 // handshake message?
-                if (SegmentsEqual(message, Hello))
+                if (Utils.SegmentsEqual(message, Hello))
                 {
                     Debug.Log("KCP: received handshake");
                     state = KcpState.Authenticated;
@@ -157,7 +156,7 @@ namespace kcp2k
             while (ReceiveNext(out ArraySegment<byte> message))
             {
                 // disconnect message?
-                if (SegmentsEqual(message, Goodbye))
+                if (Utils.SegmentsEqual(message, Goodbye))
                 {
                     Debug.Log("KCP: received disconnect message");
                     Disconnect();
@@ -297,20 +296,6 @@ namespace kcp2k
 
         protected virtual void Dispose()
         {
-        }
-
-        // ArraySegment content comparison without Linq
-        public static unsafe bool SegmentsEqual(ArraySegment<byte> a, ArraySegment<byte> b)
-        {
-            if (a.Count == b.Count)
-            {
-                fixed (byte* aPtr = &a.Array[a.Offset],
-                             bPtr = &b.Array[b.Offset])
-                {
-                    return UnsafeUtility.MemCmp(aPtr, bPtr, a.Count) == 0;
-                }
-            }
-            return false;
         }
 
         // disconnect this connection

@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace kcp2k
 {
-    public static class Utils
+    public static partial class Utils
     {
         // encode 8 bits unsigned int
         public static int Encode8u(byte[] p, int offset, byte c)

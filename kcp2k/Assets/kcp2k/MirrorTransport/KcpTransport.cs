@@ -141,6 +141,7 @@ namespace Mirror.KCP
             {
                 GUILayout.BeginVertical("Box");
                 GUILayout.Label("SERVER");
+                GUILayout.Label("  connections: " + server.connections.Count);
                 GUILayout.Label("  SendQueue: " + GetTotalSendQueue());
                 GUILayout.Label("  ReceiveQueue: " + GetTotalReceiveQueue());
                 GUILayout.Label("  SendBuffer: " + GetTotalSendBuffer());

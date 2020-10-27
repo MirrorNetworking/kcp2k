@@ -55,12 +55,12 @@ namespace Mirror.KCP
             // TODO consider lower interval IF interval matters in nodelay mode
 
             // we did this in previous test
-            connection.kcp.SetNoDelay(1, 10, 2, true);
+            //connection.kcp.SetNoDelay(1, 10, 2, true);
 
             // this works for 4k:
             //connection.kcp.SetWindowSize(128, 128);
             // this works for 10k:
-            connection.kcp.SetWindowSize(512, 512);
+            //connection.kcp.SetWindowSize(512, 512);
             // this works for 20k:
             //connection.kcp.SetWindowSize(8192, 8192);
         }

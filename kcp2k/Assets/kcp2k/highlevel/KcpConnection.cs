@@ -104,6 +104,93 @@ namespace kcp2k
             return false;
         }
 
+        void TickConnected(uint time)
+        {
+            kcp.Update(time);
+            // send handshake to the other end, wait for a reply
+            // note that server & client connections both send the
+            // handshake immediately. there is no particular order.
+            Debug.Log("KcpConnection: sending Handshake to other end!");
+            Send(Hello);
+            state = KcpState.Handshake;
+        }
+
+        void TickHandshake(uint time)
+        {
+            kcp.Update(time);
+
+            // any message received?
+            if (ReceiveNext(out ArraySegment<byte> message))
+            {
+                // handshake message?
+                if (SegmentsEqual(message, Hello))
+                {
+                    Debug.Log("KCP: received handshake");
+                    state = KcpState.Authenticated;
+                    OnConnected?.Invoke();
+                }
+                // otherwise it's random data from the internet, not
+                // from a legitimate player. disconnect.
+                else
+                {
+                    Debug.LogWarning("KCP: received random data before handshake. Disconnecting the connection.");
+                    Disconnect();
+                }
+            }
+        }
+
+        void TickAuthenticated(uint time)
+        {
+            kcp.Update(time);
+
+            // we can only send to authenticated connections.
+            // so we need to detect chocked connections here.
+            if (IsChoked(out int total))
+            {
+                Debug.LogWarning($"KCP: disconnecting connection because it can't process data fast enough.\n" +
+                                 $"Queue total {total}>{QueueDisconnectThreshold}. rcv_queue={kcp.rcv_queue.Count} snd_queue={kcp.snd_queue.Count} rcv_buf={kcp.rcv_buf.Count} snd_buf={kcp.snd_buf.Count}\n" +
+                                 $"* Try to Enable NoDelay, decrease INTERVAL, increase SEND/RECV WINDOW or compress data.\n" +
+                                 $"* Or perhaps the network is simply too slow on our end, or on the other end.\n");
+                Disconnect();
+            }
+
+            // process all received messages
+            while (ReceiveNext(out ArraySegment<byte> message))
+            {
+                // disconnect message?
+                if (SegmentsEqual(message, Goodbye))
+                {
+                    Debug.Log("KCP: received disconnect message");
+                    Disconnect();
+                    break;
+                }
+                // otherwise regular message
+                else
+                {
+                    // only accept regular messages
+                    //Debug.LogWarning($"Kcp recv msg: {BitConverter.ToString(buffer, 0, msgSize)}");
+                    OnData?.Invoke(message);
+                }
+            }
+        }
+
+        void TickDisconnected(uint time)
+        {
+            // don't update while disconnected
+
+            // TODO keep updating while disconnected so everything
+            // is flushed out?
+            // or use a Disconnecting state for a second or so
+
+            // not disconnected before?
+            // then call OnDisconnected
+            if (lastState != KcpState.Disconnected)
+            {
+                Debug.Log("KCP Connection: Disconnected.");
+                OnDisconnected?.Invoke();
+            }
+        }
+
         public void Tick()
         {
             uint time = (uint)refTime.ElapsedMilliseconds;
@@ -114,93 +201,22 @@ namespace kcp2k
                 {
                     case KcpState.Connected:
                     {
-                        kcp.Update(time);
-                        // send handshake to the other end, wait for a reply
-                        // note that server & client connections both send the
-                        // handshake immediately. there is no particular order.
-                        Debug.Log("KcpConnection: sending Handshake to other end!");
-                        Send(Hello);
-                        state = KcpState.Handshake;
+                        TickConnected(time);
                         break;
                     }
                     case KcpState.Handshake:
                     {
-                        kcp.Update(time);
-
-                        // any message received?
-                        if (ReceiveNext(out ArraySegment<byte> message))
-                        {
-                            // handshake message?
-                            if (SegmentsEqual(message, Hello))
-                            {
-                                Debug.Log("KCP: received handshake");
-                                state = KcpState.Authenticated;
-                                OnConnected?.Invoke();
-                            }
-                            // otherwise it's random data from the internet, not
-                            // from a legitimate player. disconnect.
-                            else
-                            {
-                                Debug.LogWarning("KCP: received random data before handshake. Disconnecting the connection.");
-                                Disconnect();
-                            }
-                        }
-
+                        TickHandshake(time);
                         break;
                     }
                     case KcpState.Authenticated:
                     {
-                        kcp.Update(time);
-
-                        // we can only send to authenticated connections.
-                        // so we need to detect chocked connections here.
-                        if (IsChoked(out int total))
-                        {
-                            Debug.LogWarning($"KCP: disconnecting connection because it can't process data fast enough.\n" +
-                                             $"Queue total {total}>{QueueDisconnectThreshold}. rcv_queue={kcp.rcv_queue.Count} snd_queue={kcp.snd_queue.Count} rcv_buf={kcp.rcv_buf.Count} snd_buf={kcp.snd_buf.Count}\n" +
-                                             $"* Try to Enable NoDelay, decrease INTERVAL, increase SEND/RECV WINDOW or compress data.\n" +
-                                             $"* Or perhaps the network is simply too slow on our end, or on the other end.\n");
-                            Disconnect();
-                            break;
-                        }
-
-                        // process all received messages
-                        while (ReceiveNext(out ArraySegment<byte> message))
-                        {
-                            // disconnect message?
-                            if (SegmentsEqual(message, Goodbye))
-                            {
-                                Debug.Log("KCP: received disconnect message");
-                                Disconnect();
-                                break;
-                            }
-                            // otherwise regular message
-                            else
-                            {
-                                // only accept regular messages
-                                //Debug.LogWarning($"Kcp recv msg: {BitConverter.ToString(buffer, 0, msgSize)}");
-                                OnData?.Invoke(message);
-                            }
-                        }
-
+                        TickAuthenticated(time);
                         break;
                     }
                     case KcpState.Disconnected:
                     {
-                        // don't update while disconnected
-
-                        // TODO keep updating while disconnected so everything
-                        // is flushed out?
-                        // or use a Disconnecting state for a second or so
-
-                        // not disconnected before?
-                        // then call OnDisconnected
-                        if (lastState != KcpState.Disconnected)
-                        {
-                            Debug.Log("KCP Connection: Disconnected.");
-                            OnDisconnected?.Invoke();
-                        }
-
+                        TickDisconnected(time);
                         break;
                     }
                 }

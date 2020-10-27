@@ -175,7 +175,30 @@ namespace kcp2k
 
         void TickDisconnecting(uint time)
         {
-            // call OnDisconnected once, then go to Disconnected.
+            // send a disconnect message and disconnect
+            if (socket.Connected)
+            {
+                try
+                {
+                    Send(Goodbye);
+                    kcp.Flush();
+                }
+                catch (SocketException)
+                {
+                    // this is ok,  the connection was already closed
+                }
+                catch (ObjectDisposedException)
+                {
+                    // this is normal when we stop the server
+                    // the socket is stopped so we can't send anything anymore
+                    // to the clients
+
+                    // the clients will eventually timeout and realize they
+                    // were disconnected
+                }
+            }
+
+            // call OnDisconnected, then go to Disconnected.
             // (instead of calling it in every Disconnected tick)
             // (this is easier than comparing lastState)
             Debug.Log("KCP Connection: Disconnected.");
@@ -293,43 +316,8 @@ namespace kcp2k
         // disconnect this connection
         public void Disconnect()
         {
-            // do nothing if already disconnected
-            if (state == KcpState.Disconnected) return;
-
-            // set as Disconnecting BEFORE calling OnDisconnected event.
-            // this avoids potential deadlocks like this Mirror bug:
-            // https://github.com/vis2k/Mirror/issues/2357
-            // where OnDisconnected->Mirror.OnDisconnected->ServerDisconnect->
-            //       Connection.Disconnect->Kcp.Disconnect->OnDisconnected->
-            //       DEADLOCK
+            // set as disconnecting. update will send the Bye message etc.
             state = KcpState.Disconnecting;
-
-            // send a disconnect message and disconnect
-            if (socket.Connected)
-            {
-                try
-                {
-                    Send(Goodbye);
-                    kcp.Flush();
-
-                    // call OnDisconnected event, even if we manually
-                    // disconnected
-                    OnDisconnected?.Invoke();
-                }
-                catch (SocketException)
-                {
-                    // this is ok,  the connection was already closed
-                }
-                catch (ObjectDisposedException)
-                {
-                    // this is normal when we stop the server
-                    // the socket is stopped so we can't send anything anymore
-                    // to the clients
-
-                    // the clients will eventually timeout and realize they
-                    // were disconnected
-                }
-            }
         }
 
         // get remote endpoint

@@ -56,7 +56,7 @@ namespace Mirror.KCP
         }
 
         // client
-        public override bool ClientConnected() => clientConnection != null;
+        public override bool ClientConnected() => clientConnected;
         public override void ClientConnect(string address)
         {
             if (clientConnected)

@@ -39,6 +39,14 @@ namespace kcp2k
         // useful to protect against random data from the internet.
         bool authenticated;
 
+        // if we send more than kcp can handle, we will get ever growing
+        // send/recv buffers and queues and minutes of latency.
+        // => if a connection can't keep up, it should be disconnected instead
+        //    to protect the server under heavy load, and because there is no
+        //    point in growing to gigabytes of memory or minutes of latency!
+        // => 10k seems more than enough room to still recover from.
+        const int QueueDisconnectThreshold = 10000;
+
         // NoDelay & interval are the most important configurations.
         // let's force require the parameters so we don't forget it anywhere.
         protected void SetupKcp(bool noDelay, uint interval = Kcp.INTERVAL)
@@ -65,6 +73,19 @@ namespace kcp2k
                 if (open && time < lastReceived + TIMEOUT)
                 {
                     kcp.Update(time);
+
+                    // disconnect connections that can't process the load.
+                    // see QueueSizeDisconnect comments.
+                    int total = kcp.rcv_queue.Count + kcp.snd_queue.Count +
+                                kcp.rcv_buf.Count + kcp.snd_buf.Count;
+                    if (total >= QueueDisconnectThreshold)
+                    {
+                        Debug.LogWarning($"KCP: disconnecting connection because it can't process data fast enough.\n" +
+                                         $"Queue total {total}>{QueueDisconnectThreshold}. rcv_queue={kcp.rcv_queue.Count} snd_queue={kcp.snd_queue.Count} rcv_buf={kcp.rcv_buf.Count} snd_buf={kcp.snd_buf.Count}\n" +
+                                         $"* Try to Enable NoDelay, decrease INTERVAL, increase SEND/RECV WINDOW or compress data.\n" +
+                                         $"* Or perhaps the network is simply too slow on our end, or on the other end.\n");
+                        Disconnect();
+                    }
 
                     // check can be used to skip updates IF:
                     // - time < what check returned

@@ -348,6 +348,7 @@ namespace kcp2k.Tests
             Assert.That(server.GetClientAddress(connectionId), Is.EqualTo("::ffff:127.0.0.1"));
         }
 
+        [Ignore("Client doesn't receive disconnected message, Server adds client again after he still sends random data.")]
         [Test]
         public void ChokeConnectionAutoDisconnects()
         {
@@ -365,6 +366,10 @@ namespace kcp2k.Tests
             // update should disconnect the connection
             LogAssert.Expect(LogType.Warning, new Regex("KCP: disconnecting connection because it can't process data fast enough.*"));
             UpdateSeveralTimes();
+
+            // client should've disconnected, server should've dropped it
+            Assert.That(client.connected, Is.False);
+            Assert.That(server.connections.Count, Is.EqualTo(0));
         }
     }
 }

@@ -17,9 +17,9 @@ namespace kcp2k
         // kcp can have several different states, let's use a state machine
         KcpState state = KcpState.Disconnected;
 
-        public event Action OnAuthenticated;
-        public event Action<ArraySegment<byte>> OnData;
-        public event Action OnDisconnected;
+        public Action OnAuthenticated;
+        public Action<ArraySegment<byte>> OnData;
+        public Action OnDisconnected;
 
         // If we don't receive anything these many milliseconds
         // then consider us disconnected

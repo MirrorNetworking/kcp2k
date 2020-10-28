@@ -8,9 +8,9 @@ namespace kcp2k
     public class KcpClient
     {
         // events
-        public event Action OnConnected;
-        public event Action<ArraySegment<byte>> OnData;
-        public event Action OnDisconnected;
+        public Action OnConnected;
+        public Action<ArraySegment<byte>> OnData;
+        public Action OnDisconnected;
 
         // state
         public KcpClientConnection connection;
@@ -34,18 +34,18 @@ namespace kcp2k
             connection = new KcpClientConnection();
 
             // setup events
-            connection.OnAuthenticated += () =>
+            connection.OnAuthenticated = () =>
             {
                 Debug.Log($"KCP: OnClientConnected");
                 connected = true;
                 OnConnected.Invoke();
             };
-            connection.OnData += (message) =>
+            connection.OnData = (message) =>
             {
                 //Debug.Log($"KCP: OnClientData({BitConverter.ToString(message.Array, message.Offset, message.Count)})");
                 OnData.Invoke(message);
             };
-            connection.OnDisconnected += () =>
+            connection.OnDisconnected = () =>
             {
                 Debug.Log($"KCP: OnClientDisconnected");
                 connected = false;

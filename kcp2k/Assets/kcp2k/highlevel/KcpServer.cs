@@ -11,9 +11,9 @@ namespace kcp2k
     public class KcpServer
     {
         // events
-        public event Action<int> OnConnected;
-        public event Action<int, ArraySegment<byte>> OnData;
-        public event Action<int> OnDisconnected;
+        public Action<int> OnConnected;
+        public Action<int, ArraySegment<byte>> OnData;
+        public Action<int> OnDisconnected;
 
         // configuration
         // NoDelay is recommended to reduce latency. This also scales better
@@ -121,7 +121,7 @@ namespace kcp2k
                     // for now, this is fine.
 
                     // setup authenticated event that also adds to connections
-                    connection.OnAuthenticated += () =>
+                    connection.OnAuthenticated = () =>
                     {
                         // only send handshake to client AFTER we received his
                         // handshake in OnAuthenticated.
@@ -139,7 +139,7 @@ namespace kcp2k
                         // internet.
 
                         // setup data event
-                        connection.OnData += (message) =>
+                        connection.OnData = (message) =>
                         {
                             // call mirror event
                             //Debug.Log($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)})");
@@ -147,7 +147,7 @@ namespace kcp2k
                         };
 
                         // setup disconnected event
-                        connection.OnDisconnected += () =>
+                        connection.OnDisconnected = () =>
                         {
                             // flag for removal
                             // (can't remove directly because connection is updated

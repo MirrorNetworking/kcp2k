@@ -23,7 +23,7 @@ namespace kcp2k
 
         // If we don't receive anything these many milliseconds
         // then consider us disconnected
-        public const int TIMEOUT = 3000;
+        public const int TIMEOUT = 10000;
 
         // internal time.
         // StopWatch offers ElapsedMilliSeconds and should be more precise than

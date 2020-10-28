@@ -18,7 +18,7 @@ namespace kcp2k
             return 1;
         }
 
-        /* encode 16 bits unsigned int (lsb) */
+        // encode 16 bits unsigned int (lsb)
         public static int Encode16U(byte[] p, int offset, ushort w)
         {
             p[0 + offset] = (byte)(w >> 0);
@@ -26,7 +26,7 @@ namespace kcp2k
             return 2;
         }
 
-        /* decode 16 bits unsigned int (lsb) */
+        // decode 16 bits unsigned int (lsb)
         public static int Decode16U(byte[] p, int offset, ref ushort c)
         {
             ushort result = 0;
@@ -36,7 +36,7 @@ namespace kcp2k
             return 2;
         }
 
-        /* encode 32 bits unsigned int (lsb) */
+        // encode 32 bits unsigned int (lsb)
         public static int Encode32U(byte[] p, int offset, uint l)
         {
             p[0 + offset] = (byte)(l >> 0);
@@ -46,7 +46,7 @@ namespace kcp2k
             return 4;
         }
 
-        /* decode 32 bits unsigned int (lsb) */
+        // decode 32 bits unsigned int (lsb)
         public static int Decode32U(byte[] p, int offset, ref uint c)
         {
             uint result = 0;

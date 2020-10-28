@@ -6,7 +6,7 @@ using Debug = UnityEngine.Debug;
 
 namespace kcp2k
 {
-    enum KcpState { Connected, Handshake, Authenticated, Disconnecting, Disconnected }
+    enum KcpState { Connected, Authenticated, Disconnecting, Disconnected }
 
     public abstract class KcpConnection
     {
@@ -105,17 +105,6 @@ namespace kcp2k
         void TickConnected(uint time)
         {
             kcp.Update(time);
-            // send handshake to the other end, wait for a reply
-            // note that server & client connections both send the
-            // handshake immediately. there is no particular order.
-            Debug.Log("KcpConnection: sending Handshake to other end!");
-            Send(Hello);
-            state = KcpState.Handshake;
-        }
-
-        void TickHandshake(uint time)
-        {
-            kcp.Update(time);
 
             // any message received?
             if (ReceiveNext(out ArraySegment<byte> message))
@@ -204,11 +193,6 @@ namespace kcp2k
                         TickConnected(time);
                         break;
                     }
-                    case KcpState.Handshake:
-                    {
-                        TickHandshake(time);
-                        break;
-                    }
                     case KcpState.Authenticated:
                     {
                         TickAuthenticated(time);
@@ -269,6 +253,17 @@ namespace kcp2k
                 }
             }
             else Debug.LogError($"Failed to send message of size {data.Count} because it's larger than MaxMessageSize={Kcp.MTU_DEF}");
+        }
+
+        // server & client need to send handshake at different times, so we need
+        // to expose the function.
+        // * client should send it immediately.
+        // * server should send it as reply to client's handshake, not before
+        //   (server should not reply to random internet messages with handshake)
+        public void SendHandshake()
+        {
+            Debug.Log("KcpConnection: sending Handshake to other end!");
+            Send(Hello);
         }
 
         protected virtual void Dispose()

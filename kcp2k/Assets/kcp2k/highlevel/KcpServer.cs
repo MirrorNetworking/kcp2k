@@ -123,8 +123,13 @@ namespace kcp2k
                     // setup authenticated event that also adds to connections
                     connection.OnAuthenticated += () =>
                     {
-                        // OnAuthenticated is only called after handshake.
-                        // that's when we add to connections, not earlier.
+                        // only send handshake to client AFTER we received his
+                        // handshake in OnAuthenticated.
+                        // we don't want to reply to random internet messages
+                        // with handshakes each time.
+                        connection.SendHandshake();
+
+                        // add to connections dict after being authenticated.
                         connections.Add(connectionId, connection);
                         Debug.Log($"KCP: server added connection {newClientEP}");
 

@@ -20,6 +20,9 @@ namespace kcp2k
             socket.Connect(remoteEndpoint);
             SetupKcp(noDelay, interval);
 
+            // client should send handshake to server as very first message
+            SendHandshake();
+
             RawReceive();
         }
 

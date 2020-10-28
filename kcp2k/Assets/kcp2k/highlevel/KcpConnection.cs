@@ -286,7 +286,7 @@ namespace kcp2k
                 }
                 catch (SocketException)
                 {
-                    // this is ok,  the connection was already closed
+                    // this is ok, the connection was already closed
                 }
                 catch (ObjectDisposedException)
                 {

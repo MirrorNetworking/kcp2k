@@ -113,6 +113,13 @@ namespace kcp2k
                                  $"Queue total {total}>{QueueDisconnectThreshold}. rcv_queue={kcp.rcv_queue.Count} snd_queue={kcp.snd_queue.Count} rcv_buf={kcp.rcv_buf.Count} snd_buf={kcp.snd_buf.Count}\n" +
                                  $"* Try to Enable NoDelay, decrease INTERVAL, increase SEND/RECV WINDOW or compress data.\n" +
                                  $"* Or perhaps the network is simply too slow on our end, or on the other end.\n");
+
+                // let's clear all pending sends before disconnting with 'Bye'.
+                // otherwise Disconnecting state might have to flush out
+                // thousands of messages before finally sending 'Bye'.
+                // this is just faster and more robust.
+                kcp.snd_queue.Clear();
+
                 Disconnect();
             }
         }
@@ -229,10 +236,7 @@ namespace kcp2k
             // fully disconnected. this way pending messages (including 'Bye')
             // will still be sent to the other end.
             // cutting the connection off immediately might not deliver the
-            // 'Bye' message otherwise (especially if we disconnect a chocked
-            // connection with a lot of pending messages).
-            // otherwise the other end would never receive 'Bye' and be
-            // seemingly frozen.
+            // 'Bye' message otherwise.
             kcp.Flush();
 
             // if everything was flushed out, then we can truly disconnect now.

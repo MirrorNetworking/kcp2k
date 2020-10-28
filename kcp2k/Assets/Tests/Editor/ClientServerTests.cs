@@ -424,12 +424,9 @@ namespace kcp2k.Tests
             // no need to log thousands of messages. that would take forever.
             client.OnData = _ => {};
 
-            // update should disconnect the connection
-            // kcp will flush them all out while in DISCONNECTING state, so we
-            // need to update way more than usual before we receive the final
-            // Bye message (because we sent thousands of messages)
+            // update should detect the choked connection and disconnect it.
             LogAssert.Expect(LogType.Warning, new Regex("KCP: disconnecting connection because it can't process data fast enough.*"));
-            for (int i = 0; i < 100; ++i) UpdateSeveralTimes();
+            UpdateSeveralTimes();
 
             // client should've disconnected, server should've dropped it
             Assert.That(client.connected, Is.False);

@@ -225,25 +225,28 @@ namespace kcp2k
             // note: no need to detect common events or ping. we are
             //       disconnecting already anyway.
 
-            // call OnDisconnected, then go to Disconnected.
-            // (instead of calling it in every Disconnected tick)
-            // (this is easier than comparing lastState)
-            Debug.Log("KCP Connection: Disconnected.");
-            OnDisconnected?.Invoke();
-            state = KcpState.Disconnected;
-        }
+            // keep flushing a little longer before we consider the connection
+            // fully disconnected. this way pending messages (including 'Bye')
+            // will still be sent to the other end.
+            // cutting the connection off immediately might not deliver the
+            // 'Bye' message otherwise (especially if we disconnect a chocked
+            // connection with a lot of pending messages).
+            // otherwise the other end would never receive 'Bye' and be
+            // seemingly frozen.
+            kcp.Flush();
 
-        void TickDisconnected(uint time)
-        {
-            // note: no need to detect common events or ping while disconnected.
-            //       otherwise 'disconnected because timeout/dead_link/etc.'
-            //       would be spammed.
-
-            // don't update while disconnected
-
-            // TODO keep updating while disconnected so everything
-            // is flushed out?
-            // or use a Disconnecting state for a second or so
+            // if everything was flushed out, then we can truly disconnect now.
+            // DO NOT check snd_buf.Count. it sometimes still has 1 entry that
+            // flush will never send out.
+            if (kcp.snd_queue.Count == 0)
+            {
+                // call OnDisconnected, then go to Disconnected.
+                // (instead of calling it in every Disconnected tick)
+                // (this is easier than comparing lastState)
+                Debug.Log("KCP Connection: Disconnected.");
+                OnDisconnected?.Invoke();
+                state = KcpState.Disconnected;
+            }
         }
 
         public void Tick()
@@ -271,7 +274,7 @@ namespace kcp2k
                     }
                     case KcpState.Disconnected:
                     {
-                        TickDisconnected(time);
+                        // do nothing while disconnected
                         break;
                     }
                 }

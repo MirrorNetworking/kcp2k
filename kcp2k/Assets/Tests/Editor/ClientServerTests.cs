@@ -407,7 +407,6 @@ namespace kcp2k.Tests
             Assert.That(server.connections.Count, Is.EqualTo(0));
         }
 
-        [Ignore("Client doesn't receive disconnected message, Server adds client again after he still sends random data.")]
         [Test]
         public void ChokeConnectionAutoDisconnects()
         {
@@ -422,9 +421,15 @@ namespace kcp2k.Tests
                 server.Send(connectionId, new ArraySegment<byte>(message));
             }
 
+            // no need to log thousands of messages. that would take forever.
+            client.OnData = _ => {};
+
             // update should disconnect the connection
+            // kcp will flush them all out while in DISCONNECTING state, so we
+            // need to update way more than usual before we receive the final
+            // Bye message (because we sent thousands of messages)
             LogAssert.Expect(LogType.Warning, new Regex("KCP: disconnecting connection because it can't process data fast enough.*"));
-            UpdateSeveralTimes();
+            for (int i = 0; i < 100; ++i) UpdateSeveralTimes();
 
             // client should've disconnected, server should've dropped it
             Assert.That(client.connected, Is.False);

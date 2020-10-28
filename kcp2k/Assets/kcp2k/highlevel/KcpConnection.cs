@@ -41,10 +41,10 @@ namespace kcp2k
         // => if a connection can't keep up, it should be disconnected instead
         //    to protect the server under heavy load, and because there is no
         //    point in growing to gigabytes of memory or minutes of latency!
-        // => 10k seems more than enough room to still recover from.
+        // => 2k seems more than enough room to still recover from.
         //
         // note: we have a ChokeConnectionAutoDisconnects test for this too!
-        internal const int QueueDisconnectThreshold = 10000;
+        internal const int QueueDisconnectThreshold = 2000;
 
         // NoDelay & interval are the most important configurations.
         // let's force require the parameters so we don't forget it anywhere.

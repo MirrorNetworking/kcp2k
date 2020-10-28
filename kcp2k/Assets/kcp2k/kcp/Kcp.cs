@@ -41,7 +41,7 @@ namespace kcp2k
         }
 
         // kcp members.
-        int state;
+        internal int state;
         readonly uint conv;          // conversation
         internal uint mtu;
         internal uint mss;           // maximum segment size

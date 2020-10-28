@@ -184,6 +184,13 @@ namespace kcp2k
         {
             uint time = (uint)refTime.ElapsedMilliseconds;
 
+            // kcp has 'dead_link' detection. might as well use it.
+            if (kcp.state == -1)
+            {
+                Debug.LogWarning("KCP Connection dead_link detected. Disconnecting.");
+                Disconnect();
+            }
+
             try
             {
                 switch (state)

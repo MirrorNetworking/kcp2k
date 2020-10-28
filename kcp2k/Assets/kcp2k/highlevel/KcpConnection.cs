@@ -36,6 +36,14 @@ namespace kcp2k
 
         internal static readonly ArraySegment<byte> Hello = new ArraySegment<byte>(new byte[] { 0 });
         static readonly ArraySegment<byte> Goodbye = new ArraySegment<byte>(new byte[] { 1 });
+        static readonly ArraySegment<byte> Ping = new ArraySegment<byte>(new byte[] { 2 });
+
+        // send a ping occasionally so we don't time out on the other end.
+        // for example, creating a character in an MMO could easily take a
+        // minute of no data being sent. which doesn't mean we want to time out.
+        // same goes for slow paced card games etc.
+        public const int PING_INTERVAL = 1000;
+        uint lastPingTime;
 
         // if we send more than kcp can handle, we will get ever growing
         // send/recv buffers and queues and minutes of latency.
@@ -80,6 +88,19 @@ namespace kcp2k
             }
         }
 
+        // send a ping occasionally in order to not time out on the other end.
+        void HandlePing(uint time)
+        {
+            // enough time elapsed since last ping?
+            if (time >= lastPingTime + PING_INTERVAL)
+            {
+                // ping again and reset time
+                Debug.Log("KCP: sending ping...");
+                Send(Ping);
+                lastPingTime = time;
+            }
+        }
+
         bool IsChoked(out int total)
         {
             // disconnect connections that can't process the load.
@@ -105,6 +126,13 @@ namespace kcp2k
                     {
                         message = new ArraySegment<byte>(buffer, 0, msgSize);
                         lastReceiveTime = (uint)refTime.ElapsedMilliseconds;
+
+                        // return false if it was a ping message. true otherwise.
+                        if (Utils.SegmentsEqual(message, Ping))
+                        {
+                            Debug.Log("KCP: received ping.");
+                            return false;
+                        }
                         return true;
                     }
                     else
@@ -207,9 +235,10 @@ namespace kcp2k
         {
             uint time = (uint)refTime.ElapsedMilliseconds;
 
-            // detect common events
+            // detect common events & ping in all cases
             HandleTimeout(time);
             HandleDeadLink();
+            HandlePing(time);
 
             try
             {

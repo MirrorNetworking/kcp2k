@@ -366,6 +366,26 @@ namespace kcp2k.Tests
             Assert.That(server.connections.Count, Is.EqualTo(0));
         }
 
+        [Test]
+        public void PingPreventsTimeout()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+
+            // only update but don't send anything for 'Timeout + 1' seconds.
+            // ping should be sent internally every second, preventing timeout.
+            System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch();
+            watch.Start();
+            while (watch.ElapsedMilliseconds < KcpConnection.TIMEOUT + 1)
+            {
+                UpdateSeveralTimes();
+            }
+
+            // if ping worked then we shouldn't have timed out
+            Assert.That(client.connected, Is.True);
+            Assert.That(server.connections.Count, Is.EqualTo(1));
+        }
+
         // fake a kcp dead_link by setting state = -1.
         // KcpConnection should detect it and disconnect.
         [Test]

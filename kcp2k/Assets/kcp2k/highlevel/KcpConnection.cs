@@ -101,13 +101,20 @@ namespace kcp2k
             }
         }
 
-        bool IsChoked(out int total)
+        void HandleChoked()
         {
             // disconnect connections that can't process the load.
             // see QueueSizeDisconnect comments.
-            total = kcp.rcv_queue.Count + kcp.snd_queue.Count +
-                    kcp.rcv_buf.Count + kcp.snd_buf.Count;
-            return total >= QueueDisconnectThreshold;
+            int total = kcp.rcv_queue.Count + kcp.snd_queue.Count +
+                        kcp.rcv_buf.Count + kcp.snd_buf.Count;
+            if (total >= QueueDisconnectThreshold)
+            {
+                Debug.LogWarning($"KCP: disconnecting connection because it can't process data fast enough.\n" +
+                                 $"Queue total {total}>{QueueDisconnectThreshold}. rcv_queue={kcp.rcv_queue.Count} snd_queue={kcp.snd_queue.Count} rcv_buf={kcp.rcv_buf.Count} snd_buf={kcp.snd_buf.Count}\n" +
+                                 $"* Try to Enable NoDelay, decrease INTERVAL, increase SEND/RECV WINDOW or compress data.\n" +
+                                 $"* Or perhaps the network is simply too slow on our end, or on the other end.\n");
+                Disconnect();
+            }
         }
 
         // reads the next message from connection.
@@ -159,6 +166,7 @@ namespace kcp2k
             HandleTimeout(time);
             HandleDeadLink();
             HandlePing(time);
+            HandleChoked();
 
             kcp.Update(time);
 
@@ -188,19 +196,9 @@ namespace kcp2k
             HandleTimeout(time);
             HandleDeadLink();
             HandlePing(time);
+            HandleChoked();
 
             kcp.Update(time);
-
-            // we can only send to authenticated connections.
-            // so we need to detect chocked connections here.
-            if (IsChoked(out int total))
-            {
-                Debug.LogWarning($"KCP: disconnecting connection because it can't process data fast enough.\n" +
-                                 $"Queue total {total}>{QueueDisconnectThreshold}. rcv_queue={kcp.rcv_queue.Count} snd_queue={kcp.snd_queue.Count} rcv_buf={kcp.rcv_buf.Count} snd_buf={kcp.snd_buf.Count}\n" +
-                                 $"* Try to Enable NoDelay, decrease INTERVAL, increase SEND/RECV WINDOW or compress data.\n" +
-                                 $"* Or perhaps the network is simply too slow on our end, or on the other end.\n");
-                Disconnect();
-            }
 
             // process all received messages
             while (ReceiveNext(out ArraySegment<byte> message))

@@ -366,6 +366,27 @@ namespace kcp2k.Tests
             Assert.That(server.connections.Count, Is.EqualTo(0));
         }
 
+        // fake a kcp dead_link by setting state = -1.
+        // KcpConnection should detect it and disconnect.
+        [Test]
+        public void DeadLink_Fake()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+
+            // fake dead_link by setting kcp.state to -1
+            server.connections[connectionId].kcp.state = -1;
+
+            // now update
+            LogAssert.Expect(LogType.Warning, $"KCP Connection dead_link detected. Disconnecting.");
+            UpdateSeveralTimes();
+
+            // should be disconnected
+            Assert.That(client.connected, Is.False);
+            Assert.That(server.connections.Count, Is.EqualTo(0));
+        }
+
         [Ignore("Client doesn't receive disconnected message, Server adds client again after he still sends random data.")]
         [Test]
         public void ChokeConnectionAutoDisconnects()

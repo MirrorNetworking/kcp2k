@@ -348,6 +348,24 @@ namespace kcp2k.Tests
             Assert.That(server.GetClientAddress(connectionId), Is.EqualTo("::ffff:127.0.0.1"));
         }
 
+        [Test]
+        public void Timeout()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+
+            // do nothing for 'Timeout + 1' seconds
+            Thread.Sleep(KcpConnection.TIMEOUT + 1);
+
+            // now update
+            LogAssert.Expect(LogType.Warning, $"KCP: Connection timed out after {KcpConnection.TIMEOUT}ms. Disconnecting.");
+            UpdateSeveralTimes();
+
+            // should be disconnected
+            Assert.That(client.connected, Is.False);
+            Assert.That(server.connections.Count, Is.EqualTo(0));
+        }
+
         [Ignore("Client doesn't receive disconnected message, Server adds client again after he still sends random data.")]
         [Test]
         public void ChokeConnectionAutoDisconnects()

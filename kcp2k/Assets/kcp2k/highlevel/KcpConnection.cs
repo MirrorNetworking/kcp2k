@@ -24,6 +24,7 @@ namespace kcp2k
         // If we don't receive anything these many milliseconds
         // then consider us disconnected
         public const int TIMEOUT = 10000;
+        uint lastReceiveTime;
 
         // internal time.
         // StopWatch offers ElapsedMilliSeconds and should be more precise than
@@ -56,6 +57,17 @@ namespace kcp2k
             state = KcpState.Connected;
 
             Tick();
+        }
+
+        void HandleTimeout(uint time)
+        {
+            if (time >= lastReceiveTime + TIMEOUT)
+            {
+                // TODO make sure that connections send a ping
+                // so we never time out in slow paced games.
+                Debug.LogWarning($"KCP: Connection timed out after {TIMEOUT}ms. Disconnecting.");
+                Disconnect();
+            }
         }
 
         void HandleDeadLink()
@@ -92,6 +104,7 @@ namespace kcp2k
                     if (received >= 0)
                     {
                         message = new ArraySegment<byte>(buffer, 0, msgSize);
+                        lastReceiveTime = (uint)refTime.ElapsedMilliseconds;
                         return true;
                     }
                     else
@@ -195,6 +208,7 @@ namespace kcp2k
             uint time = (uint)refTime.ElapsedMilliseconds;
 
             // detect common events
+            HandleTimeout(time);
             HandleDeadLink();
 
             try

@@ -155,6 +155,11 @@ namespace kcp2k
 
         void TickConnected(uint time)
         {
+            // detect common events & ping
+            HandleTimeout(time);
+            HandleDeadLink();
+            HandlePing(time);
+
             kcp.Update(time);
 
             // any message received?
@@ -179,6 +184,11 @@ namespace kcp2k
 
         void TickAuthenticated(uint time)
         {
+            // detect common events & ping
+            HandleTimeout(time);
+            HandleDeadLink();
+            HandlePing(time);
+
             kcp.Update(time);
 
             // we can only send to authenticated connections.
@@ -214,6 +224,9 @@ namespace kcp2k
 
         void TickDisconnecting(uint time)
         {
+            // note: no need to detect common events or ping. we are
+            //       disconnecting already anyway.
+
             // call OnDisconnected, then go to Disconnected.
             // (instead of calling it in every Disconnected tick)
             // (this is easier than comparing lastState)
@@ -224,6 +237,10 @@ namespace kcp2k
 
         void TickDisconnected(uint time)
         {
+            // note: no need to detect common events or ping while disconnected.
+            //       otherwise 'disconnected because timeout/dead_link/etc.'
+            //       would be spammed.
+
             // don't update while disconnected
 
             // TODO keep updating while disconnected so everything
@@ -234,11 +251,6 @@ namespace kcp2k
         public void Tick()
         {
             uint time = (uint)refTime.ElapsedMilliseconds;
-
-            // detect common events & ping in all cases
-            HandleTimeout(time);
-            HandleDeadLink();
-            HandlePing(time);
 
             try
             {

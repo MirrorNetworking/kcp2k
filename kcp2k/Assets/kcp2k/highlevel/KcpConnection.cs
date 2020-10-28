@@ -58,6 +58,16 @@ namespace kcp2k
             Tick();
         }
 
+        void HandleDeadLink()
+        {
+            // kcp has 'dead_link' detection. might as well use it.
+            if (kcp.state == -1)
+            {
+                Debug.LogWarning("KCP Connection dead_link detected. Disconnecting.");
+                Disconnect();
+            }
+        }
+
         bool IsChoked(out int total)
         {
             // disconnect connections that can't process the load.
@@ -184,12 +194,8 @@ namespace kcp2k
         {
             uint time = (uint)refTime.ElapsedMilliseconds;
 
-            // kcp has 'dead_link' detection. might as well use it.
-            if (kcp.state == -1)
-            {
-                Debug.LogWarning("KCP Connection dead_link detected. Disconnecting.");
-                Disconnect();
-            }
+            // detect common events
+            HandleDeadLink();
 
             try
             {

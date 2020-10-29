@@ -114,7 +114,7 @@ namespace kcp2k
             {
                 Debug.LogWarning($"KCP: disconnecting connection because it can't process data fast enough.\n" +
                                  $"Queue total {total}>{QueueDisconnectThreshold}. rcv_queue={kcp.rcv_queue.Count} snd_queue={kcp.snd_queue.Count} rcv_buf={kcp.rcv_buf.Count} snd_buf={kcp.snd_buf.Count}\n" +
-                                 $"* Try to Enable NoDelay, decrease INTERVAL, increase SEND/RECV WINDOW or compress data.\n" +
+                                 $"* Try to Enable NoDelay, decrease INTERVAL, disable Congestion Window (= enable NOCWND!), increase SEND/RECV WINDOW or compress data.\n" +
                                  $"* Or perhaps the network is simply too slow on our end, or on the other end.\n");
 
                 // let's clear all pending sends before disconnting with 'Bye'.

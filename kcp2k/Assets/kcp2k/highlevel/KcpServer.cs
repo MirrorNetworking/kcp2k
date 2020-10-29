@@ -23,6 +23,13 @@ namespace kcp2k
         // interval is recommended to minimize latency and to scale to more
         // networked entities.
         public uint Interval;
+        // KCP fastresend parameter. Faster resend for the cost of higher
+        // bandwidth.
+        public int FastResend;
+        // KCP 'NoCongestionWindow' is false by default. here we negate it for
+        // ease of use. This can be disabled for high scale games if connections
+        // choke regularly.
+        public bool CongestionWindow;
         // KCP window size can be modified to support higher loads.
         // for example, Mirror Benchmark requires:
         //   128, 128 for 4k monsters
@@ -44,6 +51,8 @@ namespace kcp2k
                          Action<int> OnDisconnected,
                          bool NoDelay,
                          uint Interval,
+                         int FastResend = 0,
+                         bool CongestionWindow = true,
                          uint SendWindowSize = Kcp.WND_SND,
                          uint ReceiveWindowSize = Kcp.WND_RCV)
         {
@@ -52,6 +61,8 @@ namespace kcp2k
             this.OnDisconnected = OnDisconnected;
             this.NoDelay = NoDelay;
             this.Interval = Interval;
+            this.FastResend = FastResend;
+            this.CongestionWindow = CongestionWindow;
             this.SendWindowSize = SendWindowSize;
             this.ReceiveWindowSize = ReceiveWindowSize;
         }
@@ -111,7 +122,7 @@ namespace kcp2k
                 if (!connections.TryGetValue(connectionId, out KcpServerConnection connection))
                 {
                     // create a new KcpConnection
-                    connection = new KcpServerConnection(socket, newClientEP, NoDelay, Interval, SendWindowSize, ReceiveWindowSize);
+                    connection = new KcpServerConnection(socket, newClientEP, NoDelay, Interval, FastResend, CongestionWindow, SendWindowSize, ReceiveWindowSize);
 
                     // DO NOT add to connections yet. only if the first message
                     // is actually the kcp handshake. otherwise it's either:

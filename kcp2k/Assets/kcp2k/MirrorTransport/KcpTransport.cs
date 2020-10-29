@@ -16,9 +16,13 @@ namespace Mirror.KCP
         [Tooltip("KCP internal update interval. 100ms is KCP default, but a lower interval is recommended to minimize latency and to scale to more networked entities.")]
         public uint Interval = 10;
         [Header("Advanced")]
-        [Tooltip("KCP window size can be modified to support higher loads. For example, Mirror Benchmark requires 128 for 4k monsters, 512 for 10k monsters")]
+        [Tooltip("KCP fastresend parameter. Faster resend for the cost of higher bandwidth.")]
+        public int FastResend = 0;
+        [Tooltip("KCP congestion window can be disabled. This is necessary to Mirror 10k Benchmark. Disable this for high scale games if connections get chocked regularly.")]
+        public bool CongestionWindow = true; // KCP 'NoCongestionWindow' is false by default. here we negate it for ease of use.
+        [Tooltip("KCP window size can be modified to support higher loads. For example, Mirror Benchmark requires 128 for 4k monsters, 256 for 10k monsters (if CongestionWindow is disabled.)")]
         public uint SendWindowSize = 128; //Kcp.WND_SND; 32 by default. 128 is better for 4k Benchmark etc.
-        [Tooltip("KCP window size can be modified to support higher loads. For example, Mirror Benchmark requires 128 for 4k monsters, 512 for 10k monsters")]
+        [Tooltip("KCP window size can be modified to support higher loads. For example, Mirror Benchmark requires 128 for 4k monsters, 256 for 10k monsters (if CongestionWindow is disabled.)")]
         public uint ReceiveWindowSize = Kcp.WND_RCV;
 
         // server & client
@@ -44,6 +48,8 @@ namespace Mirror.KCP
                 (connectionId) => OnServerDisconnected.Invoke(connectionId),
                 NoDelay,
                 Interval,
+                FastResend,
+                CongestionWindow,
                 SendWindowSize,
                 ReceiveWindowSize
             );
@@ -58,7 +64,7 @@ namespace Mirror.KCP
         public override bool ClientConnected() => client.connected;
         public override void ClientConnect(string address)
         {
-            client.Connect(address, Port, NoDelay, Interval, SendWindowSize, ReceiveWindowSize);
+            client.Connect(address, Port, NoDelay, Interval, FastResend, CongestionWindow, SendWindowSize, ReceiveWindowSize);
         }
         public override bool ClientSend(int channelId, ArraySegment<byte> segment)
         {

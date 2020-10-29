@@ -59,10 +59,12 @@ namespace kcp2k
 
         // NoDelay, interval, window size are the most important configurations.
         // let's force require the parameters so we don't forget it anywhere.
-        protected void SetupKcp(bool noDelay, uint interval = Kcp.INTERVAL, uint SendWindowSize = Kcp.WND_SND, uint ReceiveWindowSize = Kcp.WND_RCV)
+        protected void SetupKcp(bool noDelay, uint interval = Kcp.INTERVAL, int fastResend = 0, bool congestionWindow = true, uint SendWindowSize = Kcp.WND_SND, uint ReceiveWindowSize = Kcp.WND_RCV)
         {
             kcp = new Kcp(0, RawSend);
-            kcp.SetNoDelay(noDelay ? 1u : 0u, interval);
+            // set nodelay.
+            // note that kcp uses 'nocwnd' internally so we negate the parameter
+            kcp.SetNoDelay(noDelay ? 1u : 0u, interval, fastResend, !congestionWindow);
             kcp.SetWindowSize(SendWindowSize, ReceiveWindowSize);
             refTime.Start();
             state = KcpState.Connected;

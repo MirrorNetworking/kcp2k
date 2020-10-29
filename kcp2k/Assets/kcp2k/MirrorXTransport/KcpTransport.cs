@@ -1,17 +1,13 @@
 #if MIRROR
 using System;
 using System.Linq;
-using System.Net;
 using UnityEngine;
-using Mirror;
+using kcp2k;
 
-namespace kcp2k
+namespace Mirror.KCP
 {
     public class KcpTransport : Transport
     {
-        // scheme used by this transport
-        public const string Scheme = "kcp";
-
         // common
         [Header("Transport Configuration")]
         public ushort Port = 7777;
@@ -42,13 +38,13 @@ namespace kcp2k
             // TODO simplify after converting Mirror Transport events to Action
             client = new KcpClient(
                 () => OnClientConnected.Invoke(),
-                (message) => OnClientDataReceived.Invoke(message, Channels.DefaultReliable),
+                (message) => OnClientDataReceived.Invoke(message),
                 () => OnClientDisconnected.Invoke()
             );
             // TODO simplify after converting Mirror Transport events to Action
             server = new KcpServer(
                 (connectionId) => OnServerConnected.Invoke(connectionId),
-                (connectionId, message) => OnServerDataReceived.Invoke(connectionId, message, Channels.DefaultReliable),
+                (connectionId, message) => OnServerDataReceived.Invoke(connectionId, message),
                 (connectionId) => OnServerDisconnected.Invoke(connectionId),
                 NoDelay,
                 Interval,
@@ -70,9 +66,10 @@ namespace kcp2k
         {
             client.Connect(address, Port, NoDelay, Interval, FastResend, CongestionWindow, SendWindowSize, ReceiveWindowSize);
         }
-        public override void ClientSend(int channelId, ArraySegment<byte> segment)
+        public override bool ClientSend(int channelId, ArraySegment<byte> segment)
         {
             client.Send(segment);
+            return true;
         }
         public override void ClientDisconnect() => client.Disconnect();
 
@@ -94,19 +91,12 @@ namespace kcp2k
         }
 
         // server
-        public override Uri ServerUri()
-        {
-            UriBuilder builder = new UriBuilder();
-            builder.Scheme = Scheme;
-            builder.Host = Dns.GetHostName();
-            builder.Port = Port;
-            return builder.Uri;
-        }
         public override bool ServerActive() => server.IsActive();
         public override void ServerStart() => server.Start(Port);
-        public override void ServerSend(int connectionId, int channelId, ArraySegment<byte> segment)
+        public override bool ServerSend(int connectionId, int channelId, ArraySegment<byte> segment)
         {
             server.Send(connectionId, segment);
+            return true;
         }
         public override bool ServerDisconnect(int connectionId)
         {
@@ -120,7 +110,7 @@ namespace kcp2k
         public override void Shutdown() {}
 
         // MTU
-        public override int GetMaxPacketSize(int channelId = Channels.DefaultReliable) => Kcp.MTU_DEF;
+        public override ushort GetMaxPacketSize() => Kcp.MTU_DEF;
 
         public override string ToString()
         {

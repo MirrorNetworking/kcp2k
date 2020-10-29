@@ -18,11 +18,11 @@ namespace kcp2k
         // configuration
         // NoDelay is recommended to reduce latency. This also scales better
         // without buffers getting full.
-        public bool NoDelay = true;
+        public bool NoDelay;
         // KCP internal update interval. 100ms is KCP default, but a lower
         // interval is recommended to minimize latency and to scale to more
         // networked entities.
-        public uint Interval = 10;
+        public uint Interval;
 
         // state
         Socket socket;

@@ -50,10 +50,12 @@ namespace kcp2k
         // => if a connection can't keep up, it should be disconnected instead
         //    to protect the server under heavy load, and because there is no
         //    point in growing to gigabytes of memory or minutes of latency!
-        // => 2k seems more than enough room to still recover from.
+        // => 2k isn't enough. we reach 2k when spawning 4k monsters at once
+        //    easily, but it does recover over time.
+        // => 10k seems safe.
         //
         // note: we have a ChokeConnectionAutoDisconnects test for this too!
-        internal const int QueueDisconnectThreshold = 2000;
+        internal const int QueueDisconnectThreshold = 10000;
 
         // NoDelay, interval, window size are the most important configurations.
         // let's force require the parameters so we don't forget it anywhere.

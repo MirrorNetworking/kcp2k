@@ -153,7 +153,7 @@ namespace kcp2k
 
                         // add to connections dict after being authenticated.
                         connections.Add(connectionId, connection);
-                        Debug.Log($"KCP: server added connection {newClientEP}");
+                        Debug.Log($"KCP: server added connection({connectionId}): {newClientEP}");
 
                         // setup Data + Disconnected events only AFTER the
                         // handshake. we don't want to fire OnServerDisconnected

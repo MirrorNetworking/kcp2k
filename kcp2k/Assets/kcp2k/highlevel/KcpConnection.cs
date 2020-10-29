@@ -69,10 +69,10 @@ namespace kcp2k
 
         void HandleTimeout(uint time)
         {
+            // note: we are also sending a ping regularly, so timeout should
+            //       only ever happen if the connection is truly gone.
             if (time >= lastReceiveTime + TIMEOUT)
             {
-                // TODO make sure that connections send a ping
-                // so we never time out in slow paced games.
                 Debug.LogWarning($"KCP: Connection timed out after {TIMEOUT}ms. Disconnecting.");
                 Disconnect();
             }

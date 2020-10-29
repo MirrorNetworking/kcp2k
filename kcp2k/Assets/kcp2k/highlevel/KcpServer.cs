@@ -23,6 +23,13 @@ namespace kcp2k
         // interval is recommended to minimize latency and to scale to more
         // networked entities.
         public uint Interval;
+        // KCP window size can be modified to support higher loads.
+        // for example, Mirror Benchmark requires:
+        //   128, 128 for 4k monsters
+        //   512, 512 for 10k monsters
+        //  8192, 8192 for 20k monsters
+        public uint SendWindowSize;
+        public uint ReceiveWindowSize;
 
         // state
         Socket socket;
@@ -36,13 +43,17 @@ namespace kcp2k
                          Action<int, ArraySegment<byte>> OnData,
                          Action<int> OnDisconnected,
                          bool NoDelay,
-                         uint Interval)
+                         uint Interval,
+                         uint SendWindowSize = Kcp.WND_SND,
+                         uint ReceiveWindowSize = Kcp.WND_RCV)
         {
             this.OnConnected = OnConnected;
             this.OnData = OnData;
             this.OnDisconnected = OnDisconnected;
             this.NoDelay = NoDelay;
             this.Interval = Interval;
+            this.SendWindowSize = SendWindowSize;
+            this.ReceiveWindowSize = ReceiveWindowSize;
         }
 
         public bool IsActive() => socket != null;
@@ -100,7 +111,7 @@ namespace kcp2k
                 if (!connections.TryGetValue(connectionId, out KcpServerConnection connection))
                 {
                     // create a new KcpConnection
-                    connection = new KcpServerConnection(socket, newClientEP, NoDelay, Interval);
+                    connection = new KcpServerConnection(socket, newClientEP, NoDelay, Interval, SendWindowSize, ReceiveWindowSize);
 
                     // DO NOT add to connections yet. only if the first message
                     // is actually the kcp handshake. otherwise it's either:

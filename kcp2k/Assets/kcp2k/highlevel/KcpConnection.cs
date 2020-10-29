@@ -55,12 +55,13 @@ namespace kcp2k
         // note: we have a ChokeConnectionAutoDisconnects test for this too!
         internal const int QueueDisconnectThreshold = 2000;
 
-        // NoDelay & interval are the most important configurations.
+        // NoDelay, interval, window size are the most important configurations.
         // let's force require the parameters so we don't forget it anywhere.
-        protected void SetupKcp(bool noDelay, uint interval = Kcp.INTERVAL)
+        protected void SetupKcp(bool noDelay, uint interval = Kcp.INTERVAL, uint SendWindowSize = Kcp.WND_SND, uint ReceiveWindowSize = Kcp.WND_RCV)
         {
             kcp = new Kcp(0, RawSend);
             kcp.SetNoDelay(noDelay ? 1u : 0u, interval);
+            kcp.SetWindowSize(SendWindowSize, ReceiveWindowSize);
             refTime.Start();
             state = KcpState.Connected;
 

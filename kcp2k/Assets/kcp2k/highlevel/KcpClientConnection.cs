@@ -8,7 +8,7 @@ namespace kcp2k
     {
         readonly byte[] buffer = new byte[1500];
 
-        public void Connect(string host, ushort port, bool noDelay, uint interval = Kcp.INTERVAL)
+        public void Connect(string host, ushort port, bool noDelay, uint interval = Kcp.INTERVAL, uint SendWindowSize = Kcp.WND_SND, uint ReceiveWindowSize = Kcp.WND_RCV)
         {
             Debug.Log($"KcpClient: connect to {host}:{port}");
             IPAddress[] ipAddress = Dns.GetHostAddresses(host);
@@ -18,7 +18,7 @@ namespace kcp2k
             remoteEndpoint = new IPEndPoint(ipAddress[0], port);
             socket = new Socket(remoteEndpoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
             socket.Connect(remoteEndpoint);
-            SetupKcp(noDelay, interval);
+            SetupKcp(noDelay, interval, SendWindowSize, ReceiveWindowSize);
 
             // client should send handshake to server as very first message
             SendHandshake();

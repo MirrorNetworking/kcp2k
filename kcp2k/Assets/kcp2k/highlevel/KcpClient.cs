@@ -23,7 +23,7 @@ namespace kcp2k
             this.OnDisconnected = OnDisconnected;
         }
 
-        public void Connect(string address, ushort port, bool noDelay, uint interval)
+        public void Connect(string address, ushort port, bool noDelay, uint interval, uint SendWindowSize = Kcp.WND_SND, uint ReceiveWindowSize = Kcp.WND_RCV)
         {
             if (connected)
             {
@@ -54,7 +54,7 @@ namespace kcp2k
             };
 
             // connect
-            connection.Connect(address, port, noDelay, interval);
+            connection.Connect(address, port, noDelay, interval, SendWindowSize, ReceiveWindowSize);
         }
 
         public void Send(ArraySegment<byte> segment)

@@ -15,12 +15,18 @@ namespace Mirror.KCP
         public bool NoDelay = true;
         [Tooltip("KCP internal update interval. 100ms is KCP default, but a lower interval is recommended to minimize latency and to scale to more networked entities.")]
         public uint Interval = 10;
+        [Header("Advanced")]
+        [Tooltip("KCP window size can be modified to support higher loads. For example, Mirror Benchmark requires 128 for 4k monsters, 512 for 10k monsters")]
+        public uint SendWindowSize = 128; //Kcp.WND_SND; 32 by default. 128 is better for 4k Benchmark etc.
+        [Tooltip("KCP window size can be modified to support higher loads. For example, Mirror Benchmark requires 128 for 4k monsters, 512 for 10k monsters")]
+        public uint ReceiveWindowSize = Kcp.WND_RCV;
 
         // server & client
         KcpServer server;
         KcpClient client;
 
         // debugging
+        [Header("Debug")]
         public bool debugGUI;
 
         void Awake()
@@ -33,14 +39,13 @@ namespace Mirror.KCP
             );
             // TODO simplify after converting Mirror Transport events to Action
             server = new KcpServer(
-                (connectionId) => {
-                    ConfigureKcpConnection(server.connections[connectionId]);
-                    OnServerConnected.Invoke(connectionId);
-                },
+                (connectionId) => OnServerConnected.Invoke(connectionId),
                 (connectionId, message) => OnServerDataReceived.Invoke(connectionId, message),
                 (connectionId) => OnServerDisconnected.Invoke(connectionId),
                 NoDelay,
-                Interval
+                Interval,
+                SendWindowSize,
+                ReceiveWindowSize
             );
             Debug.Log("KcpTransport initialized!");
         }
@@ -49,30 +54,11 @@ namespace Mirror.KCP
         public override bool Available() =>
             Application.platform != RuntimePlatform.WebGLPlayer;
 
-        // use same Kcp configuration on server and client
-        void ConfigureKcpConnection(KcpConnection connection)
-        {
-            // TODO consider lower interval IF interval matters in nodelay mode
-
-            // we did this in previous test
-            //connection.kcp.SetNoDelay(1, 10, 2, true);
-
-            // this works for 4k:
-            //connection.kcp.SetWindowSize(128, 128);
-            // this works for 10k:
-            //connection.kcp.SetWindowSize(512, 512);
-            // this works for 20k:
-            //connection.kcp.SetWindowSize(8192, 8192);
-        }
-
         // client
         public override bool ClientConnected() => client.connected;
         public override void ClientConnect(string address)
         {
-            client.Connect(address, Port, NoDelay, Interval);
-
-            // configure connection for max scale
-            ConfigureKcpConnection(client.connection);
+            client.Connect(address, Port, NoDelay, Interval, SendWindowSize, ReceiveWindowSize);
         }
         public override bool ClientSend(int channelId, ArraySegment<byte> segment)
         {

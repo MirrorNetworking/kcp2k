@@ -95,7 +95,7 @@ namespace kcp2k
             if (time >= lastPingTime + PING_INTERVAL)
             {
                 // ping again and reset time
-                Debug.Log("KCP: sending ping...");
+                //Debug.Log("KCP: sending ping...");
                 Send(Ping);
                 lastPingTime = time;
             }
@@ -144,7 +144,7 @@ namespace kcp2k
                         // return false if it was a ping message. true otherwise.
                         if (Utils.SegmentsEqual(message, Ping))
                         {
-                            Debug.Log("KCP: received ping.");
+                            //Debug.Log("KCP: received ping.");
                             return false;
                         }
                         return true;

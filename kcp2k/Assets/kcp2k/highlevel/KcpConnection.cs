@@ -288,14 +288,16 @@ namespace kcp2k
                     }
                 }
             }
-            catch (SocketException)
+            catch (SocketException exception)
             {
                 // this is ok, the connection was closed
+                Debug.Log($"KCP Connection: Disconnecting because {exception}. This is fine.");
                 Disconnect();
             }
-            catch (ObjectDisposedException)
+            catch (ObjectDisposedException exception)
             {
                 // fine, socket was closed
+                Debug.Log($"KCP Connection: Disconnecting because {exception}. This is fine.");
                 Disconnect();
             }
             catch (Exception ex)

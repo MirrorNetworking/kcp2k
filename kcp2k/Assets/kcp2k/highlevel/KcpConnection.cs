@@ -6,7 +6,7 @@ using Debug = UnityEngine.Debug;
 
 namespace kcp2k
 {
-    enum KcpState { Connected, Authenticated, Disconnecting, Disconnected }
+    enum KcpState { Connected, Authenticated, Disconnected }
 
     public abstract class KcpConnection
     {
@@ -120,8 +120,8 @@ namespace kcp2k
                                  $"* Or perhaps the network is simply too slow on our end, or on the other end.\n");
 
                 // let's clear all pending sends before disconnting with 'Bye'.
-                // otherwise Disconnecting state might have to flush out
-                // thousands of messages before finally sending 'Bye'.
+                // otherwise a single Flush in Disconnect() won't be enough to
+                // flush thousands of messages to finally deliver 'Bye'.
                 // this is just faster and more robust.
                 kcp.snd_queue.Clear();
 
@@ -232,32 +232,6 @@ namespace kcp2k
             }
         }
 
-        void TickDisconnecting(uint time)
-        {
-            // note: no need to detect common events or ping. we are
-            //       disconnecting already anyway.
-
-            // keep flushing a little longer before we consider the connection
-            // fully disconnected. this way pending messages (including 'Bye')
-            // will still be sent to the other end.
-            // cutting the connection off immediately might not deliver the
-            // 'Bye' message otherwise.
-            kcp.Flush();
-
-            // if everything was flushed out, then we can truly disconnect now.
-            // DO NOT check snd_buf.Count. it sometimes still has 1 entry that
-            // flush will never send out.
-            if (kcp.snd_queue.Count == 0)
-            {
-                // call OnDisconnected, then go to Disconnected.
-                // (instead of calling it in every Disconnected tick)
-                // (this is easier than comparing lastState)
-                Debug.Log("KCP Connection: Disconnected.");
-                OnDisconnected?.Invoke();
-                state = KcpState.Disconnected;
-            }
-        }
-
         public void Tick()
         {
             uint time = (uint)refTime.ElapsedMilliseconds;
@@ -274,11 +248,6 @@ namespace kcp2k
                     case KcpState.Authenticated:
                     {
                         TickAuthenticated(time);
-                        break;
-                    }
-                    case KcpState.Disconnecting:
-                    {
-                        TickDisconnecting(time);
                         break;
                     }
                     case KcpState.Disconnected:
@@ -352,8 +321,9 @@ namespace kcp2k
         // disconnect this connection
         public void Disconnect()
         {
-            // set as disconnecting. update will send the Bye message etc.
-            state = KcpState.Disconnecting;
+            // only if not disconnected yet
+            if (state == KcpState.Disconnected)
+                return;
 
             // send a disconnect message
             if (socket.Connected)
@@ -377,6 +347,11 @@ namespace kcp2k
                     // were disconnected
                 }
             }
+
+            // set as Disconnected, call event
+            Debug.Log("KCP Connection: Disconnected.");
+            state = KcpState.Disconnected;
+            OnDisconnected?.Invoke();
         }
 
         // get remote endpoint

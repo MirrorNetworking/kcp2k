@@ -36,8 +36,20 @@ namespace kcp2k
                     while (socket.Poll(0, SelectMode.SelectRead))
                     {
                         int msgLength = socket.ReceiveFrom(buffer, ref remoteEndpoint);
-                        //Debug.Log($"KCP: client raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
-                        RawInput(buffer, msgLength);
+                        // IMPORTANT: detect if buffer was too small for the
+                        //            received msgLength. otherwise the excess
+                        //            data would be silently lost.
+                        //            (see ReceiveFrom documentation)
+                        if (msgLength <= buffer.Length)
+                        {
+                            //Debug.Log($"KCP: client raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
+                            RawInput(buffer, msgLength);
+                        }
+                        else
+                        {
+                            Debug.LogError($"KCP ClientConnection: message of size {msgLength} does not fit into buffer of size {buffer.Length}. The excess was silently dropped. Disconnecting.");
+                            Disconnect();
+                        }
                     }
                 }
             }

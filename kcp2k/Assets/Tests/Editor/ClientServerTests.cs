@@ -199,7 +199,7 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
 
             byte[] message = new byte[Kcp.MaxMessageSize];
-            for (int i = 0; i < Kcp.MaxMessageSize; ++i)
+            for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
             Debug.Log($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
             SendClientToServerBlocking(new ArraySegment<byte>(message));
@@ -253,7 +253,7 @@ namespace kcp2k.Tests
             {
                 // create message, fill with unique data (j+i & 0xff)
                 byte[] message = new byte[Kcp.MaxMessageSize];
-                for (int j = 0; j < Kcp.MaxMessageSize; ++j)
+                for (int j = 0; j < message.Length; ++j)
                     message[j] = (byte)((j + i) & 0xFF);
                 messages.Add(message);
             }
@@ -293,7 +293,7 @@ namespace kcp2k.Tests
             int connectionId = ServerFirstConnectionId();
 
             byte[] message = new byte[Kcp.MaxMessageSize];
-            for (int i = 0; i < Kcp.MaxMessageSize; ++i)
+            for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
 
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));

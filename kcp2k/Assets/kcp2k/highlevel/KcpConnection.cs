@@ -32,8 +32,14 @@ namespace kcp2k
         readonly Stopwatch refTime = new Stopwatch();
 
         // MaxMessageSize so the outside knows largest allowed message to send.
-        // TODO this is not correct yet
-        public const int MaxMessageSize = Kcp.MTU_DEF;
+        // the calculation in Send() is not obvious at all, so let's provide the
+        // helper here.
+        // -> runtime MTU changes are disabled: mss is always MTU_DEF-OVERHEAD
+        // -> Send() checks if fragment count < WND_RCV, so we use WND_RCV - 1.
+        //    note that Send() checks WND_RCV instead of wnd_rcv which may or
+        //    may not be a bug in original kcp. but since it uses the define, we
+        //    can use that here too.
+        public const int MaxMessageSize = (Kcp.MTU_DEF - Kcp.OVERHEAD) * (Kcp.WND_RCV - 1);
 
         // kcp message buffer to avoid allocations.
         // IMPORTANT: this is for KCP messages. so it needs to be of

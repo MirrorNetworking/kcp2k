@@ -45,7 +45,7 @@ namespace kcp2k
         //            if MaxMessageSize is larger. kcp always sends in MTU
         //            segments and having a buffer smaller than MTU would
         //            silently drop excess data.
-        readonly byte[] buffer = new byte[Kcp.MTU_DEF];
+        readonly byte[] rawReceiveBuffer = new byte[Kcp.MTU_DEF];
 
         // connections <connectionId, connection> where connectionId is EndPoint.GetHashCode
         public Dictionary<int, KcpServerConnection> connections = new Dictionary<int, KcpServerConnection>();
@@ -116,7 +116,7 @@ namespace kcp2k
         {
             while (socket != null && socket.Poll(0, SelectMode.SelectRead))
             {
-                int msgLength = socket.ReceiveFrom(buffer, 0, buffer.Length, SocketFlags.None, ref newClientEP);
+                int msgLength = socket.ReceiveFrom(rawReceiveBuffer, 0, rawReceiveBuffer.Length, SocketFlags.None, ref newClientEP);
                 //Debug.Log($"KCP: server raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
 
                 // calculate connectionId from endpoint
@@ -126,7 +126,7 @@ namespace kcp2k
                 //            msgLength. otherwise the excess data would be
                 //            silently lost.
                 //            (see ReceiveFrom documentation)
-                if (msgLength <= buffer.Length)
+                if (msgLength <= rawReceiveBuffer.Length)
                 {
 
                     // is this a new connection?
@@ -201,7 +201,7 @@ namespace kcp2k
                         // connected event was set up.
                         // tick will process the first message and adds the
                         // connection if it was the handshake.
-                        connection.RawInput(buffer, msgLength);
+                        connection.RawInput(rawReceiveBuffer, msgLength);
                         connection.Tick();
 
                         // again, do not add to connections.
@@ -211,12 +211,12 @@ namespace kcp2k
                     // existing connection: simply input the message into kcp
                     else
                     {
-                        connection.RawInput(buffer, msgLength);
+                        connection.RawInput(rawReceiveBuffer, msgLength);
                     }
                 }
                 else
                 {
-                    Debug.LogError($"KCP Server: message of size {msgLength} does not fit into buffer of size {buffer.Length}. The excess was silently dropped. Disconnecting connectionId={connectionId}.");
+                    Debug.LogError($"KCP Server: message of size {msgLength} does not fit into buffer of size {rawReceiveBuffer.Length}. The excess was silently dropped. Disconnecting connectionId={connectionId}.");
                     Disconnect(connectionId);
                 }
             }

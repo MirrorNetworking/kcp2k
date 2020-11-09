@@ -504,8 +504,10 @@ namespace kcp2k
                 byte cmd = 0;
                 byte frg = 0;
 
+                // enough data left to decode segment (aka OVERHEAD bytes)?
                 if (size < OVERHEAD) break;
 
+                // decode segment
                 offset += Utils.Decode32U(data, offset, ref conv_);
                 if (conv_ != conv) return -1;
 
@@ -517,8 +519,10 @@ namespace kcp2k
                 offset += Utils.Decode32U(data, offset, ref una);
                 offset += Utils.Decode32U(data, offset, ref len);
 
+                // subtract the segment bytes from size
                 size -= OVERHEAD;
 
+                // enough remaining to read 'len' bytes of the actual payload?
                 if (size < len || len < 0) return -2;
 
                 if (cmd != CMD_PUSH && cmd != CMD_ACK &&

@@ -31,7 +31,9 @@ namespace kcp2k
         // Unity's time.deltaTime over long periods.
         readonly Stopwatch refTime = new Stopwatch();
 
-        // recv buffer to avoid allocations
+        // kcp recv buffer to avoid allocations.
+        // IMPORTANT: this is for KCP messages. so it needs to be of
+        //            MaxMessageSize!
         byte[] buffer = new byte[Kcp.MTU_DEF];
 
         internal static readonly ArraySegment<byte> Hello = new ArraySegment<byte>(new byte[] { 0 });

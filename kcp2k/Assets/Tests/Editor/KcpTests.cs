@@ -281,7 +281,7 @@ namespace kcp2k.Tests
             Assert.That(kcp.rcv_wnd, Is.EqualTo(Kcp.WND_RCV));
         }
 
-        [Test]
+        /*[Test]
         public void SetMtu()
         {
             void Output(byte[] data, int len) {}
@@ -294,7 +294,7 @@ namespace kcp2k.Tests
             kcp.SetMtu(mtu);
             Assert.That(kcp.mtu, Is.EqualTo(mtu));
             Assert.That(kcp.buffer.Length, Is.GreaterThanOrEqualTo(mtu));
-        }
+        }*/
 
         [Test]
         public void Check()

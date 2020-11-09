@@ -19,15 +19,24 @@ namespace kcp2k.Tests
         const uint Interval = 1; // 1ms so at interval code at least runs.
 
         KcpServer server;
+        List<byte[]> serverReceived;
+
         KcpClient client;
+        List<byte[]> clientReceived;
 
         // setup ///////////////////////////////////////////////////////////////
         [SetUp]
         public void SetUp()
         {
+            // create new server & received list for each test
+            serverReceived = new List<byte[]>();
             server = new KcpServer(
                 (connectionId) => {},
-                (connectionId, message) => Debug.Log($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)})"),
+                (connectionId, message) => {
+                    byte[] copy = new byte[message.Count];
+                    Buffer.BlockCopy(message.Array, message.Offset, copy, 0, message.Count);
+                    serverReceived.Add(copy);
+                },
                 (connectionId) => {},
                 NoDelay,
                 Interval
@@ -35,9 +44,15 @@ namespace kcp2k.Tests
             server.NoDelay = NoDelay;
             server.Interval = Interval;
 
+            // create new client & received list for each test
+            clientReceived = new List<byte[]>();
             client = new KcpClient(
                 () => {},
-                (message) => Debug.Log($"KCP: OnClientDataReceived({BitConverter.ToString(message.Array, message.Offset, message.Count)})"),
+                (message) => {
+                    byte[] copy = new byte[message.Count];
+                    Buffer.BlockCopy(message.Array, message.Offset, copy, 0, message.Count);
+                    clientReceived.Add(copy);
+                },
                 () => {}
             );
         }
@@ -171,8 +186,9 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
 
             byte[] message = {0x01, 0x02};
-            LogAssert.Expect(LogType.Log, new Regex($"KCP: OnServerDataReceived(.*, {BitConverter.ToString(message)})"));
             SendClientToServerBlocking(new ArraySegment<byte>(message));
+            Assert.That(serverReceived.Count, Is.EqualTo(1));
+            Assert.That(serverReceived[0].SequenceEqual(message), Is.True);
         }
 
         // max sized message should always work
@@ -185,8 +201,9 @@ namespace kcp2k.Tests
             byte[] message = new byte[Kcp.MTU_DEF];
             for (int i = 0; i < Kcp.MTU_DEF; ++i)
                 message[i] = (byte)(i & 0xFF);
-            LogAssert.Expect(LogType.Log, new Regex($"KCP: OnServerDataReceived(.*, {BitConverter.ToString(message)})"));
             SendClientToServerBlocking(new ArraySegment<byte>(message));
+            Assert.That(serverReceived.Count, Is.EqualTo(1));
+            Assert.That(serverReceived[0].SequenceEqual(message), Is.True);
         }
 
         // > max sized message should not work
@@ -199,6 +216,7 @@ namespace kcp2k.Tests
             byte[] message = new byte[Kcp.MTU_DEF + 1];
             LogAssert.Expect(LogType.Error, $"Failed to send message of size {message.Length} because it's larger than MaxMessageSize={Kcp.MTU_DEF}");
             SendClientToServerBlocking(new ArraySegment<byte>(message));
+            Assert.That(serverReceived.Count, Is.EqualTo(0));
         }
 
         // test to see if successive messages still work fine.
@@ -209,12 +227,14 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
 
             byte[] message = {0x01, 0x02};
-            LogAssert.Expect(LogType.Log, new Regex($"KCP: OnServerDataReceived(.*, {BitConverter.ToString(message)})"));
             SendClientToServerBlocking(new ArraySegment<byte>(message));
 
             byte[] message2 = {0x03, 0x04};
-            LogAssert.Expect(LogType.Log, new Regex($"KCP: OnServerDataReceived(.*, {BitConverter.ToString(message2)})"));
             SendClientToServerBlocking(new ArraySegment<byte>(message2));
+
+            Assert.That(serverReceived.Count, Is.EqualTo(2));
+            Assert.That(serverReceived[0].SequenceEqual(message), Is.True);
+            Assert.That(serverReceived[1].SequenceEqual(message2), Is.True);
         }
 
         // send multiple large messages before calling update.
@@ -241,10 +261,13 @@ namespace kcp2k.Tests
             foreach (byte[] message in messages)
                 client.Send(new ArraySegment<byte>(message));
 
-            // now update everyone and expect a log for each one
-            foreach (byte[] message in messages)
-                LogAssert.Expect(LogType.Log, new Regex($"KCP: OnServerDataReceived(.*, {BitConverter.ToString(message)})"));
+            // now update everyone and expect all
             UpdateSeveralTimes();
+            Assert.That(serverReceived.Count, Is.EqualTo(messages.Count));
+            for (int i = 0; i < messages.Count; ++i)
+            {
+                Assert.That(serverReceived[i].SequenceEqual(messages[i]), Is.True);
+            }
         }
 
         [Test]
@@ -255,8 +278,9 @@ namespace kcp2k.Tests
             int connectionId = ServerFirstConnectionId();
 
             byte[] message = {0x03, 0x04};
-            LogAssert.Expect(LogType.Log, $"KCP: OnClientDataReceived({BitConverter.ToString(message)})");
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
+            Assert.That(clientReceived.Count, Is.EqualTo(1));
+            Assert.That(clientReceived[0].SequenceEqual(message), Is.True);
         }
 
         // max sized message should always work
@@ -271,8 +295,9 @@ namespace kcp2k.Tests
             for (int i = 0; i < Kcp.MTU_DEF; ++i)
                 message[i] = (byte)(i & 0xFF);
 
-            LogAssert.Expect(LogType.Log, $"KCP: OnClientDataReceived({BitConverter.ToString(message)})");
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
+            Assert.That(clientReceived.Count, Is.EqualTo(1));
+            Assert.That(clientReceived[0].SequenceEqual(message), Is.True);
         }
 
         // > max sized message should not work
@@ -286,6 +311,7 @@ namespace kcp2k.Tests
             byte[] message = new byte[Kcp.MTU_DEF + 1];
             LogAssert.Expect(LogType.Error, $"Failed to send message of size {message.Length} because it's larger than MaxMessageSize={Kcp.MTU_DEF}");
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
+            Assert.That(clientReceived.Count, Is.EqualTo(0));
         }
 
         // test to see if successive messages still work fine.
@@ -297,12 +323,14 @@ namespace kcp2k.Tests
             int connectionId = ServerFirstConnectionId();
 
             byte[] message = {0x03, 0x04};
-            LogAssert.Expect(LogType.Log, $"KCP: OnClientDataReceived({BitConverter.ToString(message)})");
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
 
             byte[] message2 = {0x05, 0x06};
-            LogAssert.Expect(LogType.Log, $"KCP: OnClientDataReceived({BitConverter.ToString(message2)})");
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message2));
+
+            Assert.That(clientReceived.Count, Is.EqualTo(2));
+            Assert.That(clientReceived[0].SequenceEqual(message), Is.True);
+            Assert.That(clientReceived[1].SequenceEqual(message2), Is.True);
 
             client.Disconnect();
             server.Stop();

@@ -321,6 +321,28 @@ namespace kcp2k.Tests
             Assert.That(clientReceived[0].SequenceEqual(message), Is.True);
         }
 
+        // there used to be a bug where sending smaller than MTU sized messages
+        // would fail because the raw receive buffer was of [MTU-5]
+        // instead of [MTU], so RawReceive would get msgLength=MTU and silently
+        // drop the last 5 bytes because buffer was too small.
+        // => let's make sure that never happens again.
+        [Test]
+        public void ServerToClientSlightlySmallerThanMTUSizedMessage()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+
+            byte[] message = new byte[Kcp.MTU_DEF - 5];
+            for (int i = 0; i < message.Length; ++i)
+                message[i] = (byte)(i & 0xFF);
+
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
+            Assert.That(clientReceived.Count, Is.EqualTo(1));
+            Assert.That(clientReceived[0].SequenceEqual(message), Is.True);
+        }
+
+
         // > max sized message should not work
         [Test]
         public void ServerToClientTooLargeMessage()

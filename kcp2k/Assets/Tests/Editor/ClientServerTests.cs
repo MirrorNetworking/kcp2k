@@ -284,8 +284,12 @@ namespace kcp2k.Tests
             foreach (byte[] message in messages)
                 client.Send(new ArraySegment<byte>(message));
 
-            // now update everyone and expect all
-            UpdateSeveralTimes();
+            // each max sized message needs a lot of updates for all the fragments.
+            // for multiple we need to update a lot more than usual.
+            for (int i = 0; i < 10; ++i)
+                UpdateSeveralTimes();
+
+            // all received?
             Assert.That(serverReceived.Count, Is.EqualTo(messages.Count));
             for (int i = 0; i < messages.Count; ++i)
             {

@@ -20,9 +20,15 @@ namespace kcp2k.Tests
 
         KcpServer server;
         List<byte[]> serverReceived;
+        // server windows can be configured separate to test differently sized windows
+        const int serverSendWindowSize = 128;
+        const int serverReceiveWindowSize = 128;
 
         KcpClient client;
         List<byte[]> clientReceived;
+        // client windows can be configured separate to test differently sized windows
+        const int clientSendWindowSize = 128;
+        const int clientReceiveWindowSize = 128;
 
         // setup ///////////////////////////////////////////////////////////////
         [SetUp]
@@ -39,7 +45,11 @@ namespace kcp2k.Tests
                 },
                 (connectionId) => {},
                 NoDelay,
-                Interval
+                Interval,
+                0,
+                true,
+                serverSendWindowSize,
+                serverReceiveWindowSize
             );
             server.NoDelay = NoDelay;
             server.Interval = Interval;
@@ -88,7 +98,7 @@ namespace kcp2k.Tests
         // connect and give it enough time to handle
         void ConnectClientBlocking()
         {
-            client.Connect("127.0.0.1", Port, NoDelay, Interval);
+            client.Connect("127.0.0.1", Port, NoDelay, Interval, 0, true, clientSendWindowSize, clientReceiveWindowSize);
             UpdateSeveralTimes();
         }
 

@@ -246,6 +246,7 @@ namespace kcp2k
         // sends byte[] to the other end.
         public int Send(byte[] buffer, int offset, int len)
         {
+            // fragment count
             int count;
 
             if (len < 0) return -1;
@@ -253,6 +254,7 @@ namespace kcp2k
             // streaming mode: removed. we never want to send 'hello' and
             // receive 'he' 'll' 'o'. we want to always receive 'hello'.
 
+            // calculate amount of fragments necessary for 'len'
             if (len <= mss) count = 1;
             else count = (int)((len + mss - 1) / mss);
 

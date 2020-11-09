@@ -109,8 +109,8 @@ namespace Mirror.KCP
         // common
         public override void Shutdown() {}
 
-        // MTU
-        public override ushort GetMaxPacketSize() => Kcp.MTU_DEF;
+        // max message size
+        public override int GetMaxPacketSize() => Kcp.MaxMessageSize;
 
         public override string ToString()
         {

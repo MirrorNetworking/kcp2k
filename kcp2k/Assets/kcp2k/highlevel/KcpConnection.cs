@@ -72,9 +72,9 @@ namespace kcp2k
             // note that kcp uses 'nocwnd' internally so we negate the parameter
             kcp.SetNoDelay(noDelay ? 1u : 0u, interval, fastResend, !congestionWindow);
             kcp.SetWindowSize(sendWindowSize, receiveWindowSize);
-            refTime.Start();
             state = KcpState.Connected;
 
+            refTime.Start();
             Tick();
         }
 

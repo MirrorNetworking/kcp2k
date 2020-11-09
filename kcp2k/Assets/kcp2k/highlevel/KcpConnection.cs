@@ -31,10 +31,10 @@ namespace kcp2k
         // Unity's time.deltaTime over long periods.
         readonly Stopwatch refTime = new Stopwatch();
 
-        // kcp recv buffer to avoid allocations.
+        // kcp message buffer to avoid allocations.
         // IMPORTANT: this is for KCP messages. so it needs to be of
         //            MaxMessageSize!
-        byte[] buffer = new byte[Kcp.MTU_DEF];
+        byte[] kcpMessageBuffer = new byte[Kcp.MTU_DEF];
 
         internal static readonly ArraySegment<byte> Hello = new ArraySegment<byte>(new byte[] { 0 });
         static readonly ArraySegment<byte> Goodbye = new ArraySegment<byte>(new byte[] { 1 });
@@ -148,10 +148,10 @@ namespace kcp2k
                 // otherwise we would get BlockCopy ArgumentException anyway.
                 if (msgSize <= Kcp.MTU_DEF)
                 {
-                    int received = kcp.Receive(buffer, msgSize);
+                    int received = kcp.Receive(kcpMessageBuffer, msgSize);
                     if (received >= 0)
                     {
-                        message = new ArraySegment<byte>(buffer, 0, msgSize);
+                        message = new ArraySegment<byte>(kcpMessageBuffer, 0, msgSize);
                         lastReceiveTime = (uint)refTime.ElapsedMilliseconds;
 
                         // return false if it was a ping message. true otherwise.

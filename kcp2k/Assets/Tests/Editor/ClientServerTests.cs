@@ -201,6 +201,7 @@ namespace kcp2k.Tests
             byte[] message = new byte[Kcp.MTU_DEF];
             for (int i = 0; i < Kcp.MTU_DEF; ++i)
                 message[i] = (byte)(i & 0xFF);
+            Debug.Log($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
             SendClientToServerBlocking(new ArraySegment<byte>(message));
             Assert.That(serverReceived.Count, Is.EqualTo(1));
             Assert.That(serverReceived[0].SequenceEqual(message), Is.True);

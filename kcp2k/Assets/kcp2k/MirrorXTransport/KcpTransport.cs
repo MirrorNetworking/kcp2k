@@ -110,7 +110,7 @@ namespace Mirror.KCP
         public override void Shutdown() {}
 
         // max message size
-        public override int GetMaxPacketSize() => Kcp.MaxMessageSize;
+        public override int GetMaxPacketSize() => KcpConnection.MaxMessageSize;
 
         public override string ToString()
         {
@@ -118,13 +118,13 @@ namespace Mirror.KCP
         }
 
         int GetTotalSendQueue() =>
-            server.connections.Values.Sum(conn => conn.kcp.snd_queue.Count);
+            server.connections.Values.Sum(conn => conn.SendQueueCount);
         int GetTotalReceiveQueue() =>
-            server.connections.Values.Sum(conn => conn.kcp.rcv_queue.Count);
+            server.connections.Values.Sum(conn => conn.ReceiveQueueCount);
         int GetTotalSendBuffer() =>
-            server.connections.Values.Sum(conn => conn.kcp.snd_buf.Count);
+            server.connections.Values.Sum(conn => conn.SendBufferCount);
         int GetTotalReceiveBuffer() =>
-            server.connections.Values.Sum(conn => conn.kcp.rcv_buf.Count);
+            server.connections.Values.Sum(conn => conn.ReceiveBufferCount);
 
         void OnGUI()
         {
@@ -148,10 +148,10 @@ namespace Mirror.KCP
             {
                 GUILayout.BeginVertical("Box");
                 GUILayout.Label("CLIENT");
-                GUILayout.Label("  SendQueue: " + client.connection.kcp.snd_queue.Count);
-                GUILayout.Label("  ReceiveQueue: " + client.connection.kcp.rcv_queue.Count);
-                GUILayout.Label("  SendBuffer: " + client.connection.kcp.snd_buf.Count);
-                GUILayout.Label("  ReceiveBuffer: " + client.connection.kcp.rcv_buf.Count);
+                GUILayout.Label("  SendQueue: " + client.connection.SendQueueCount);
+                GUILayout.Label("  ReceiveQueue: " + client.connection.ReceiveQueueCount);
+                GUILayout.Label("  SendBuffer: " + client.connection.SendBufferCount);
+                GUILayout.Label("  ReceiveBuffer: " + client.connection.ReceiveBufferCount);
                 GUILayout.EndVertical();
             }
 

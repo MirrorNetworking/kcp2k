@@ -44,7 +44,7 @@ namespace kcp2k
         internal int state;
         readonly uint conv;          // conversation
         internal uint mtu;
-        internal uint mss;           // maximum segment size
+        internal uint mss;           // maximum segment size := MTU - OVERHEAD
         internal uint snd_una;       // unacknowledged
         internal uint snd_nxt;
         internal uint rcv_nxt;

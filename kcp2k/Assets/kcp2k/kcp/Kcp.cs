@@ -959,6 +959,10 @@ namespace kcp2k
 
         // ikcp_setmtu
         // Change MTU (Maximum Transmission Unit) size.
+        // -> runtime MTU changes disabled so that MaxMessageSize can be a const
+        // -> makes KcpClient/KcpServer significantly more simple if we can
+        //    assume a const max message size.
+        /*
         public void SetMtu(uint mtu)
         {
             if (mtu < 50 || mtu < OVERHEAD)
@@ -968,6 +972,7 @@ namespace kcp2k
             this.mtu = mtu;
             mss = mtu - OVERHEAD;
         }
+        */
 
         // ikcp_interval
         public void SetInterval(uint interval)

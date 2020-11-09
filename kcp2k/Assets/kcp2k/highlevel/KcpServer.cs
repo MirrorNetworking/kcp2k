@@ -41,7 +41,7 @@ namespace kcp2k
         // state
         Socket socket;
         EndPoint newClientEP = new IPEndPoint(IPAddress.IPv6Any, 0);
-        readonly byte[] buffer = new byte[Kcp.MTU_DEF];
+        readonly byte[] buffer = new byte[Kcp.MaxMessageSize];
 
         // connections <connectionId, connection> where connectionId is EndPoint.GetHashCode
         public Dictionary<int, KcpServerConnection> connections = new Dictionary<int, KcpServerConnection>();

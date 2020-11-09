@@ -198,8 +198,8 @@ namespace kcp2k.Tests
             server.Start(Port);
             ConnectClientBlocking();
 
-            byte[] message = new byte[Kcp.MTU_DEF];
-            for (int i = 0; i < Kcp.MTU_DEF; ++i)
+            byte[] message = new byte[Kcp.MaxMessageSize];
+            for (int i = 0; i < Kcp.MaxMessageSize; ++i)
                 message[i] = (byte)(i & 0xFF);
             SendClientToServerBlocking(new ArraySegment<byte>(message));
             Assert.That(serverReceived.Count, Is.EqualTo(1));
@@ -213,8 +213,8 @@ namespace kcp2k.Tests
             server.Start(Port);
             ConnectClientBlocking();
 
-            byte[] message = new byte[Kcp.MTU_DEF + 1];
-            LogAssert.Expect(LogType.Error, $"Failed to send message of size {message.Length} because it's larger than MaxMessageSize={Kcp.MTU_DEF}");
+            byte[] message = new byte[Kcp.MaxMessageSize + 1];
+            LogAssert.Expect(LogType.Error, $"Failed to send message of size {message.Length} because it's larger than MaxMessageSize={Kcp.MaxMessageSize}");
             SendClientToServerBlocking(new ArraySegment<byte>(message));
             Assert.That(serverReceived.Count, Is.EqualTo(0));
         }
@@ -251,8 +251,8 @@ namespace kcp2k.Tests
             for (int i = 0; i < 10; ++i)
             {
                 // create message, fill with unique data (j+i & 0xff)
-                byte[] message = new byte[Kcp.MTU_DEF];
-                for (int j = 0; j < Kcp.MTU_DEF; ++j)
+                byte[] message = new byte[Kcp.MaxMessageSize];
+                for (int j = 0; j < Kcp.MaxMessageSize; ++j)
                     message[j] = (byte)((j + i) & 0xFF);
                 messages.Add(message);
             }
@@ -291,8 +291,8 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
-            byte[] message = new byte[Kcp.MTU_DEF];
-            for (int i = 0; i < Kcp.MTU_DEF; ++i)
+            byte[] message = new byte[Kcp.MaxMessageSize];
+            for (int i = 0; i < Kcp.MaxMessageSize; ++i)
                 message[i] = (byte)(i & 0xFF);
 
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
@@ -308,8 +308,8 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
-            byte[] message = new byte[Kcp.MTU_DEF + 1];
-            LogAssert.Expect(LogType.Error, $"Failed to send message of size {message.Length} because it's larger than MaxMessageSize={Kcp.MTU_DEF}");
+            byte[] message = new byte[Kcp.MaxMessageSize + 1];
+            LogAssert.Expect(LogType.Error, $"Failed to send message of size {message.Length} because it's larger than MaxMessageSize={Kcp.MaxMessageSize}");
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
             Assert.That(clientReceived.Count, Is.EqualTo(0));
         }

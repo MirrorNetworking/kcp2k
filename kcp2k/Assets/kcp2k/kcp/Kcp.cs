@@ -242,6 +242,10 @@ namespace kcp2k
             return length;
         }
 
+        // MaxMessageSize so the outside knows largest allowed message to send.
+        // TODO this is not correct yet
+        public const int MaxMessageSize = MTU_DEF;
+
         // ikcp_send
         // sends byte[] to the other end.
         public int Send(byte[] buffer, int offset, int len)

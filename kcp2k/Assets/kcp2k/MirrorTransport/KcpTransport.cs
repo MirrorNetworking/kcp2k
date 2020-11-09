@@ -119,8 +119,8 @@ namespace kcp2k
         // common
         public override void Shutdown() {}
 
-        // MTU
-        public override int GetMaxPacketSize(int channelId = Channels.DefaultReliable) => Kcp.MTU_DEF;
+        // max message size
+        public override int GetMaxPacketSize(int channelId = Channels.DefaultReliable) => Kcp.MaxMessageSize;
 
         public override string ToString()
         {

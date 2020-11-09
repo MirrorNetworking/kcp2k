@@ -10,7 +10,7 @@ namespace kcp2k
         //            if MaxMessageSize is larger. kcp always sends in MTU
         //            segments and having a buffer smaller than MTU would
         //            silently drop excess data.
-        readonly byte[] buffer = new byte[Kcp.MTU_DEF];
+        readonly byte[] rawReceiveBuffer = new byte[Kcp.MTU_DEF];
 
         public void Connect(string host, ushort port, bool noDelay, uint interval = Kcp.INTERVAL, int fastResend = 0, bool congestionWindow = true, uint sendWindowSize = Kcp.WND_SND, uint receiveWindowSize = Kcp.WND_RCV)
         {
@@ -39,19 +39,19 @@ namespace kcp2k
                 {
                     while (socket.Poll(0, SelectMode.SelectRead))
                     {
-                        int msgLength = socket.ReceiveFrom(buffer, ref remoteEndpoint);
+                        int msgLength = socket.ReceiveFrom(rawReceiveBuffer, ref remoteEndpoint);
                         // IMPORTANT: detect if buffer was too small for the
                         //            received msgLength. otherwise the excess
                         //            data would be silently lost.
                         //            (see ReceiveFrom documentation)
-                        if (msgLength <= buffer.Length)
+                        if (msgLength <= rawReceiveBuffer.Length)
                         {
                             //Debug.Log($"KCP: client raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
-                            RawInput(buffer, msgLength);
+                            RawInput(rawReceiveBuffer, msgLength);
                         }
                         else
                         {
-                            Debug.LogError($"KCP ClientConnection: message of size {msgLength} does not fit into buffer of size {buffer.Length}. The excess was silently dropped. Disconnecting.");
+                            Debug.LogError($"KCP ClientConnection: message of size {msgLength} does not fit into buffer of size {rawReceiveBuffer.Length}. The excess was silently dropped. Disconnecting.");
                             Disconnect();
                         }
                     }

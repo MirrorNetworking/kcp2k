@@ -88,10 +88,6 @@ namespace kcp2k
         // get how many packet is waiting to be sent
         public int WaitSnd => snd_buf.Count + snd_queue.Count;
 
-        // MaxMessageSize so the outside knows largest allowed message to send.
-        // TODO this is not correct yet
-        public const int MaxMessageSize = MTU_DEF;
-
         // ikcp_create
         // create a new kcp control object, 'conv' must equal in two endpoint
         // from the same connection.

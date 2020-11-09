@@ -31,10 +31,14 @@ namespace kcp2k
         // Unity's time.deltaTime over long periods.
         readonly Stopwatch refTime = new Stopwatch();
 
+        // MaxMessageSize so the outside knows largest allowed message to send.
+        // TODO this is not correct yet
+        public const int MaxMessageSize = Kcp.MTU_DEF;
+
         // kcp message buffer to avoid allocations.
         // IMPORTANT: this is for KCP messages. so it needs to be of
         //            MaxMessageSize!
-        byte[] kcpMessageBuffer = new byte[Kcp.MaxMessageSize];
+        byte[] kcpMessageBuffer = new byte[MaxMessageSize];
 
         internal static readonly ArraySegment<byte> Hello = new ArraySegment<byte>(new byte[] { 0 });
         static readonly ArraySegment<byte> Goodbye = new ArraySegment<byte>(new byte[] { 1 });
@@ -146,7 +150,7 @@ namespace kcp2k
             {
                 // only allow receiving up to MaxMessageSize sized messages.
                 // otherwise we would get BlockCopy ArgumentException anyway.
-                if (msgSize <= Kcp.MaxMessageSize)
+                if (msgSize <= MaxMessageSize)
                 {
                     int received = kcp.Receive(kcpMessageBuffer, msgSize);
                     if (received >= 0)
@@ -173,7 +177,7 @@ namespace kcp2k
                 // attacker. let's disconnect to avoid allocation attacks etc.
                 else
                 {
-                    Debug.LogWarning($"KCP: possible allocation attack for msgSize {msgSize} > max {Kcp.MaxMessageSize}. Disconnecting the connection.");
+                    Debug.LogWarning($"KCP: possible allocation attack for msgSize {msgSize} > max {MaxMessageSize}. Disconnecting the connection.");
                     Disconnect();
                 }
             }
@@ -300,7 +304,7 @@ namespace kcp2k
         {
             // only allow sending up to MaxMessageSize sized messages.
             // other end won't process bigger messages anyway.
-            if (data.Count <= Kcp.MaxMessageSize)
+            if (data.Count <= MaxMessageSize)
             {
                 int sent = kcp.Send(data.Array, data.Offset, data.Count);
                 if (sent < 0)
@@ -308,7 +312,7 @@ namespace kcp2k
                     Debug.LogWarning($"Send failed with error={sent} for segment with length={data.Count}");
                 }
             }
-            else Debug.LogError($"Failed to send message of size {data.Count} because it's larger than MaxMessageSize={Kcp.MaxMessageSize}");
+            else Debug.LogError($"Failed to send message of size {data.Count} because it's larger than MaxMessageSize={MaxMessageSize}");
         }
 
         // server & client need to send handshake at different times, so we need

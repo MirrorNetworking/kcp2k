@@ -53,6 +53,7 @@ namespace kcp2k
 
         protected override void RawSend(byte[] data, int length)
         {
+            Debug.Log($"RAWSEND: {length} bytes");
             socket.Send(data, length, SocketFlags.None);
         }
     }

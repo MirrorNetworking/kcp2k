@@ -285,6 +285,7 @@ namespace kcp2k
 
         public void RawInput(byte[] buffer, int msgLength)
         {
+            Debug.Log($"RAWINPUT: buffer.Length={buffer.Length} msgLength= {msgLength} bytes");
             int input = kcp.Input(buffer, msgLength);
             if (input != 0)
             {

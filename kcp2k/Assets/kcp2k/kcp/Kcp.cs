@@ -89,8 +89,11 @@ namespace kcp2k
         public int WaitSnd => snd_buf.Count + snd_queue.Count;
 
         // MaxMessageSize so the outside knows largest allowed message to send.
-        // TODO this is not correct yet
-        public const int MaxMessageSize = MTU_DEF;
+        // the calculation in Send() is not obvious at all, so let's provide the
+        // helper here.
+        // -> runtime MTU changes are disabled: mss is always MTU_DEF-OVERHEAD
+        // -> Send() checks if fragment count < WND_RCV, so we use WND_RCV - 1.
+        public const int MaxMessageSize = MTU_DEF - 5; //(MTU_DEF - OVERHEAD);// * (WND_RCV / 2);
 
         // ikcp_create
         // create a new kcp control object, 'conv' must equal in two endpoint
@@ -284,6 +287,7 @@ namespace kcp2k
                 seg.frg = (byte)(count - i - 1);
                 snd_queue.Enqueue(seg);
                 offset += size;
+                Debug.LogWarning($"Send {len} bytes: fragment({seg.frg}) => fragment.len={size}; segment.data.Position={seg.data.Position} new offset={offset} new len={len-size}");
                 len -= size;
             }
 
@@ -508,6 +512,7 @@ namespace kcp2k
                 if (size < OVERHEAD) break;
 
                 // decode segment
+                Debug.LogWarning($"  Receive: reading metadata at offset={offset}");
                 offset += Utils.Decode32U(data, offset, ref conv_);
                 if (conv_ != conv) return -1;
 
@@ -517,10 +522,11 @@ namespace kcp2k
                 offset += Utils.Decode32U(data, offset, ref ts);
                 offset += Utils.Decode32U(data, offset, ref sn);
                 offset += Utils.Decode32U(data, offset, ref una);
-                offset += Utils.Decode32U(data, offset, ref len);
+                offset += Utils.Decode32U(data, offset, ref len); // 1176
 
                 // subtract the segment bytes from size
-                size -= OVERHEAD;
+                Debug.LogWarning($"Receive {size} bytes: Fragment({frg}) => fragment.len={len}, size-OVERHEAD[{OVERHEAD}]={size-OVERHEAD}");
+                size -= OVERHEAD; // 1171
 
                 // enough remaining to read 'len' bytes of the actual payload?
                 if (size < len || len < 0) return -2;
@@ -688,6 +694,8 @@ namespace kcp2k
             seg.wnd = WndUnused();
             seg.una = rcv_nxt;
 
+            //TODO log buffer sizes and see where we went wrong
+
             // flush acknowledges
             foreach (AckItem ack in acklist)
             {
@@ -833,6 +841,7 @@ namespace kcp2k
                     if (segment.data.Position > 0)
                     {
                         Buffer.BlockCopy(segment.data.GetBuffer(), 0, buffer, offset, (int)segment.data.Position);
+                        Debug.LogWarning($"Flush: copied offset={offset}, count={segment.data.Position} bytes into buffer with length={buffer.Length} bytes");
                         offset += (int)segment.data.Position;
                     }
 

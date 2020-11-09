@@ -6,7 +6,11 @@ namespace kcp2k
 {
     public class KcpClientConnection : KcpConnection
     {
-        readonly byte[] buffer = new byte[1500];
+        // IMPORTANT: raw receive buffer always needs to be of 'MTU' size, even
+        //            if MaxMessageSize is larger. kcp always sends in MTU
+        //            segments and having a buffer smaller than MTU would
+        //            silently drop excess data.
+        readonly byte[] buffer = new byte[Kcp.MTU_DEF];
 
         public void Connect(string host, ushort port, bool noDelay, uint interval = Kcp.INTERVAL, int fastResend = 0, bool congestionWindow = true, uint sendWindowSize = Kcp.WND_SND, uint receiveWindowSize = Kcp.WND_RCV)
         {

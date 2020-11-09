@@ -41,6 +41,10 @@ namespace kcp2k
         // state
         Socket socket;
         EndPoint newClientEP = new IPEndPoint(IPAddress.IPv6Any, 0);
+        // IMPORTANT: raw receive buffer always needs to be of 'MTU' size, even
+        //            if MaxMessageSize is larger. kcp always sends in MTU
+        //            segments and having a buffer smaller than MTU would
+        //            silently drop excess data.
         readonly byte[] buffer = new byte[Kcp.MTU_DEF];
 
         // connections <connectionId, connection> where connectionId is EndPoint.GetHashCode

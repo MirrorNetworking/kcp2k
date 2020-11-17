@@ -34,6 +34,11 @@ namespace kcp2k.Tests
         [SetUp]
         public void SetUp()
         {
+            // logging
+            Log.Info = Debug.Log;
+            Log.Warning = Debug.LogWarning;
+            Log.Error = Debug.LogError;
+
             // create new server & received list for each test
             serverReceived = new List<byte[]>();
             server = new KcpServer(

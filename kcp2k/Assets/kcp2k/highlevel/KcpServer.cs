@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using UnityEngine;
 
 namespace kcp2k
 {
@@ -78,7 +77,7 @@ namespace kcp2k
             // only start once
             if (socket != null)
             {
-                Debug.LogWarning("KCP: server already started!");
+                Log.Warning("KCP: server already started!");
             }
 
             // listen
@@ -117,7 +116,7 @@ namespace kcp2k
             while (socket != null && socket.Poll(0, SelectMode.SelectRead))
             {
                 int msgLength = socket.ReceiveFrom(rawReceiveBuffer, 0, rawReceiveBuffer.Length, SocketFlags.None, ref newClientEP);
-                //Debug.Log($"KCP: server raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
+                //Log.Debug($"KCP: server raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
 
                 // calculate connectionId from endpoint
                 int connectionId = newClientEP.GetHashCode();
@@ -164,7 +163,7 @@ namespace kcp2k
 
                             // add to connections dict after being authenticated.
                             connections.Add(connectionId, connection);
-                            Debug.Log($"KCP: server added connection({connectionId}): {newClientEP}");
+                            Log.Info($"KCP: server added connection({connectionId}): {newClientEP}");
 
                             // setup Data + Disconnected events only AFTER the
                             // handshake. we don't want to fire OnServerDisconnected
@@ -175,7 +174,7 @@ namespace kcp2k
                             connection.OnData = (message) =>
                             {
                                 // call mirror event
-                                //Debug.Log($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)})");
+                                //Log.Debug($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)})");
                                 OnData.Invoke(connectionId, message);
                             };
 
@@ -188,12 +187,12 @@ namespace kcp2k
                                 connectionsToRemove.Add(connectionId);
 
                                 // call mirror event
-                                Debug.Log($"KCP: OnServerDisconnected({connectionId})");
+                                Log.Info($"KCP: OnServerDisconnected({connectionId})");
                                 OnDisconnected.Invoke(connectionId);
                             };
 
                             // finally, call mirror OnConnected event
-                            Debug.Log($"KCP: OnServerConnected({connectionId})");
+                            Log.Info($"KCP: OnServerConnected({connectionId})");
                             OnConnected.Invoke(connectionId);
                         };
 
@@ -216,7 +215,7 @@ namespace kcp2k
                 }
                 else
                 {
-                    Debug.LogError($"KCP Server: message of size {msgLength} does not fit into buffer of size {rawReceiveBuffer.Length}. The excess was silently dropped. Disconnecting connectionId={connectionId}.");
+                    Log.Error($"KCP Server: message of size {msgLength} does not fit into buffer of size {rawReceiveBuffer.Length}. The excess was silently dropped. Disconnecting connectionId={connectionId}.");
                     Disconnect(connectionId);
                 }
             }

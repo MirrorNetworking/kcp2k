@@ -16,6 +16,14 @@ namespace kcp2k.Examples
         );
 
         // MonoBehaviour ///////////////////////////////////////////////////////
+        void Awake()
+        {
+            // logging
+            Log.Info = Debug.Log;
+            Log.Warning = Debug.LogWarning;
+            Log.Error = Debug.LogError;
+        }
+
         public void LateUpdate() => client.Tick();
 
         void OnGUI()

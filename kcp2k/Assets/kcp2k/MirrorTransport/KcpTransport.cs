@@ -39,6 +39,11 @@ namespace kcp2k
 
         void Awake()
         {
+            // logging
+            Log.Debug = Debug.Log;
+            Log.Warning = Debug.LogWarning;
+            Log.Error = Debug.LogError;
+
             // TODO simplify after converting Mirror Transport events to Action
             client = new KcpClient(
                 () => OnClientConnected.Invoke(),

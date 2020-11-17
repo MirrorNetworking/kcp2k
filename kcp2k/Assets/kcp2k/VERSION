@@ -1,4 +1,4 @@
-V1.2
+V1.2 [2020-11-10]
 - more tests added
 - fix: raw receive buffers are now all of MTU size
 - fix: raw receive detects error where buffer was too small for msgLength and
@@ -8,10 +8,10 @@ V1.2
   message size of 145KB for kcp (based on mtu, overhead, wnd_rcv)
 
 
-V1.1
+V1.1 [2020-10-30]
 - high level cleanup, fixes, improvements
 
-V1.0
+V1.0 [2020-10-22]
 - Kcp.cs now mirrors original Kcp.c behaviour
   (this fixes dozens of bugs)
 

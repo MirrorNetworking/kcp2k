@@ -1,3 +1,11 @@
+V1.3 [2020-11-17]
+- Log.Info/Warning/Error so logging doesn't depend on UnityEngine anymore
+- fix: Server.Tick catches SocketException which happens if Android client is killed
+- MirrorTransport: debugLog option added that can be checked in Unity Inspector
+- Utils.Clamp so Kcp.cs doesn't depend on UnityEngine
+- Utils.SegmentsEqual: use Linq SequenceEqual so it doesn't depend on UnityEngine
+=> kcp2k can now be used in any C# project even without Unity
+
 V1.2 [2020-11-10]
 - more tests added
 - fix: raw receive buffers are now all of MTU size

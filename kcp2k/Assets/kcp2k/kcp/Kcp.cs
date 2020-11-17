@@ -2,7 +2,6 @@
 // Kept as close to original as possible.
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace kcp2k
 {
@@ -303,7 +302,7 @@ namespace kcp2k
                 if (rx_srtt < 1) rx_srtt = 1;
             }
             int rto = rx_srtt + Math.Max((int)interval, 4 * rx_rttval);
-            rx_rto = Mathf.Clamp(rto, rx_minrto, RTO_MAX);
+            rx_rto = Utils.Clamp(rto, rx_minrto, RTO_MAX);
         }
 
         // ikcp_shrink_buf

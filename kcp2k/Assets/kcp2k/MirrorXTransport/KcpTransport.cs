@@ -37,7 +37,7 @@ namespace Mirror.KCP
         void Awake()
         {
             // logging
-            if (debugLog) Log.Debug = Debug.Log;
+            if (debugLog) Log.Info = Debug.Log;
             Log.Warning = Debug.LogWarning;
             Log.Error = Debug.LogError;
 

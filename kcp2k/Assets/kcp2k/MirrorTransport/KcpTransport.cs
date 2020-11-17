@@ -35,12 +35,13 @@ namespace kcp2k
 
         // debugging
         [Header("Debug")]
+        public bool debugLog;
         public bool debugGUI;
 
         void Awake()
         {
             // logging
-            Log.Debug = Debug.Log;
+            if (debugLog) Log.Debug = Debug.Log;
             Log.Warning = Debug.LogWarning;
             Log.Error = Debug.LogError;
 

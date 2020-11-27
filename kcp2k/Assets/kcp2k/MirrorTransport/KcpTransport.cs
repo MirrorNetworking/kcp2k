@@ -20,7 +20,7 @@ namespace kcp2k
         [Tooltip("KCP internal update interval. 100ms is KCP default, but a lower interval is recommended to minimize latency and to scale to more networked entities.")]
         public uint Interval = 10;
         [Header("Advanced")]
-        [Tooltip("KCP fastresend parameter. Faster resend for the cost of higher bandwidth. 0 by default, 2 in turbo mode.")]
+        [Tooltip("KCP fastresend parameter. Faster resend for the cost of higher bandwidth. 0 in normal mode, 2 in turbo mode.")]
         public int FastResend = 2;
         [Tooltip("KCP congestion window. Enabled in normal mode, disabled in turbo mode. Disable this for high scale games if connections get chocked regularly.")]
         public bool CongestionWindow = false; // KCP 'NoCongestionWindow' is false by default. here we negate it for ease of use.

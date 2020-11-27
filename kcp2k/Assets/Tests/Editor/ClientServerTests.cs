@@ -524,5 +524,60 @@ namespace kcp2k.Tests
             Assert.That(client.connected, Is.False);
             Assert.That(server.connections.Count, Is.EqualTo(0));
         }
+
+        // OnCheckEnabled tests to make sure it works in Mirror
+        [Test]
+        public void ClientRespectsOnCheckEnabled()
+        {
+            // client OnCheckEnabled should stop after first message
+            client.OnCheckEnabled = () => clientReceived.Count == 0;
+
+            // start
+            server.Start(Port);
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+
+            // send two messages to client
+            server.Send(connectionId, new ArraySegment<byte>(new byte[]{0x03, 0x04}));
+            server.Send(connectionId, new ArraySegment<byte>(new byte[]{0x05, 0x06}));
+
+            // update should process only the first message and then stop.
+            UpdateSeveralTimes();
+            Assert.That(clientReceived.Count, Is.EqualTo(1));
+            Assert.That(clientReceived[0].SequenceEqual(new byte[]{0x03, 0x04}), Is.True);
+
+            // enable again by clearing received and make sure it still works.
+            clientReceived.Clear();
+            UpdateSeveralTimes();
+            Assert.That(clientReceived.Count, Is.EqualTo(1));
+            Assert.That(clientReceived[0].SequenceEqual(new byte[]{0x05, 0x06}), Is.True);
+        }
+
+        // OnCheckEnabled tests to make sure it works in Mirror
+        [Test]
+        public void ServerRespectsOnCheckEnabled()
+        {
+            // server OnCheckEnabled should stop after first message
+            server.OnCheckEnabled = () => serverReceived.Count == 0;
+
+            // start
+            server.Start(Port);
+            ConnectClientBlocking();
+
+            // send two messages to server
+            client.Send(new ArraySegment<byte>(new byte[]{0x03, 0x04}));
+            client.Send(new ArraySegment<byte>(new byte[]{0x05, 0x06}));
+
+            // update should process only the first message and then stop.
+            UpdateSeveralTimes();
+            Assert.That(serverReceived.Count, Is.EqualTo(1));
+            Assert.That(serverReceived[0].SequenceEqual(new byte[]{0x03, 0x04}), Is.True);
+
+            // enable again by clearing received and make sure it still works.
+            serverReceived.Clear();
+            UpdateSeveralTimes();
+            Assert.That(serverReceived.Count, Is.EqualTo(1));
+            Assert.That(serverReceived[0].SequenceEqual(new byte[]{0x05, 0x06}), Is.True);
+        }
     }
 }

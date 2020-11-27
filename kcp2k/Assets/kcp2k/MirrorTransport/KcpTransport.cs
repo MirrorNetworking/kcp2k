@@ -65,6 +65,12 @@ namespace kcp2k
                 ReceiveWindowSize
             );
 
+            // scene change message will disable transports.
+            // kcp processes messages in an internal loop which should be
+            // stopped immediately after scene change (= after disabled)
+            client.OnCheckEnabled = () => enabled;
+            server.OnCheckEnabled = () => enabled;
+
             Debug.Log("KcpTransport initialized!");
         }
 
@@ -91,9 +97,11 @@ namespace kcp2k
         //            spawns at the point before shoulder rotation.
         public void LateUpdate()
         {
-            // note: we need to check enabled in case we set it to false
-            // when LateUpdate already started.
-            // (https://github.com/vis2k/Mirror/pull/379)
+            // scene change messages disable transports to stop them from
+            // processing while changing the scene.
+            // -> we need to check enabled here
+            // -> and in kcp's internal loops, see Awake() OnCheckEnabled setup!
+            // (see also: https://github.com/vis2k/Mirror/pull/379)
             if (!enabled)
                 return;
 

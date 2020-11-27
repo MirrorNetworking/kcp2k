@@ -45,13 +45,14 @@ namespace kcp2k
             Log.Warning = Debug.LogWarning;
             Log.Error = Debug.LogError;
 
-            // TODO simplify after converting Mirror Transport events to Action
+            // client
             client = new KcpClient(
                 () => OnClientConnected.Invoke(),
                 (message) => OnClientDataReceived.Invoke(message, Channels.DefaultReliable),
                 () => OnClientDisconnected.Invoke()
             );
-            // TODO simplify after converting Mirror Transport events to Action
+
+            // server
             server = new KcpServer(
                 (connectionId) => OnServerConnected.Invoke(connectionId),
                 (connectionId, message) => OnServerDataReceived.Invoke(connectionId, message, Channels.DefaultReliable),
@@ -63,6 +64,7 @@ namespace kcp2k
                 SendWindowSize,
                 ReceiveWindowSize
             );
+
             Debug.Log("KcpTransport initialized!");
         }
 

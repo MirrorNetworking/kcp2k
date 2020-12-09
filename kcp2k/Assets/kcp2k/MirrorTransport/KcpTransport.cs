@@ -41,7 +41,9 @@ namespace kcp2k
         void Awake()
         {
             // logging
-            if (debugLog) Log.Info = Debug.Log;
+            //   Log.Info should use Debug.Log if enabled, or nothing otherwise
+            //   (don't want to spam the console on headless servers)
+            Log.Info = debugLog ? Debug.Log : (_) => {};
             Log.Warning = Debug.LogWarning;
             Log.Error = Debug.LogError;
 

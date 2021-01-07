@@ -48,7 +48,7 @@ namespace kcp2k
         internal uint snd_nxt;
         internal uint rcv_nxt;
         internal uint ssthresh;      // slow start threshold
-        internal int rx_rttval;
+        internal int rx_rttval;      // average deviation of rtt, used to measure the jitter of rtt
         internal int rx_srtt;        // smoothed round trip time (a weighted average of rtt)
         internal int rx_rto;
         internal int rx_minrto;

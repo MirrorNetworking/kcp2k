@@ -44,7 +44,10 @@ namespace kcp2k
             // logging
             //   Log.Info should use Debug.Log if enabled, or nothing otherwise
             //   (don't want to spam the console on headless servers)
-            Log.Info = debugLog ? Debug.Log : (_) => {};
+            if (debugLog)
+                Log.Info = Debug.Log;
+            else
+                Log.Info = _ => {};
             Log.Warning = Debug.LogWarning;
             Log.Error = Debug.LogError;
 

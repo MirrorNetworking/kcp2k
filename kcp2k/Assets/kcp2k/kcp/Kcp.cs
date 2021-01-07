@@ -49,7 +49,7 @@ namespace kcp2k
         internal uint rcv_nxt;
         internal uint ssthresh;      // slow start threshold
         internal int rx_rttval;
-        internal int rx_srtt;        // smoothed round trip time
+        internal int rx_srtt;        // smoothed round trip time (a weighted average of rtt)
         internal int rx_rto;
         internal int rx_minrto;
         internal uint snd_wnd;       // send window

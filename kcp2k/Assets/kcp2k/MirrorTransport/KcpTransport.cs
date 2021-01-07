@@ -25,10 +25,10 @@ namespace kcp2k
         public int FastResend = 2;
         [Tooltip("KCP congestion window. Enabled in normal mode, disabled in turbo mode. Disable this for high scale games if connections get chocked regularly.")]
         public bool CongestionWindow = false; // KCP 'NoCongestionWindow' is false by default. here we negate it for ease of use.
-        [Tooltip("KCP window size can be modified to support higher loads. For example, Mirror Benchmark requires 128 for 4k monsters, 256 for 10k monsters (if CongestionWindow is disabled.)")]
-        public uint SendWindowSize = 128; //Kcp.WND_SND; 32 by default. 128 is better for 4k Benchmark etc.
-        [Tooltip("KCP window size can be modified to support higher loads. For example, Mirror Benchmark requires 128 for 4k monsters, 256 for 10k monsters (if CongestionWindow is disabled.)")]
-        public uint ReceiveWindowSize = Kcp.WND_RCV;
+        [Tooltip("KCP window size can be modified to support higher loads.")]
+        public uint SendWindowSize = 2048; //Kcp.WND_SND; 32 by default. Mirror sends a lot, so we need a lot more.
+        [Tooltip("KCP window size can be modified to support higher loads.")]
+        public uint ReceiveWindowSize = 2048; //Kcp.WND_RCV; 128 by default. Mirror sends a lot, so we need a lot more.
 
         // server & client
         KcpServer server;

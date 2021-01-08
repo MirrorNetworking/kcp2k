@@ -96,7 +96,7 @@ namespace kcp2k
         {
             if (connections.TryGetValue(connectionId, out KcpServerConnection connection))
             {
-                connection.Send(segment);
+                connection.SendData(segment);
             }
         }
         public void Disconnect(int connectionId)

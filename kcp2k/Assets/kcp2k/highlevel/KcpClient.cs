@@ -70,7 +70,7 @@ namespace kcp2k
         {
             if (connected)
             {
-                connection.Send(segment);
+                connection.SendData(segment);
             }
             else Log.Warning("KCP: can't send because client not connected!");
         }

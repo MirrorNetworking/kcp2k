@@ -44,16 +44,20 @@ namespace kcp2k
         //    note that Send() checks WND_RCV instead of wnd_rcv which may or
         //    may not be a bug in original kcp. but since it uses the define, we
         //    can use that here too.
-        public const int MaxMessageSize = (Kcp.MTU_DEF - Kcp.OVERHEAD) * (Kcp.WND_RCV - 1);
+        // -> we add 1 byte KcpHeader enum to each message, so we need to
+        //    subtract that from what the user is allowed to send as well.
+        public const int MaxMessageSize = (Kcp.MTU_DEF - Kcp.OVERHEAD) * (Kcp.WND_RCV - 1) - 1;
 
-        // kcp message buffer to avoid allocations.
-        // IMPORTANT: this is for KCP messages. so it needs to be of
-        //            MaxMessageSize!
-        byte[] kcpMessageBuffer = new byte[MaxMessageSize];
+        // buffer to receive kcp's processed messages (avoids allocations).
+        // IMPORTANT: this is for KCP messages. so it needs to be of size:
+        //            1 byte header + MaxMessageSize content
+        byte[] kcpMessageBuffer = new byte[1 + MaxMessageSize];
 
-        internal static readonly ArraySegment<byte> Hello = new ArraySegment<byte>(new byte[] { 0 });
-        static readonly ArraySegment<byte> Goodbye = new ArraySegment<byte>(new byte[] { 1 });
-        static readonly ArraySegment<byte> Ping = new ArraySegment<byte>(new byte[] { 2 });
+        // send buffer for handing user messages to kcp for processing.
+        // (avoids allocations).
+        // IMPORTANT: needs to be of size:
+        //            1 byte header + MaxMessageSize content
+        byte[] kcpSendBuffer = new byte[1 + MaxMessageSize];
 
         // send a ping occasionally so we don't time out on the other end.
         // for example, creating a character in an MMO could easily take a
@@ -141,7 +145,7 @@ namespace kcp2k
             {
                 // ping again and reset time
                 //Log.Debug("KCP: sending ping...");
-                Send(Ping);
+                SendPing();
                 lastPingTime = time;
             }
         }
@@ -169,29 +173,25 @@ namespace kcp2k
             }
         }
 
-        // reads the next message from connection.
-        bool ReceiveNext(out ArraySegment<byte> message)
+        // reads the next message type & content from connection.
+        bool ReceiveNext(out KcpHeader header, out ArraySegment<byte> message)
         {
             // read only one message
             int msgSize = kcp.PeekSize();
             if (msgSize > 0)
             {
-                // only allow receiving up to MaxMessageSize sized messages.
+                // only allow receiving up to buffer sized messages.
                 // otherwise we would get BlockCopy ArgumentException anyway.
-                if (msgSize <= MaxMessageSize)
+                if (msgSize <= kcpMessageBuffer.Length)
                 {
+                    // receive from kcp
                     int received = kcp.Receive(kcpMessageBuffer, msgSize);
                     if (received >= 0)
                     {
-                        message = new ArraySegment<byte>(kcpMessageBuffer, 0, msgSize);
+                        // extract header & content without header
+                        header = (KcpHeader)kcpMessageBuffer[0];
+                        message = new ArraySegment<byte>(kcpMessageBuffer, 1, msgSize - 1);
                         lastReceiveTime = (uint)refTime.ElapsedMilliseconds;
-
-                        // return false if it was a ping message. true otherwise.
-                        if (Utils.SegmentsEqual(message, Ping))
-                        {
-                            //Log.Debug("KCP: received ping.");
-                            return false;
-                        }
                         return true;
                     }
                     else
@@ -205,10 +205,11 @@ namespace kcp2k
                 // attacker. let's disconnect to avoid allocation attacks etc.
                 else
                 {
-                    Log.Warning($"KCP: possible allocation attack for msgSize {msgSize} > max {MaxMessageSize}. Disconnecting the connection.");
+                    Log.Warning($"KCP: possible allocation attack for msgSize {msgSize} > buffer {kcpMessageBuffer.Length}. Disconnecting the connection.");
                     Disconnect();
                 }
             }
+            header = KcpHeader.Disconnect;
             return false;
         }
 
@@ -223,21 +224,33 @@ namespace kcp2k
             kcp.Update(time);
 
             // any message received?
-            if (ReceiveNext(out ArraySegment<byte> message))
+            if (ReceiveNext(out KcpHeader header, out ArraySegment<byte> message))
             {
-                // handshake message?
-                if (Utils.SegmentsEqual(message, Hello))
+                // message type FSM. no default so we never miss a case.
+                switch (header)
                 {
-                    Log.Info("KCP: received handshake");
-                    state = KcpState.Authenticated;
-                    OnAuthenticated?.Invoke();
-                }
-                // otherwise it's random data from the internet, not
-                // from a legitimate player. disconnect.
-                else
-                {
-                    Log.Warning("KCP: received random data before handshake. Disconnecting the connection.");
-                    Disconnect();
+                    case KcpHeader.Handshake:
+                    {
+                        // we were waiting for a handshake.
+                        // it proves that the other end speaks our protocol.
+                        Log.Info("KCP: received handshake");
+                        state = KcpState.Authenticated;
+                        OnAuthenticated?.Invoke();
+                        break;
+                    }
+                    case KcpHeader.Ping:
+                    {
+                        // ping keeps kcp from timing out. do nothing.
+                        break;
+                    }
+                    case KcpHeader.Data:
+                    case KcpHeader.Disconnect:
+                    {
+                        // everything else is not allowed during handshake!
+                        Log.Warning($"KCP: received invalid header {header} while Connected. Disconnecting the connection.");
+                        Disconnect();
+                        break;
+                    }
                 }
             }
         }
@@ -265,21 +278,36 @@ namespace kcp2k
             // note that we check it BEFORE ever calling ReceiveNext. otherwise
             // we would silently eat the received message and never process it.
             while (OnCheckEnabled() &&
-                   ReceiveNext(out ArraySegment<byte> message))
+                   ReceiveNext(out KcpHeader header, out ArraySegment<byte> message))
             {
-                // disconnect message?
-                if (Utils.SegmentsEqual(message, Goodbye))
+                // message type FSM. no default so we never miss a case.
+                switch (header)
                 {
-                    Log.Info("KCP: received disconnect message");
-                    Disconnect();
-                    break;
-                }
-                // otherwise regular message
-                else
-                {
-                    // only accept regular messages
-                    //Log.Warning($"Kcp recv msg: {BitConverter.ToString(message.Array, message.Offset, message.Count)}");
-                    OnData?.Invoke(message);
+                    case KcpHeader.Handshake:
+                    {
+                        // should never receive another handshake after auth
+                        Log.Warning($"KCP: received invalid header {header} while Authenticated. Disconnecting the connection.");
+                        Disconnect();
+                        break;
+                    }
+                    case KcpHeader.Data:
+                    {
+                        //Log.Warning($"Kcp recv msg: {BitConverter.ToString(message.Array, message.Offset, message.Count)}");
+                        OnData?.Invoke(message);
+                        break;
+                    }
+                    case KcpHeader.Ping:
+                    {
+                        // ping keeps kcp from timing out. do nothing.
+                        break;
+                    }
+                    case KcpHeader.Disconnect:
+                    {
+                        // disconnect might happen
+                        Log.Info("KCP: received disconnect message");
+                        Disconnect();
+                        break;
+                    }
                 }
             }
         }
@@ -340,19 +368,25 @@ namespace kcp2k
 
         protected abstract void RawSend(byte[] data, int length);
 
-        public void Send(ArraySegment<byte> data)
+        void Send(KcpHeader header, ArraySegment<byte> content)
         {
-            // only allow sending up to MaxMessageSize sized messages.
-            // other end won't process bigger messages anyway.
-            if (data.Count <= MaxMessageSize)
+            // 1 byte header + content needs to fit into send buffer
+            if (1 + content.Count <= kcpSendBuffer.Length)
             {
-                int sent = kcp.Send(data.Array, data.Offset, data.Count);
+                // copy header, content (if any) into send buffer
+                kcpSendBuffer[0] = (byte)header;
+                if (content.Count > 0)
+                    Buffer.BlockCopy(content.Array, content.Offset, kcpSendBuffer, 1, content.Count);
+
+                // send to kcp for processing
+                int sent = kcp.Send(kcpSendBuffer, 0, 1 + content.Count);
                 if (sent < 0)
                 {
-                    Log.Warning($"Send failed with error={sent} for segment with length={data.Count}");
+                    Log.Warning($"Send failed with error={sent} for content with length={content.Count}");
                 }
             }
-            else Log.Error($"Failed to send message of size {data.Count} because it's larger than MaxMessageSize={MaxMessageSize}");
+            // otherwise content is larger than MaxMessageSize. let user know!
+            else Log.Error($"Failed to send message of size {content.Count} because it's larger than MaxMessageSize={MaxMessageSize}");
         }
 
         // server & client need to send handshake at different times, so we need
@@ -363,8 +397,11 @@ namespace kcp2k
         public void SendHandshake()
         {
             Log.Info("KcpConnection: sending Handshake to other end!");
-            Send(Hello);
+            Send(KcpHeader.Handshake, default);
         }
+        public void SendData(ArraySegment<byte> data) => Send(KcpHeader.Data, data);
+        void SendPing() => Send(KcpHeader.Ping, default);
+        void SendDisconnect() => Send(KcpHeader.Disconnect, default);
 
         protected virtual void Dispose()
         {
@@ -382,7 +419,7 @@ namespace kcp2k
             {
                 try
                 {
-                    Send(Goodbye);
+                    SendDisconnect();
                     kcp.Flush();
                 }
                 catch (SocketException)

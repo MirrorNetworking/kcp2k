@@ -368,10 +368,35 @@ namespace kcp2k
 
         public void RawInput(byte[] buffer, int msgLength)
         {
-            int input = kcp.Input(buffer, msgLength);
-            if (input != 0)
+            // parse channel
+            if (msgLength > 0)
             {
-                Log.Warning($"Input failed with error={input} for buffer with length={msgLength}");
+                byte channel = buffer[0];
+                switch (channel)
+                {
+                    case (byte)KcpChannel.Reliable:
+                    {
+                        // input into kcp, but skip channel byte
+                        int input = kcp.Input(buffer, 1, msgLength - 1);
+                        if (input != 0)
+                        {
+                            Log.Warning($"Input failed with error={input} for buffer with length={msgLength - 1}");
+                        }
+                        break;
+                    }
+                    case (byte)KcpChannel.Unreliable:
+                    {
+                        // TODO
+                        break;
+                    }
+                    default:
+                    {
+                        // not a valid channel. random data or attacks.
+                        Log.Info($"Disconnecting connection because of invalid channel header: {channel}");
+                        Disconnect();
+                        break;
+                    }
+                }
             }
         }
 

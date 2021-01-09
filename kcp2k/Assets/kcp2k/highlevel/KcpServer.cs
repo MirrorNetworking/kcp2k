@@ -50,7 +50,8 @@ namespace kcp2k
         //            if MaxMessageSize is larger. kcp always sends in MTU
         //            segments and having a buffer smaller than MTU would
         //            silently drop excess data.
-        readonly byte[] rawReceiveBuffer = new byte[Kcp.MTU_DEF];
+        //            => we need the true NETWORK_MTU to fit channel + message!
+        readonly byte[] rawReceiveBuffer = new byte[Kcp.NETWORK_MTU];
 
         // connections <connectionId, connection> where connectionId is EndPoint.GetHashCode
         public Dictionary<int, KcpServerConnection> connections = new Dictionary<int, KcpServerConnection>();

@@ -41,7 +41,11 @@ namespace kcp2k.Examples
             }
             if (GUILayout.Button("Send 0x01, 0x02 to " + firstclient))
             {
-                server.Send(firstclient, new ArraySegment<byte>(new byte[]{0x01, 0x02}));
+                server.Send(firstclient, new ArraySegment<byte>(new byte[]{0x01, 0x02}), KcpChannel.Reliable);
+            }
+            if (GUILayout.Button("Send 0x03, 0x04 to " + firstclient + " unreliable"))
+            {
+                server.Send(firstclient, new ArraySegment<byte>(new byte[]{0x03, 0x04}), KcpChannel.Unreliable);
             }
             if (GUILayout.Button("Disconnect connection " + firstclient))
             {

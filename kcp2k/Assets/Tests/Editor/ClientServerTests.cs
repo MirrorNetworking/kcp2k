@@ -121,15 +121,15 @@ namespace kcp2k.Tests
             UpdateSeveralTimes();
         }
 
-        void SendClientToServerBlocking(ArraySegment<byte> message)
+        void SendClientToServerBlocking(ArraySegment<byte> message, KcpChannel channel)
         {
-            client.Send(message);
+            client.Send(message, channel);
             UpdateSeveralTimes();
         }
 
-        void SendServerToClientBlocking(int connectionId, ArraySegment<byte> message)
+        void SendServerToClientBlocking(int connectionId, ArraySegment<byte> message, KcpChannel channel)
         {
-            server.Send(connectionId, message);
+            server.Send(connectionId, message, channel);
             UpdateSeveralTimes();
         }
 
@@ -197,20 +197,32 @@ namespace kcp2k.Tests
         }
 
         [Test]
-        public void ClientToServerMessage()
+        public void ClientToServerReliableMessage()
         {
             server.Start(Port);
             ConnectClientBlocking();
 
             byte[] message = {0x01, 0x02};
-            SendClientToServerBlocking(new ArraySegment<byte>(message));
+            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
+            Assert.That(serverReceived.Count, Is.EqualTo(1));
+            Assert.That(serverReceived[0].SequenceEqual(message), Is.True);
+        }
+
+        [Test]
+        public void ClientToServerUnreliableMessage()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+
+            byte[] message = {0x01, 0x02};
+            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Unreliable);
             Assert.That(serverReceived.Count, Is.EqualTo(1));
             Assert.That(serverReceived[0].SequenceEqual(message), Is.True);
         }
 
         // max sized message should always work
         [Test]
-        public void ClientToServerMaxSizedMessage()
+        public void ClientToServerReliableMaxSizedMessage()
         {
             server.Start(Port);
             ConnectClientBlocking();
@@ -219,7 +231,23 @@ namespace kcp2k.Tests
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
             Debug.Log($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
-            SendClientToServerBlocking(new ArraySegment<byte>(message));
+            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
+            Assert.That(serverReceived.Count, Is.EqualTo(1));
+            Assert.That(serverReceived[0].SequenceEqual(message), Is.True);
+        }
+
+        // max sized message should always work
+        [Test]
+        public void ClientToServerUnreliableMaxSizedMessage()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+
+            byte[] message = new byte[KcpConnection.UnreliableMaxMessageSize];
+            for (int i = 0; i < message.Length; ++i)
+                message[i] = (byte)(i & 0xFF);
+            Debug.Log($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
+            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Unreliable);
             Assert.That(serverReceived.Count, Is.EqualTo(1));
             Assert.That(serverReceived[0].SequenceEqual(message), Is.True);
         }
@@ -230,7 +258,7 @@ namespace kcp2k.Tests
         // drop the last 5 bytes because buffer was too small.
         // => let's make sure that never happens again.
         [Test]
-        public void ClientToServerSlightlySmallerThanMTUSizedMessage()
+        public void ClientToServerSlightlySmallerThanMTUSizedReliableMessage()
         {
             server.Start(Port);
             ConnectClientBlocking();
@@ -239,36 +267,99 @@ namespace kcp2k.Tests
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
             Debug.Log($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
-            SendClientToServerBlocking(new ArraySegment<byte>(message));
+            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
+            Assert.That(serverReceived.Count, Is.EqualTo(1));
+            Assert.That(serverReceived[0].SequenceEqual(message), Is.True);
+        }
+
+        [Test]
+        public void ClientToServerSlightlySmallerThanMTUSizedUnreliableMessage()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+
+            byte[] message = new byte[Kcp.MTU_DEF - 5];
+            for (int i = 0; i < message.Length; ++i)
+                message[i] = (byte)(i & 0xFF);
+            Debug.Log($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
+            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Unreliable);
             Assert.That(serverReceived.Count, Is.EqualTo(1));
             Assert.That(serverReceived[0].SequenceEqual(message), Is.True);
         }
 
         // > max sized message should not work
         [Test]
-        public void ClientToServerTooLargeMessage()
+        public void ClientToServerTooLargeReliableMessage()
         {
             server.Start(Port);
             ConnectClientBlocking();
 
             byte[] message = new byte[KcpConnection.ReliableMaxMessageSize + 1];
             LogAssert.Expect(LogType.Error, $"Failed to send reliable message of size {message.Length} because it's larger than ReliableMaxMessageSize={KcpConnection.ReliableMaxMessageSize}");
-            SendClientToServerBlocking(new ArraySegment<byte>(message));
+            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
+            Assert.That(serverReceived.Count, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void ClientToServerTooLargeUnreliableMessage()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+
+            byte[] message = new byte[KcpConnection.UnreliableMaxMessageSize + 1];
+            LogAssert.Expect(LogType.Error, $"Failed to send unreliable message of size {message.Length} because it's larger than UnreliableMaxMessageSize={KcpConnection.UnreliableMaxMessageSize}");
+            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Unreliable);
             Assert.That(serverReceived.Count, Is.EqualTo(0));
         }
 
         // test to see if successive messages still work fine.
         [Test]
-        public void ClientToServerTwoMessages()
+        public void ClientToServerTwoReliableMessages()
         {
             server.Start(Port);
             ConnectClientBlocking();
 
             byte[] message = {0x01, 0x02};
-            SendClientToServerBlocking(new ArraySegment<byte>(message));
+            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
 
             byte[] message2 = {0x03, 0x04};
-            SendClientToServerBlocking(new ArraySegment<byte>(message2));
+            SendClientToServerBlocking(new ArraySegment<byte>(message2), KcpChannel.Reliable);
+
+            Assert.That(serverReceived.Count, Is.EqualTo(2));
+            Assert.That(serverReceived[0].SequenceEqual(message), Is.True);
+            Assert.That(serverReceived[1].SequenceEqual(message2), Is.True);
+        }
+
+        // test to see if successive messages still work fine.
+        [Test]
+        public void ClientToServerTwoUnreliableMessages()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+
+            byte[] message = {0x01, 0x02};
+            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Unreliable);
+
+            byte[] message2 = {0x03, 0x04};
+            SendClientToServerBlocking(new ArraySegment<byte>(message2), KcpChannel.Unreliable);
+
+            Assert.That(serverReceived.Count, Is.EqualTo(2));
+            Assert.That(serverReceived[0].SequenceEqual(message), Is.True);
+            Assert.That(serverReceived[1].SequenceEqual(message2), Is.True);
+        }
+
+        // test to see if mixed reliable & unreliable messages still work fine.
+        [Test]
+        public void ClientToServerTwoMixedMessages()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+
+            byte[] message = {0x01, 0x02};
+            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Unreliable);
+
+            byte[] message2 = {0x03, 0x04};
+            SendClientToServerBlocking(new ArraySegment<byte>(message2), KcpChannel.Reliable);
 
             Assert.That(serverReceived.Count, Is.EqualTo(2));
             Assert.That(serverReceived[0].SequenceEqual(message), Is.True);
@@ -278,7 +369,7 @@ namespace kcp2k.Tests
         // send multiple large messages before calling update.
         // this way kcp is forced to buffer / queue them.
         [Test]
-        public void ClientToServerMultipleMaxSizedMessagesAtOnce()
+        public void ClientToServerMultipleReliableMaxSizedMessagesAtOnce()
         {
             server.Start(Port);
             ConnectClientBlocking();
@@ -297,7 +388,44 @@ namespace kcp2k.Tests
 
             // send each one without updating server or client yet
             foreach (byte[] message in messages)
-                client.Send(new ArraySegment<byte>(message));
+                client.Send(new ArraySegment<byte>(message), KcpChannel.Reliable);
+
+            // each max sized message needs a lot of updates for all the fragments.
+            // for multiple we need to update a lot more than usual.
+            for (int i = 0; i < 10; ++i)
+                UpdateSeveralTimes();
+
+            // all received?
+            Assert.That(serverReceived.Count, Is.EqualTo(messages.Count));
+            for (int i = 0; i < messages.Count; ++i)
+            {
+                Assert.That(serverReceived[i].SequenceEqual(messages[i]), Is.True);
+            }
+        }
+
+        // send multiple large messages before calling update.
+        // this way kcp is forced to buffer / queue them.
+        [Test]
+        public void ClientToServerMultipleUnreliableMaxSizedMessagesAtOnce()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+
+            // prepare 10 different MTU sized messages.
+            // each of them with unique content so we can guarantee arrival.
+            List<byte[]> messages = new List<byte[]>();
+            for (int i = 0; i < 10; ++i)
+            {
+                // create message, fill with unique data (j+i & 0xff)
+                byte[] message = new byte[KcpConnection.UnreliableMaxMessageSize];
+                for (int j = 0; j < message.Length; ++j)
+                    message[j] = (byte)((j + i) & 0xFF);
+                messages.Add(message);
+            }
+
+            // send each one without updating server or client yet
+            foreach (byte[] message in messages)
+                client.Send(new ArraySegment<byte>(message), KcpChannel.Unreliable);
 
             // each max sized message needs a lot of updates for all the fragments.
             // for multiple we need to update a lot more than usual.
@@ -313,21 +441,34 @@ namespace kcp2k.Tests
         }
 
         [Test]
-        public void ServerToClientMessage()
+        public void ServerToClientReliableMessage()
         {
             server.Start(Port);
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
             byte[] message = {0x03, 0x04};
-            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Reliable);
+            Assert.That(clientReceived.Count, Is.EqualTo(1));
+            Assert.That(clientReceived[0].SequenceEqual(message), Is.True);
+        }
+
+        [Test]
+        public void ServerToClientUnreliableMessage()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+
+            byte[] message = {0x03, 0x04};
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Unreliable);
             Assert.That(clientReceived.Count, Is.EqualTo(1));
             Assert.That(clientReceived[0].SequenceEqual(message), Is.True);
         }
 
         // max sized message should always work
         [Test]
-        public void ServerToClientMaxSizedMessage()
+        public void ServerToClientReliableMaxSizedMessage()
         {
             server.Start(Port);
             ConnectClientBlocking();
@@ -337,7 +478,24 @@ namespace kcp2k.Tests
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
 
-            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Reliable);
+            Assert.That(clientReceived.Count, Is.EqualTo(1));
+            Assert.That(clientReceived[0].SequenceEqual(message), Is.True);
+        }
+
+        // max sized message should always work
+        [Test]
+        public void ServerToClientUnreliableMaxSizedMessage()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+
+            byte[] message = new byte[KcpConnection.UnreliableMaxMessageSize];
+            for (int i = 0; i < message.Length; ++i)
+                message[i] = (byte)(i & 0xFF);
+
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Unreliable);
             Assert.That(clientReceived.Count, Is.EqualTo(1));
             Assert.That(clientReceived[0].SequenceEqual(message), Is.True);
         }
@@ -348,7 +506,7 @@ namespace kcp2k.Tests
         // drop the last 5 bytes because buffer was too small.
         // => let's make sure that never happens again.
         [Test]
-        public void ServerToClientSlightlySmallerThanMTUSizedMessage()
+        public void ServerToClientSlightlySmallerThanMTUSizedReliableMessage()
         {
             server.Start(Port);
             ConnectClientBlocking();
@@ -358,15 +516,30 @@ namespace kcp2k.Tests
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
 
-            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Reliable);
             Assert.That(clientReceived.Count, Is.EqualTo(1));
             Assert.That(clientReceived[0].SequenceEqual(message), Is.True);
         }
 
+        [Test]
+        public void ServerToClientSlightlySmallerThanMTUSizedUnreliableMessage()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+
+            byte[] message = new byte[Kcp.MTU_DEF - 5];
+            for (int i = 0; i < message.Length; ++i)
+                message[i] = (byte)(i & 0xFF);
+
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Unreliable);
+            Assert.That(clientReceived.Count, Is.EqualTo(1));
+            Assert.That(clientReceived[0].SequenceEqual(message), Is.True);
+        }
 
         // > max sized message should not work
         [Test]
-        public void ServerToClientTooLargeMessage()
+        public void ServerToClientTooLargeReliableMessage()
         {
             server.Start(Port);
             ConnectClientBlocking();
@@ -374,23 +547,81 @@ namespace kcp2k.Tests
 
             byte[] message = new byte[KcpConnection.ReliableMaxMessageSize + 1];
             LogAssert.Expect(LogType.Error, $"Failed to send reliable message of size {message.Length} because it's larger than ReliableMaxMessageSize={KcpConnection.ReliableMaxMessageSize}");
-            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Reliable);
+            Assert.That(clientReceived.Count, Is.EqualTo(0));
+        }
+
+        // > max sized message should not work
+        [Test]
+        public void ServerToClientTooLargeUnreliableMessage()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+
+            byte[] message = new byte[KcpConnection.UnreliableMaxMessageSize + 1];
+            LogAssert.Expect(LogType.Error, $"Failed to send unreliable message of size {message.Length} because it's larger than UnreliableMaxMessageSize={KcpConnection.UnreliableMaxMessageSize}");
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Unreliable);
             Assert.That(clientReceived.Count, Is.EqualTo(0));
         }
 
         // test to see if successive messages still work fine.
         [Test]
-        public void ServerToClientTwoMessages()
+        public void ServerToClientTwoReliableMessages()
         {
             server.Start(Port);
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
             byte[] message = {0x03, 0x04};
-            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Reliable);
 
             byte[] message2 = {0x05, 0x06};
-            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message2));
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message2), KcpChannel.Reliable);
+
+            Assert.That(clientReceived.Count, Is.EqualTo(2));
+            Assert.That(clientReceived[0].SequenceEqual(message), Is.True);
+            Assert.That(clientReceived[1].SequenceEqual(message2), Is.True);
+
+            client.Disconnect();
+            server.Stop();
+        }
+
+        // test to see if successive messages still work fine.
+        [Test]
+        public void ServerToClientTwoUnreliableMessages()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+
+            byte[] message = {0x03, 0x04};
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Unreliable);
+
+            byte[] message2 = {0x05, 0x06};
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message2), KcpChannel.Unreliable);
+
+            Assert.That(clientReceived.Count, Is.EqualTo(2));
+            Assert.That(clientReceived[0].SequenceEqual(message), Is.True);
+            Assert.That(clientReceived[1].SequenceEqual(message2), Is.True);
+
+            client.Disconnect();
+            server.Stop();
+        }
+
+        // test to see if mixed messages still work fine.
+        [Test]
+        public void ServerToClientTwoMixedMessages()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+
+            byte[] message = {0x03, 0x04};
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Unreliable);
+
+            byte[] message2 = {0x05, 0x06};
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message2), KcpChannel.Reliable);
 
             Assert.That(clientReceived.Count, Is.EqualTo(2));
             Assert.That(clientReceived[0].SequenceEqual(message), Is.True);
@@ -510,7 +741,7 @@ namespace kcp2k.Tests
             byte[] message = {0x03, 0x04};
             for (int i = 0; i < KcpConnection.QueueDisconnectThreshold + 1; ++i)
             {
-                server.Send(connectionId, new ArraySegment<byte>(message));
+                server.Send(connectionId, new ArraySegment<byte>(message), KcpChannel.Reliable);
             }
 
             // no need to log thousands of messages. that would take forever.
@@ -538,8 +769,8 @@ namespace kcp2k.Tests
             int connectionId = ServerFirstConnectionId();
 
             // send two messages to client
-            server.Send(connectionId, new ArraySegment<byte>(new byte[]{0x03, 0x04}));
-            server.Send(connectionId, new ArraySegment<byte>(new byte[]{0x05, 0x06}));
+            server.Send(connectionId, new ArraySegment<byte>(new byte[]{0x03, 0x04}), KcpChannel.Reliable);
+            server.Send(connectionId, new ArraySegment<byte>(new byte[]{0x05, 0x06}), KcpChannel.Reliable);
 
             // update should process only the first message and then stop.
             UpdateSeveralTimes();
@@ -565,8 +796,8 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
 
             // send two messages to server
-            client.Send(new ArraySegment<byte>(new byte[]{0x03, 0x04}));
-            client.Send(new ArraySegment<byte>(new byte[]{0x05, 0x06}));
+            client.Send(new ArraySegment<byte>(new byte[]{0x03, 0x04}), KcpChannel.Reliable);
+            client.Send(new ArraySegment<byte>(new byte[]{0x05, 0x06}), KcpChannel.Reliable);
 
             // update should process only the first message and then stop.
             UpdateSeveralTimes();

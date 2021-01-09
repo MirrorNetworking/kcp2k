@@ -93,13 +93,14 @@ namespace kcp2k
             socket.Bind(new IPEndPoint(IPAddress.IPv6Any, port));
         }
 
-        public void Send(int connectionId, ArraySegment<byte> segment)
+        public void Send(int connectionId, ArraySegment<byte> segment, KcpChannel channel)
         {
             if (connections.TryGetValue(connectionId, out KcpServerConnection connection))
             {
-                connection.SendData(segment);
+                connection.SendData(segment, channel);
             }
         }
+
         public void Disconnect(int connectionId)
         {
             if (connections.TryGetValue(connectionId, out KcpServerConnection connection))

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -109,6 +110,10 @@ namespace kcp2k
         public uint MaxReceiveRate =>
             kcp.rcv_wnd * kcp.mtu * 1000 / kcp.interval;
 
+        // queue unreliable messages so we can process them in ReceiveNext too
+        // TODO avoid allocations
+        Queue<byte[]> unreliableQueue = new Queue<byte[]>();
+
         // NoDelay, interval, window size are the most important configurations.
         // let's force require the parameters so we don't forget it anywhere.
         protected void SetupKcp(bool noDelay, uint interval = Kcp.INTERVAL, int fastResend = 0, bool congestionWindow = true, uint sendWindowSize = Kcp.WND_SND, uint receiveWindowSize = Kcp.WND_RCV)
@@ -185,6 +190,18 @@ namespace kcp2k
         // reads the next message type & content from connection.
         bool ReceiveNext(out KcpHeader header, out ArraySegment<byte> message)
         {
+            // process queued unreliable first (if any)
+            if (unreliableQueue.Count > 0)
+            {
+                // unreliable messages are only used for data.
+                // no need to extract the header.
+                byte[] unreliable = unreliableQueue.Dequeue();
+                header = KcpHeader.Data;
+                message = new ArraySegment<byte>(unreliable, 0, unreliable.Length);
+                lastReceiveTime = (uint)refTime.ElapsedMilliseconds;
+                return true;
+            }
+
             // read only one message
             int msgSize = kcp.PeekSize();
             if (msgSize > 0)
@@ -386,7 +403,11 @@ namespace kcp2k
                     }
                     case (byte)KcpChannel.Unreliable:
                     {
-                        // TODO
+                        // add to unreliable queue, process in ReceiveNext later
+                        // TODO avoid allocations
+                        byte[] unreliable = new byte[msgLength - 1];
+                        Buffer.BlockCopy(buffer, 1, unreliable, 0, msgLength - 1);
+                        unreliableQueue.Enqueue(unreliable);
                         break;
                     }
                     default:
@@ -412,12 +433,12 @@ namespace kcp2k
             RawSend(rawSendBuffer, length + 1);
         }
 
-        void RawSendUnreliable(byte[] data, int length)
+        void RawSendUnreliable(ArraySegment<byte> message)
         {
             // copy channel header, data into raw send buffer, then send
             rawSendBuffer[0] = (byte)KcpChannel.Unreliable;
-            Buffer.BlockCopy(data, 0, rawSendBuffer, 1, length);
-            RawSend(rawSendBuffer, length + 1);
+            Buffer.BlockCopy(message.Array, 0, rawSendBuffer, 1, message.Count);
+            RawSend(rawSendBuffer, message.Count + 1);
         }
 
         void SendReliable(KcpHeader header, ArraySegment<byte> content)
@@ -441,6 +462,17 @@ namespace kcp2k
             else Log.Error($"Failed to send reliable message of size {content.Count} because it's larger than ReliableMaxMessageSize={ReliableMaxMessageSize}");
         }
 
+        void SendUnreliable(ArraySegment<byte> message)
+        {
+            // message size needs to be <= unreliable max size
+            if (message.Count <= UnreliableMaxMessageSize)
+            {
+                RawSendUnreliable(message);
+            }
+            // otherwise content is larger than MaxMessageSize. let user know!
+            else Log.Error($"Failed to send unreliable message of size {message.Count} because it's larger than UnreliableMaxMessageSize={UnreliableMaxMessageSize}");
+        }
+
         // server & client need to send handshake at different times, so we need
         // to expose the function.
         // * client should send it immediately.
@@ -452,7 +484,19 @@ namespace kcp2k
             Log.Info("KcpConnection: sending Handshake to other end!");
             SendReliable(KcpHeader.Handshake, default);
         }
-        public void SendData(ArraySegment<byte> data) => SendReliable(KcpHeader.Data, data);
+
+        public void SendData(ArraySegment<byte> data, KcpChannel channel)
+        {
+            switch (channel)
+            {
+                case KcpChannel.Reliable:
+                    SendReliable(KcpHeader.Data, data);
+                    break;
+                case KcpChannel.Unreliable:
+                    SendUnreliable(data);
+                    break;
+            }
+        }
 
         // ping goes through kcp to keep it from timing out, so it goes over the
         // reliable channel.

@@ -373,7 +373,7 @@ namespace kcp2k.Tests
             int connectionId = ServerFirstConnectionId();
 
             byte[] message = new byte[KcpConnection.ReliableMaxMessageSize + 1];
-            LogAssert.Expect(LogType.Error, $"Failed to send reliablemessage of size {message.Length} because it's larger than ReliableMaxMessageSize={KcpConnection.ReliableMaxMessageSize}");
+            LogAssert.Expect(LogType.Error, $"Failed to send reliable message of size {message.Length} because it's larger than ReliableMaxMessageSize={KcpConnection.ReliableMaxMessageSize}");
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message));
             Assert.That(clientReceived.Count, Is.EqualTo(0));
         }

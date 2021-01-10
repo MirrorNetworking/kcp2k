@@ -198,21 +198,12 @@ namespace kcp2k
         // reads the next message type & content from connection.
         bool ReceiveNext(out KcpHeader header, out ArraySegment<byte> message, out bool needsRecycle)
         {
-            // process queued unreliable first (if any)
-            if (unreliableQueue.Count > 0)
-            {
-                // unreliable messages are only used for data.
-                // no need to extract the header.
-                header = KcpHeader.Data;
-                message = unreliableQueue.Dequeue();
-                lastReceiveTime = (uint)refTime.ElapsedMilliseconds;
+            // IMPORTANT: process RELIABLE messages (spawning etc.) before
+            //            UNRELIABLE messages (movement etc.).
+            //            => reliable are always more important.
+            //            => by definition, unreliable can wait.
 
-                // indicate that it should be recycled afterwards
-                needsRecycle = true;
-                return true;
-            }
-
-
+            // process all reliable messages first
             // read only one message
             int msgSize = kcp.PeekSize();
             if (msgSize > 0)
@@ -249,6 +240,21 @@ namespace kcp2k
                     Disconnect();
                 }
             }
+
+            // process queued unreliable afterwards (if any)
+            if (unreliableQueue.Count > 0)
+            {
+                // unreliable messages are only used for data.
+                // no need to extract the header.
+                header = KcpHeader.Data;
+                message = unreliableQueue.Dequeue();
+                lastReceiveTime = (uint)refTime.ElapsedMilliseconds;
+
+                // indicate that it should be recycled afterwards
+                needsRecycle = true;
+                return true;
+            }
+
             header = KcpHeader.Disconnect;
             needsRecycle = false;
             return false;

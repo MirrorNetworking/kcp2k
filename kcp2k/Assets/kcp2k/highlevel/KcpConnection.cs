@@ -441,7 +441,7 @@ namespace kcp2k
         // raw send puts the data into the socket
         protected abstract void RawSend(byte[] data, int length);
 
-        // wrappers to prepend the channel type before calling RawSend
+        // raw send called by kcp
         void RawSendReliable(byte[] data, int length)
         {
             // copy channel header, data into raw send buffer, then send
@@ -450,6 +450,7 @@ namespace kcp2k
             RawSend(rawSendBuffer, length + 1);
         }
 
+        // raw send called by SendUnreliable directly
         void RawSendUnreliable(ArraySegment<byte> message)
         {
             // copy channel header, data into raw send buffer, then send

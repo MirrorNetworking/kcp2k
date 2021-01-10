@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -110,16 +109,6 @@ namespace kcp2k
         public uint MaxReceiveRate =>
             kcp.rcv_wnd * kcp.mtu * 1000 / kcp.interval;
 
-        // for consistency with reliable kcp messages, the unreliable messages
-        // are also queued and then only processed later in ReceiveNext().
-        //
-        // to avoid allocations, we need a max sized byte[] pool.
-        // => one pool per KcpConnection to avoid static state.
-        //
-        // make sure to recycle to pool when dequeing!
-        Pool<byte[]> unreliablePool = new Pool<byte[]>(() => new byte[UnreliableMaxMessageSize]);
-        Queue<ArraySegment<byte>> unreliableQueue = new Queue<ArraySegment<byte>>();
-
         // NoDelay, interval, window size are the most important configurations.
         // let's force require the parameters so we don't forget it anywhere.
         protected void SetupKcp(bool noDelay, uint interval = Kcp.INTERVAL, int fastResend = 0, bool congestionWindow = true, uint sendWindowSize = Kcp.WND_SND, uint receiveWindowSize = Kcp.WND_RCV)
@@ -176,12 +165,11 @@ namespace kcp2k
             // see QueueSizeDisconnect comments.
             // => include all of kcp's buffers and the unreliable queue!
             int total = kcp.rcv_queue.Count + kcp.snd_queue.Count +
-                        kcp.rcv_buf.Count + kcp.snd_buf.Count +
-                        unreliableQueue.Count;
+                        kcp.rcv_buf.Count + kcp.snd_buf.Count;
             if (total >= QueueDisconnectThreshold)
             {
                 Log.Warning($"KCP: disconnecting connection because it can't process data fast enough.\n" +
-                                 $"Queue total {total}>{QueueDisconnectThreshold}. rcv_queue={kcp.rcv_queue.Count} snd_queue={kcp.snd_queue.Count} rcv_buf={kcp.rcv_buf.Count} snd_buf={kcp.snd_buf.Count} unreliableQueue={unreliableQueue.Count}\n" +
+                                 $"Queue total {total}>{QueueDisconnectThreshold}. rcv_queue={kcp.rcv_queue.Count} snd_queue={kcp.snd_queue.Count} rcv_buf={kcp.rcv_buf.Count} snd_buf={kcp.snd_buf.Count}\n" +
                                  $"* Try to Enable NoDelay, decrease INTERVAL, disable Congestion Window (= enable NOCWND!), increase SEND/RECV WINDOW or compress data.\n" +
                                  $"* Or perhaps the network is simply too slow on our end, or on the other end.\n");
 
@@ -195,16 +183,10 @@ namespace kcp2k
             }
         }
 
-        // reads the next message type & content from connection.
-        bool ReceiveNext(out KcpHeader header, out ArraySegment<byte> message, out bool needsRecycle)
+        // reads the next reliable message type & content from kcp.
+        // -> to avoid buffering, unreliable messages call OnData directly.
+        bool ReceiveNextReliable(out KcpHeader header, out ArraySegment<byte> message)
         {
-            // IMPORTANT: process RELIABLE messages (spawning etc.) before
-            //            UNRELIABLE messages (movement etc.).
-            //            => reliable are always more important.
-            //            => by definition, unreliable can wait.
-
-            // process all reliable messages first
-            // read only one message
             int msgSize = kcp.PeekSize();
             if (msgSize > 0)
             {
@@ -220,9 +202,6 @@ namespace kcp2k
                         header = (KcpHeader)kcpMessageBuffer[0];
                         message = new ArraySegment<byte>(kcpMessageBuffer, 1, msgSize - 1);
                         lastReceiveTime = (uint)refTime.ElapsedMilliseconds;
-
-                        // reliable messages from kcp don't need to recycle the buffer
-                        needsRecycle = false;
                         return true;
                     }
                     else
@@ -241,22 +220,7 @@ namespace kcp2k
                 }
             }
 
-            // process queued unreliable afterwards (if any)
-            if (unreliableQueue.Count > 0)
-            {
-                // unreliable messages are only used for data.
-                // no need to extract the header.
-                header = KcpHeader.Data;
-                message = unreliableQueue.Dequeue();
-                lastReceiveTime = (uint)refTime.ElapsedMilliseconds;
-
-                // indicate that it should be recycled afterwards
-                needsRecycle = true;
-                return true;
-            }
-
             header = KcpHeader.Disconnect;
-            needsRecycle = false;
             return false;
         }
 
@@ -270,8 +234,8 @@ namespace kcp2k
 
             kcp.Update(time);
 
-            // any message received?
-            if (ReceiveNext(out KcpHeader header, out ArraySegment<byte> message, out bool needsRecycle))
+            // any reliable kcp message received?
+            if (ReceiveNextReliable(out KcpHeader header, out ArraySegment<byte> message))
             {
                 // message type FSM. no default so we never miss a case.
                 switch (header)
@@ -299,10 +263,6 @@ namespace kcp2k
                         break;
                     }
                 }
-
-                // recycle after we are done with it
-                if (needsRecycle)
-                    unreliablePool.Return(message.Array);
             }
         }
 
@@ -329,7 +289,7 @@ namespace kcp2k
             // note that we check it BEFORE ever calling ReceiveNext. otherwise
             // we would silently eat the received message and never process it.
             while (OnCheckEnabled() &&
-                   ReceiveNext(out KcpHeader header, out ArraySegment<byte> message, out bool needsRecycle))
+                   ReceiveNextReliable(out KcpHeader header, out ArraySegment<byte> message))
             {
                 // message type FSM. no default so we never miss a case.
                 switch (header)
@@ -360,10 +320,6 @@ namespace kcp2k
                         break;
                     }
                 }
-
-                // recycle after we are done with it
-                if (needsRecycle)
-                    unreliablePool.Return(message.Array);
             }
         }
 
@@ -432,11 +388,43 @@ namespace kcp2k
                     }
                     case (byte)KcpChannel.Unreliable:
                     {
-                        // add to unreliable queue
-                        // => use byte[] from pool to avoid allocations!
-                        byte[] bytes = unreliablePool.Take();
-                        Buffer.BlockCopy(buffer, 1, bytes, 0, msgLength - 1);
-                        unreliableQueue.Enqueue(new ArraySegment<byte>(bytes, 0, msgLength - 1));
+                        // ideally we would queue all unreliable messages and
+                        // then process them in ReceiveNext() together with the
+                        // reliable messages, but:
+                        // -> queues/allocations/pools are slow and complex.
+                        // -> DOTSNET 10k is actually slower if we use pooled
+                        //    unreliable messages for transform messages.
+                        //
+                        //      DOTSNET 10k benchmark:
+                        //        reliable-only:         170 FPS
+                        //        unreliable queued: 130-150 FPS
+                        //        unreliable direct:     183 FPS(!)
+                        //
+                        //      DOTSNET 50k benchmark:
+                        //        reliable-only:         FAILS (queues keep growing)
+                        //        unreliable direct:     18-22 FPS(!)
+                        //
+                        // -> all unreliable messages are DATA messages anyway.
+                        // -> let's skip the magic and call OnData directly if
+                        //    the current state allows it.
+                        if (state == KcpState.Authenticated)
+                        {
+                            // only process messages while enabled for Mirror
+                            // scene switching etc.
+                            // -> if an unreliable message comes in while not
+                            //    enabled, simply drop it. it's unreliable!
+                            if (OnCheckEnabled())
+                            {
+                                ArraySegment<byte> message = new ArraySegment<byte>(buffer, 1, msgLength - 1);
+                                OnData?.Invoke(message);
+                            }
+                        }
+                        else
+                        {
+                            // should never
+                            Log.Warning($"KCP: received unreliable message in state {state}. Disconnecting the connection.");
+                            Disconnect();
+                        }
                         break;
                     }
                     default:

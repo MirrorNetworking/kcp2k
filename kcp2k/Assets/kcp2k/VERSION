@@ -1,3 +1,12 @@
+V1.6 [2021-01-10]
+- Unreliable channel added!
+- perf: KcpHeader byte added to every kcp message to indicate
+  Handshake/Data/Ping/Disconnect instead of scanning each message for Hello/Byte/Ping
+  content via SegmentEquals. It's a lot cleaner, should be faster and should avoid
+  edge cases where a message content would equal Hello/Ping/Bye sequence accidentally.
+- Kcp.Input: offset moved to parameters for cases where it's needed
+- Kcp.SetMtu from original Kcp.c
+
 V1.5 [2021-01-07]
 - KcpConnection.MaxSend/ReceiveRate calculation based on the article
 - MirrorTransport: large send/recv window size defaults to avoid high latencies caused

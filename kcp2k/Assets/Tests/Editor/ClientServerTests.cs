@@ -681,7 +681,7 @@ namespace kcp2k.Tests
             Thread.Sleep(KcpConnection.TIMEOUT + 1);
 
             // now update
-            LogAssert.Expect(LogType.Warning, $"KCP: Connection timed out after {KcpConnection.TIMEOUT}ms. Disconnecting.");
+            LogAssert.Expect(LogType.Warning, $"KCP: Connection timed out after not receiving any reliable message for {KcpConnection.TIMEOUT}ms. Disconnecting.");
             UpdateSeveralTimes();
 
             // should be disconnected

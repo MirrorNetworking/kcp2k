@@ -110,9 +110,15 @@ namespace kcp2k
         public uint MaxReceiveRate =>
             kcp.rcv_wnd * kcp.mtu * 1000 / kcp.interval;
 
-        // queue unreliable messages so we can process them in ReceiveNext too
-        // TODO avoid allocations
-        Queue<byte[]> unreliableQueue = new Queue<byte[]>();
+        // for consistency with reliable kcp messages, the unreliable messages
+        // are also queued and then only processed later in ReceiveNext().
+        //
+        // to avoid allocations, we need a max sized byte[] pool.
+        // => one pool per KcpConnection to avoid static state.
+        //
+        // make sure to recycle to pool when dequeing!
+        Pool<byte[]> unreliablePool = new Pool<byte[]>(() => new byte[UnreliableMaxMessageSize]);
+        Queue<ArraySegment<byte>> unreliableQueue = new Queue<ArraySegment<byte>>();
 
         // NoDelay, interval, window size are the most important configurations.
         // let's force require the parameters so we don't forget it anywhere.
@@ -168,12 +174,14 @@ namespace kcp2k
         {
             // disconnect connections that can't process the load.
             // see QueueSizeDisconnect comments.
+            // => include all of kcp's buffers and the unreliable queue!
             int total = kcp.rcv_queue.Count + kcp.snd_queue.Count +
-                        kcp.rcv_buf.Count + kcp.snd_buf.Count;
+                        kcp.rcv_buf.Count + kcp.snd_buf.Count +
+                        unreliableQueue.Count;
             if (total >= QueueDisconnectThreshold)
             {
                 Log.Warning($"KCP: disconnecting connection because it can't process data fast enough.\n" +
-                                 $"Queue total {total}>{QueueDisconnectThreshold}. rcv_queue={kcp.rcv_queue.Count} snd_queue={kcp.snd_queue.Count} rcv_buf={kcp.rcv_buf.Count} snd_buf={kcp.snd_buf.Count}\n" +
+                                 $"Queue total {total}>{QueueDisconnectThreshold}. rcv_queue={kcp.rcv_queue.Count} snd_queue={kcp.snd_queue.Count} rcv_buf={kcp.rcv_buf.Count} snd_buf={kcp.snd_buf.Count} unreliableQueue={unreliableQueue.Count}\n" +
                                  $"* Try to Enable NoDelay, decrease INTERVAL, disable Congestion Window (= enable NOCWND!), increase SEND/RECV WINDOW or compress data.\n" +
                                  $"* Or perhaps the network is simply too slow on our end, or on the other end.\n");
 
@@ -188,19 +196,22 @@ namespace kcp2k
         }
 
         // reads the next message type & content from connection.
-        bool ReceiveNext(out KcpHeader header, out ArraySegment<byte> message)
+        bool ReceiveNext(out KcpHeader header, out ArraySegment<byte> message, out bool needsRecycle)
         {
             // process queued unreliable first (if any)
             if (unreliableQueue.Count > 0)
             {
                 // unreliable messages are only used for data.
                 // no need to extract the header.
-                byte[] unreliable = unreliableQueue.Dequeue();
                 header = KcpHeader.Data;
-                message = new ArraySegment<byte>(unreliable, 0, unreliable.Length);
+                message = unreliableQueue.Dequeue();
                 lastReceiveTime = (uint)refTime.ElapsedMilliseconds;
+
+                // indicate that it should be recycled afterwards
+                needsRecycle = true;
                 return true;
             }
+
 
             // read only one message
             int msgSize = kcp.PeekSize();
@@ -218,6 +229,9 @@ namespace kcp2k
                         header = (KcpHeader)kcpMessageBuffer[0];
                         message = new ArraySegment<byte>(kcpMessageBuffer, 1, msgSize - 1);
                         lastReceiveTime = (uint)refTime.ElapsedMilliseconds;
+
+                        // reliable messages from kcp don't need to recycle the buffer
+                        needsRecycle = false;
                         return true;
                     }
                     else
@@ -236,6 +250,7 @@ namespace kcp2k
                 }
             }
             header = KcpHeader.Disconnect;
+            needsRecycle = false;
             return false;
         }
 
@@ -250,7 +265,7 @@ namespace kcp2k
             kcp.Update(time);
 
             // any message received?
-            if (ReceiveNext(out KcpHeader header, out ArraySegment<byte> message))
+            if (ReceiveNext(out KcpHeader header, out ArraySegment<byte> message, out bool needsRecycle))
             {
                 // message type FSM. no default so we never miss a case.
                 switch (header)
@@ -278,6 +293,10 @@ namespace kcp2k
                         break;
                     }
                 }
+
+                // recycle after we are done with it
+                if (needsRecycle)
+                    unreliablePool.Return(message.Array);
             }
         }
 
@@ -304,7 +323,7 @@ namespace kcp2k
             // note that we check it BEFORE ever calling ReceiveNext. otherwise
             // we would silently eat the received message and never process it.
             while (OnCheckEnabled() &&
-                   ReceiveNext(out KcpHeader header, out ArraySegment<byte> message))
+                   ReceiveNext(out KcpHeader header, out ArraySegment<byte> message, out bool needsRecycle))
             {
                 // message type FSM. no default so we never miss a case.
                 switch (header)
@@ -335,6 +354,10 @@ namespace kcp2k
                         break;
                     }
                 }
+
+                // recycle after we are done with it
+                if (needsRecycle)
+                    unreliablePool.Return(message.Array);
             }
         }
 
@@ -403,11 +426,11 @@ namespace kcp2k
                     }
                     case (byte)KcpChannel.Unreliable:
                     {
-                        // add to unreliable queue, process in ReceiveNext later
-                        // TODO avoid allocations
-                        byte[] unreliable = new byte[msgLength - 1];
-                        Buffer.BlockCopy(buffer, 1, unreliable, 0, msgLength - 1);
-                        unreliableQueue.Enqueue(unreliable);
+                        // add to unreliable queue
+                        // => use byte[] from pool to avoid allocations!
+                        byte[] bytes = unreliablePool.Take();
+                        Buffer.BlockCopy(buffer, 1, bytes, 0, msgLength - 1);
+                        unreliableQueue.Enqueue(new ArraySegment<byte>(bytes, 0, msgLength - 1));
                         break;
                     }
                     default:

@@ -10,14 +10,6 @@ namespace kcp2k
         // original Kcp has a define option, which is not defined by default:
         // #define FASTACK_CONSERVE
 
-        // vis2k: NETWORK_MTU is the true network mtu.
-        // 1200 to fit all cases (steam uses 1200 too):
-        // https://en.wikipedia.org/wiki/Maximum_transmission_unit
-        //
-        // we give kcp a fake MTU_DEF of NETWORK_MTU - 1 so kcp fragments into
-        // up to NETWORK_MTU - 1 chunks and we can still prepend the channel byte.
-        public const int NETWORK_MTU = 1200;
-
         public const int RTO_NDL = 30;             // no delay min rto
         public const int RTO_MIN = 100;            // normal min rto
         public const int RTO_DEF = 200;            // default RTO
@@ -30,7 +22,7 @@ namespace kcp2k
         public const int ASK_TELL = 2;             // need to send CMD_WINS
         public const int WND_SND = 32;             // default send window
         public const int WND_RCV = 128;            // default receive window. must be >= max fragment size
-        public const int MTU_DEF = NETWORK_MTU -1; // the MTU that kcp uses for fragmentation. high level needs 1 byte space for channel header, so kcp can use up to NETWORK_MTU - 1
+        public const int MTU_DEF = 1200;           // default MTU (reduced to 1200 to fit all cases: https://en.wikipedia.org/wiki/Maximum_transmission_unit ; steam uses 1200 too!)
         public const int ACK_FAST = 3;
         public const int INTERVAL = 100;
         public const int OVERHEAD = 24;

@@ -36,6 +36,11 @@ namespace kcp2k
         // Unity's time.deltaTime over long periods.
         readonly Stopwatch refTime = new Stopwatch();
 
+        // we need to subtract the channel byte from every MaxMessageSize
+        // calculation.
+        // we also need to tell kcp to use MTU-1 to leave space for the byte.
+        const int CHANNEL_HEADER_SIZE = 1;
+
         // reliable channel (= kcp) MaxMessageSize so the outside knows largest
         // allowed message to send the calculation in Send() is not obvious at
         // all, so let's provide the helper here.
@@ -48,10 +53,10 @@ namespace kcp2k
         //    may not be a bug in original kcp. but since it uses the define, we
         //    can use that here too.
         // -> we add 1 byte KcpHeader enum to each message, so -1
-        public const int ReliableMaxMessageSize = (Kcp.MTU_DEF - Kcp.OVERHEAD) * (Kcp.WND_RCV - 1) - 1;
+        public const int ReliableMaxMessageSize = (Kcp.MTU_DEF - Kcp.OVERHEAD - CHANNEL_HEADER_SIZE) * (Kcp.WND_RCV - 1) - 1;
 
-        // unreliable max message size is simply MTU - 1 byte channel header.
-        public const int UnreliableMaxMessageSize = Kcp.NETWORK_MTU - 1;
+        // unreliable max message size is simply MTU - channel header size
+        public const int UnreliableMaxMessageSize = Kcp.MTU_DEF - CHANNEL_HEADER_SIZE;
 
         // buffer to receive kcp's processed messages (avoids allocations).
         // IMPORTANT: this is for KCP messages. so it needs to be of size:
@@ -64,8 +69,8 @@ namespace kcp2k
         //            1 byte header + MaxMessageSize content
         byte[] kcpSendBuffer = new byte[1 + ReliableMaxMessageSize];
 
-        // raw send buffer is exactly the network MTU.
-        byte[] rawSendBuffer = new byte[Kcp.NETWORK_MTU];
+        // raw send buffer is exactly MTU.
+        byte[] rawSendBuffer = new byte[Kcp.MTU_DEF];
 
         // send a ping occasionally so we don't time out on the other end.
         // for example, creating a character in an MMO could easily take a
@@ -119,6 +124,13 @@ namespace kcp2k
             // note that kcp uses 'nocwnd' internally so we negate the parameter
             kcp.SetNoDelay(noDelay ? 1u : 0u, interval, fastResend, !congestionWindow);
             kcp.SetWindowSize(sendWindowSize, receiveWindowSize);
+
+            // IMPORTANT: high level needs to add 1 channel byte to each raw
+            // message. so while Kcp.MTU_DEF is perfect, we actually need to
+            // tell kcp to use MTU-1 so we can still put the header into the
+            // message afterwards.
+            kcp.SetMtu(Kcp.MTU_DEF - CHANNEL_HEADER_SIZE);
+
             state = KcpState.Connected;
 
             refTime.Start();

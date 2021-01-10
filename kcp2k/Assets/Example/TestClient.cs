@@ -34,9 +34,13 @@ namespace kcp2k.Examples
             {
                 client.Connect("127.0.0.1", Port, true, 10);
             }
-            if (GUILayout.Button("Send 0x01, 0x02"))
+            if (GUILayout.Button("Send 0x01, 0x02 reliable"))
             {
-                client.Send(new ArraySegment<byte>(new byte[]{0x01, 0x02}));
+                client.Send(new ArraySegment<byte>(new byte[]{0x01, 0x02}), KcpChannel.Reliable);
+            }
+            if (GUILayout.Button("Send 0x03, 0x04 unreliable"))
+            {
+                client.Send(new ArraySegment<byte>(new byte[]{0x03, 0x04}), KcpChannel.Unreliable);
             }
             if (GUILayout.Button("Disconnect"))
             {

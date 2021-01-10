@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -36,28 +37,36 @@ namespace kcp2k
         // Unity's time.deltaTime over long periods.
         readonly Stopwatch refTime = new Stopwatch();
 
-        // MaxMessageSize so the outside knows largest allowed message to send.
-        // the calculation in Send() is not obvious at all, so let's provide the
-        // helper here.
+        // reliable channel (= kcp) MaxMessageSize so the outside knows largest
+        // allowed message to send the calculation in Send() is not obvious at
+        // all, so let's provide the helper here.
+        //
+        // kcp does fragmentation, so max message is way larger than MTU.
+        //
         // -> runtime MTU changes are disabled: mss is always MTU_DEF-OVERHEAD
         // -> Send() checks if fragment count < WND_RCV, so we use WND_RCV - 1.
         //    note that Send() checks WND_RCV instead of wnd_rcv which may or
         //    may not be a bug in original kcp. but since it uses the define, we
         //    can use that here too.
-        // -> we add 1 byte KcpHeader enum to each message, so we need to
-        //    subtract that from what the user is allowed to send as well.
-        public const int MaxMessageSize = (Kcp.MTU_DEF - Kcp.OVERHEAD) * (Kcp.WND_RCV - 1) - 1;
+        // -> we add 1 byte KcpHeader enum to each message, so -1
+        public const int ReliableMaxMessageSize = (Kcp.MTU_DEF - Kcp.OVERHEAD) * (Kcp.WND_RCV - 1) - 1;
+
+        // unreliable max message size is simply MTU - 1 byte channel header.
+        public const int UnreliableMaxMessageSize = Kcp.NETWORK_MTU - 1;
 
         // buffer to receive kcp's processed messages (avoids allocations).
         // IMPORTANT: this is for KCP messages. so it needs to be of size:
         //            1 byte header + MaxMessageSize content
-        byte[] kcpMessageBuffer = new byte[1 + MaxMessageSize];
+        byte[] kcpMessageBuffer = new byte[1 + ReliableMaxMessageSize];
 
         // send buffer for handing user messages to kcp for processing.
         // (avoids allocations).
         // IMPORTANT: needs to be of size:
         //            1 byte header + MaxMessageSize content
-        byte[] kcpSendBuffer = new byte[1 + MaxMessageSize];
+        byte[] kcpSendBuffer = new byte[1 + ReliableMaxMessageSize];
+
+        // raw send buffer is exactly the network MTU.
+        byte[] rawSendBuffer = new byte[Kcp.NETWORK_MTU];
 
         // send a ping occasionally so we don't time out on the other end.
         // for example, creating a character in an MMO could easily take a
@@ -101,11 +110,22 @@ namespace kcp2k
         public uint MaxReceiveRate =>
             kcp.rcv_wnd * kcp.mtu * 1000 / kcp.interval;
 
+        // for consistency with reliable kcp messages, the unreliable messages
+        // are also queued and then only processed later in ReceiveNext().
+        //
+        // to avoid allocations, we need a max sized byte[] pool.
+        // => one pool per KcpConnection to avoid static state.
+        //
+        // make sure to recycle to pool when dequeing!
+        Pool<byte[]> unreliablePool = new Pool<byte[]>(() => new byte[UnreliableMaxMessageSize]);
+        Queue<ArraySegment<byte>> unreliableQueue = new Queue<ArraySegment<byte>>();
+
         // NoDelay, interval, window size are the most important configurations.
         // let's force require the parameters so we don't forget it anywhere.
         protected void SetupKcp(bool noDelay, uint interval = Kcp.INTERVAL, int fastResend = 0, bool congestionWindow = true, uint sendWindowSize = Kcp.WND_SND, uint receiveWindowSize = Kcp.WND_RCV)
         {
-            kcp = new Kcp(0, RawSend);
+            // set up kcp over reliable channel (that's what kcp is for)
+            kcp = new Kcp(0, RawSendReliable);
             // set nodelay.
             // note that kcp uses 'nocwnd' internally so we negate the parameter
             kcp.SetNoDelay(noDelay ? 1u : 0u, interval, fastResend, !congestionWindow);
@@ -154,12 +174,14 @@ namespace kcp2k
         {
             // disconnect connections that can't process the load.
             // see QueueSizeDisconnect comments.
+            // => include all of kcp's buffers and the unreliable queue!
             int total = kcp.rcv_queue.Count + kcp.snd_queue.Count +
-                        kcp.rcv_buf.Count + kcp.snd_buf.Count;
+                        kcp.rcv_buf.Count + kcp.snd_buf.Count +
+                        unreliableQueue.Count;
             if (total >= QueueDisconnectThreshold)
             {
                 Log.Warning($"KCP: disconnecting connection because it can't process data fast enough.\n" +
-                                 $"Queue total {total}>{QueueDisconnectThreshold}. rcv_queue={kcp.rcv_queue.Count} snd_queue={kcp.snd_queue.Count} rcv_buf={kcp.rcv_buf.Count} snd_buf={kcp.snd_buf.Count}\n" +
+                                 $"Queue total {total}>{QueueDisconnectThreshold}. rcv_queue={kcp.rcv_queue.Count} snd_queue={kcp.snd_queue.Count} rcv_buf={kcp.rcv_buf.Count} snd_buf={kcp.snd_buf.Count} unreliableQueue={unreliableQueue.Count}\n" +
                                  $"* Try to Enable NoDelay, decrease INTERVAL, disable Congestion Window (= enable NOCWND!), increase SEND/RECV WINDOW or compress data.\n" +
                                  $"* Or perhaps the network is simply too slow on our end, or on the other end.\n");
 
@@ -174,8 +196,23 @@ namespace kcp2k
         }
 
         // reads the next message type & content from connection.
-        bool ReceiveNext(out KcpHeader header, out ArraySegment<byte> message)
+        bool ReceiveNext(out KcpHeader header, out ArraySegment<byte> message, out bool needsRecycle)
         {
+            // process queued unreliable first (if any)
+            if (unreliableQueue.Count > 0)
+            {
+                // unreliable messages are only used for data.
+                // no need to extract the header.
+                header = KcpHeader.Data;
+                message = unreliableQueue.Dequeue();
+                lastReceiveTime = (uint)refTime.ElapsedMilliseconds;
+
+                // indicate that it should be recycled afterwards
+                needsRecycle = true;
+                return true;
+            }
+
+
             // read only one message
             int msgSize = kcp.PeekSize();
             if (msgSize > 0)
@@ -192,6 +229,9 @@ namespace kcp2k
                         header = (KcpHeader)kcpMessageBuffer[0];
                         message = new ArraySegment<byte>(kcpMessageBuffer, 1, msgSize - 1);
                         lastReceiveTime = (uint)refTime.ElapsedMilliseconds;
+
+                        // reliable messages from kcp don't need to recycle the buffer
+                        needsRecycle = false;
                         return true;
                     }
                     else
@@ -210,6 +250,7 @@ namespace kcp2k
                 }
             }
             header = KcpHeader.Disconnect;
+            needsRecycle = false;
             return false;
         }
 
@@ -224,7 +265,7 @@ namespace kcp2k
             kcp.Update(time);
 
             // any message received?
-            if (ReceiveNext(out KcpHeader header, out ArraySegment<byte> message))
+            if (ReceiveNext(out KcpHeader header, out ArraySegment<byte> message, out bool needsRecycle))
             {
                 // message type FSM. no default so we never miss a case.
                 switch (header)
@@ -252,6 +293,10 @@ namespace kcp2k
                         break;
                     }
                 }
+
+                // recycle after we are done with it
+                if (needsRecycle)
+                    unreliablePool.Return(message.Array);
             }
         }
 
@@ -278,7 +323,7 @@ namespace kcp2k
             // note that we check it BEFORE ever calling ReceiveNext. otherwise
             // we would silently eat the received message and never process it.
             while (OnCheckEnabled() &&
-                   ReceiveNext(out KcpHeader header, out ArraySegment<byte> message))
+                   ReceiveNext(out KcpHeader header, out ArraySegment<byte> message, out bool needsRecycle))
             {
                 // message type FSM. no default so we never miss a case.
                 switch (header)
@@ -309,6 +354,10 @@ namespace kcp2k
                         break;
                     }
                 }
+
+                // recycle after we are done with it
+                if (needsRecycle)
+                    unreliablePool.Return(message.Array);
             }
         }
 
@@ -359,19 +408,66 @@ namespace kcp2k
 
         public void RawInput(byte[] buffer, int msgLength)
         {
-            int input = kcp.Input(buffer, 0, msgLength);
-            if (input != 0)
+            // parse channel
+            if (msgLength > 0)
             {
-                Log.Warning($"Input failed with error={input} for buffer with length={msgLength}");
+                byte channel = buffer[0];
+                switch (channel)
+                {
+                    case (byte)KcpChannel.Reliable:
+                    {
+                        // input into kcp, but skip channel byte
+                        int input = kcp.Input(buffer, 1, msgLength - 1);
+                        if (input != 0)
+                        {
+                            Log.Warning($"Input failed with error={input} for buffer with length={msgLength - 1}");
+                        }
+                        break;
+                    }
+                    case (byte)KcpChannel.Unreliable:
+                    {
+                        // add to unreliable queue
+                        // => use byte[] from pool to avoid allocations!
+                        byte[] bytes = unreliablePool.Take();
+                        Buffer.BlockCopy(buffer, 1, bytes, 0, msgLength - 1);
+                        unreliableQueue.Enqueue(new ArraySegment<byte>(bytes, 0, msgLength - 1));
+                        break;
+                    }
+                    default:
+                    {
+                        // not a valid channel. random data or attacks.
+                        Log.Info($"Disconnecting connection because of invalid channel header: {channel}");
+                        Disconnect();
+                        break;
+                    }
+                }
             }
         }
 
+        // raw send puts the data into the socket
         protected abstract void RawSend(byte[] data, int length);
 
-        void Send(KcpHeader header, ArraySegment<byte> content)
+        // wrappers to prepend the channel type before calling RawSend
+        void RawSendReliable(byte[] data, int length)
+        {
+            // copy channel header, data into raw send buffer, then send
+            rawSendBuffer[0] = (byte)KcpChannel.Reliable;
+            Buffer.BlockCopy(data, 0, rawSendBuffer, 1, length);
+            RawSend(rawSendBuffer, length + 1);
+        }
+
+        void RawSendUnreliable(ArraySegment<byte> message)
+        {
+            // copy channel header, data into raw send buffer, then send
+            rawSendBuffer[0] = (byte)KcpChannel.Unreliable;
+            Buffer.BlockCopy(message.Array, 0, rawSendBuffer, 1, message.Count);
+            RawSend(rawSendBuffer, message.Count + 1);
+        }
+
+        void SendReliable(KcpHeader header, ArraySegment<byte> content)
         {
             // 1 byte header + content needs to fit into send buffer
-            if (1 + content.Count <= kcpSendBuffer.Length)
+            if (1 + content.Count <= kcpSendBuffer.Length) // TODO
             {
                 // copy header, content (if any) into send buffer
                 kcpSendBuffer[0] = (byte)header;
@@ -386,7 +482,18 @@ namespace kcp2k
                 }
             }
             // otherwise content is larger than MaxMessageSize. let user know!
-            else Log.Error($"Failed to send message of size {content.Count} because it's larger than MaxMessageSize={MaxMessageSize}");
+            else Log.Error($"Failed to send reliable message of size {content.Count} because it's larger than ReliableMaxMessageSize={ReliableMaxMessageSize}");
+        }
+
+        void SendUnreliable(ArraySegment<byte> message)
+        {
+            // message size needs to be <= unreliable max size
+            if (message.Count <= UnreliableMaxMessageSize)
+            {
+                RawSendUnreliable(message);
+            }
+            // otherwise content is larger than MaxMessageSize. let user know!
+            else Log.Error($"Failed to send unreliable message of size {message.Count} because it's larger than UnreliableMaxMessageSize={UnreliableMaxMessageSize}");
         }
 
         // server & client need to send handshake at different times, so we need
@@ -394,14 +501,32 @@ namespace kcp2k
         // * client should send it immediately.
         // * server should send it as reply to client's handshake, not before
         //   (server should not reply to random internet messages with handshake)
+        // => handshake info needs to be delivered, so it goes over reliable.
         public void SendHandshake()
         {
             Log.Info("KcpConnection: sending Handshake to other end!");
-            Send(KcpHeader.Handshake, default);
+            SendReliable(KcpHeader.Handshake, default);
         }
-        public void SendData(ArraySegment<byte> data) => Send(KcpHeader.Data, data);
-        void SendPing() => Send(KcpHeader.Ping, default);
-        void SendDisconnect() => Send(KcpHeader.Disconnect, default);
+
+        public void SendData(ArraySegment<byte> data, KcpChannel channel)
+        {
+            switch (channel)
+            {
+                case KcpChannel.Reliable:
+                    SendReliable(KcpHeader.Data, data);
+                    break;
+                case KcpChannel.Unreliable:
+                    SendUnreliable(data);
+                    break;
+            }
+        }
+
+        // ping goes through kcp to keep it from timing out, so it goes over the
+        // reliable channel.
+        void SendPing() => SendReliable(KcpHeader.Ping, default);
+
+        // disconnect info needs to be delivered, so it goes over reliable
+        void SendDisconnect() => SendReliable(KcpHeader.Disconnect, default);
 
         protected virtual void Dispose()
         {

@@ -475,8 +475,10 @@ namespace kcp2k
         }
 
         // ikcp_input
-        /// used when you receive a low level packet (eg. UDP packet)
-        public int Input(byte[] data, int size)
+        // used when you receive a low level packet (eg. UDP packet)
+        // => original kcp uses offset=0, we made it a parameter so that high
+        //    level can skip the channel byte more easily
+        public int Input(byte[] data, int offset, int size)
         {
             uint prev_una = snd_una;
             uint maxack = 0;
@@ -484,8 +486,6 @@ namespace kcp2k
             int flag = 0;
 
             if (data == null || size < OVERHEAD) return -1;
-
-            int offset = 0;
 
             while (true)
             {

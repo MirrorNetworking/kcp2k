@@ -359,7 +359,7 @@ namespace kcp2k
 
         public void RawInput(byte[] buffer, int msgLength)
         {
-            int input = kcp.Input(buffer, msgLength);
+            int input = kcp.Input(buffer, 0, msgLength);
             if (input != 0)
             {
                 Log.Warning($"Input failed with error={input} for buffer with length={msgLength}");

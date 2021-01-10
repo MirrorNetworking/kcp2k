@@ -450,15 +450,6 @@ namespace kcp2k
             RawSend(rawSendBuffer, length + 1);
         }
 
-        // raw send called by SendUnreliable directly
-        void RawSendUnreliable(ArraySegment<byte> message)
-        {
-            // copy channel header, data into raw send buffer, then send
-            rawSendBuffer[0] = (byte)KcpChannel.Unreliable;
-            Buffer.BlockCopy(message.Array, 0, rawSendBuffer, 1, message.Count);
-            RawSend(rawSendBuffer, message.Count + 1);
-        }
-
         void SendReliable(KcpHeader header, ArraySegment<byte> content)
         {
             // 1 byte header + content needs to fit into send buffer
@@ -485,7 +476,10 @@ namespace kcp2k
             // message size needs to be <= unreliable max size
             if (message.Count <= UnreliableMaxMessageSize)
             {
-                RawSendUnreliable(message);
+                // copy channel header, data into raw send buffer, then send
+                rawSendBuffer[0] = (byte)KcpChannel.Unreliable;
+                Buffer.BlockCopy(message.Array, 0, rawSendBuffer, 1, message.Count);
+                RawSend(rawSendBuffer, message.Count + 1);
             }
             // otherwise content is larger than MaxMessageSize. let user know!
             else Log.Error($"Failed to send unreliable message of size {message.Count} because it's larger than UnreliableMaxMessageSize={UnreliableMaxMessageSize}");

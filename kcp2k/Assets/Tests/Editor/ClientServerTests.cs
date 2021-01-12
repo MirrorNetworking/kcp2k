@@ -773,10 +773,26 @@ namespace kcp2k.Tests
         // kcp connection should not time out while paused.
         //
         // see also: https://github.com/vis2k/kcp2k/issues/8
-        [Test, Ignore("WIP")]
-        public void TimeoutIsPausedWhilePaused()
+        [Test]
+        public void TimeoutIsResetWhenUnpaused()
         {
-            Assert.Fail();
+            server.Start(Port);
+            ConnectClientBlocking();
+
+            // pause for Timeout + 1 seconds
+            client.Pause();
+            server.Pause();
+            Thread.Sleep(KcpConnection.TIMEOUT + 1);
+
+            // unpause
+            client.Unpause();
+            server.Unpause();
+
+            // update both. neither should time out if Unpause has reset the
+            // timeout.
+            UpdateSeveralTimes();
+            Assert.That(client.connected, Is.True);
+            Assert.That(server.connections.Count, Is.EqualTo(1));
         }
 
         // fake a kcp dead_link by setting state = -1.

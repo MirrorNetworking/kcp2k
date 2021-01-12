@@ -592,6 +592,20 @@ namespace kcp2k
         // pause/unpause to safely support mirror scene handling and to
         // immediately pause the receive while loop if needed.
         public void Pause() => paused = true;
-        public void Unpause() => paused = false;
+        public void Unpause()
+        {
+            // unpause
+            paused = false;
+
+            // reset the timeout.
+            // we have likely been paused for > timeout seconds, but that
+            // doesn't mean we should disconnect. for example, Mirror pauses
+            // kcp during scene changes which could easily take > 10s timeout:
+            //   see also: https://github.com/vis2k/kcp2k/issues/8
+            // => Unpause completely resets the timeout instead of restoring the
+            //    time difference when we started pausing. it's more simple and
+            //    it's a good idea to start counting from 0 after we unpaused!
+            lastReceiveTime = (uint)refTime.ElapsedMilliseconds;
+        }
     }
 }

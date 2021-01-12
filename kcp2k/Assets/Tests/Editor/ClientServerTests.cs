@@ -31,6 +31,20 @@ namespace kcp2k.Tests
         const int clientReceiveWindowSize = 128;
 
         // setup ///////////////////////////////////////////////////////////////
+        void ClientOnData(ArraySegment<byte> message)
+        {
+            byte[] copy = new byte[message.Count];
+            Buffer.BlockCopy(message.Array, message.Offset, copy, 0, message.Count);
+            clientReceived.Add(copy);
+        }
+
+        void ServerOnData(int connectionId, ArraySegment<byte> message)
+        {
+            byte[] copy = new byte[message.Count];
+            Buffer.BlockCopy(message.Array, message.Offset, copy, 0, message.Count);
+            serverReceived.Add(copy);
+        }
+
         [SetUp]
         public void SetUp()
         {
@@ -43,11 +57,7 @@ namespace kcp2k.Tests
             serverReceived = new List<byte[]>();
             server = new KcpServer(
                 (connectionId) => {},
-                (connectionId, message) => {
-                    byte[] copy = new byte[message.Count];
-                    Buffer.BlockCopy(message.Array, message.Offset, copy, 0, message.Count);
-                    serverReceived.Add(copy);
-                },
+                ServerOnData,
                 (connectionId) => {},
                 NoDelay,
                 Interval,
@@ -63,11 +73,7 @@ namespace kcp2k.Tests
             clientReceived = new List<byte[]>();
             client = new KcpClient(
                 () => {},
-                (message) => {
-                    byte[] copy = new byte[message.Count];
-                    Buffer.BlockCopy(message.Array, message.Offset, copy, 0, message.Count);
-                    clientReceived.Add(copy);
-                },
+                ClientOnData,
                 () => {}
             );
         }

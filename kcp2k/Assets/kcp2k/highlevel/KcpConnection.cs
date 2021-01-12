@@ -24,7 +24,7 @@ namespace kcp2k
         // immediately after a scene change message. Mirror can't process any
         // other messages during a scene change.
         // (could be useful for others too)
-        public Func<bool> OnCheckEnabled = () => true;
+        bool paused;
 
         // If we don't receive anything these many milliseconds
         // then consider us disconnected
@@ -307,7 +307,7 @@ namespace kcp2k
             //
             // note that we check it BEFORE ever calling ReceiveNext. otherwise
             // we would silently eat the received message and never process it.
-            while (OnCheckEnabled() &&
+            while (!paused &&
                    ReceiveNextReliable(out KcpHeader header, out ArraySegment<byte> message))
             {
                 // message type FSM. no default so we never miss a case.
@@ -428,11 +428,11 @@ namespace kcp2k
                         //    the current state allows it.
                         if (state == KcpState.Authenticated)
                         {
-                            // only process messages while enabled for Mirror
+                            // only process messages while not paused for Mirror
                             // scene switching etc.
-                            // -> if an unreliable message comes in while not
-                            //    enabled, simply drop it. it's unreliable!
-                            if (OnCheckEnabled())
+                            // -> if an unreliable message comes in while
+                            //    paused, simply drop it. it's unreliable!
+                            if (!paused)
                             {
                                 ArraySegment<byte> message = new ArraySegment<byte>(buffer, 1, msgLength - 1);
                                 OnData?.Invoke(message);
@@ -588,5 +588,10 @@ namespace kcp2k
 
         // get remote endpoint
         public EndPoint GetRemoteEndPoint() => remoteEndpoint;
+
+        // pause/unpause to safely support mirror scene handling and to
+        // immediately pause the receive while loop if needed.
+        public void Pause() => paused = true;
+        public void Unpause() => paused = false;
     }
 }

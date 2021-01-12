@@ -770,11 +770,11 @@ namespace kcp2k.Tests
         }
 
         // Mirror scene changes might take > 10s timeout time.
-        // kcp connection should not time out while disabled.
+        // kcp connection should not time out while paused.
         //
         // see also: https://github.com/vis2k/kcp2k/issues/8
         [Test, Ignore("WIP")]
-        public void TimeoutIsPausedWhileDisabled()
+        public void TimeoutIsPausedWhilePaused()
         {
             Assert.Fail();
         }
@@ -826,12 +826,18 @@ namespace kcp2k.Tests
             Assert.That(server.connections.Count, Is.EqualTo(0));
         }
 
-        // OnCheckEnabled tests to make sure it works in Mirror
+        // client paused test to make sure we can savely support scene changes
+        // in Mirror by calling Pause during the receive while loop to stop
+        // receiving immediately!
         [Test]
-        public void ClientRespectsOnCheckEnabled()
+        public void ClientImmediatelyStopsReceivingWhenPaused()
         {
-            // client OnCheckEnabled should stop after first message
-            client.OnCheckEnabled = () => clientReceived.Count == 0;
+            // pause client in the middle of a receive while loop by sending two
+            // messages and pausing immediately after the first one.
+            client.OnData = (message) => {
+                ClientOnData(message);
+                client.Pause();
+            };
 
             // start
             server.Start(Port);
@@ -847,19 +853,26 @@ namespace kcp2k.Tests
             Assert.That(clientReceived.Count, Is.EqualTo(1));
             Assert.That(clientReceived[0].SequenceEqual(new byte[]{0x03, 0x04}), Is.True);
 
-            // enable again by clearing received and make sure it still works.
-            clientReceived.Clear();
+            // unpause again make sure the second message is received (not dropped!)
+            client.Unpause();
             UpdateSeveralTimes();
-            Assert.That(clientReceived.Count, Is.EqualTo(1));
-            Assert.That(clientReceived[0].SequenceEqual(new byte[]{0x05, 0x06}), Is.True);
+            Assert.That(clientReceived.Count, Is.EqualTo(2));
+            Assert.That(clientReceived[0].SequenceEqual(new byte[]{0x03, 0x04}), Is.True);
+            Assert.That(clientReceived[1].SequenceEqual(new byte[]{0x05, 0x06}), Is.True);
         }
 
-        // OnCheckEnabled tests to make sure it works in Mirror
+        // server paused test to make sure we can savely support scene changes
+        // in Mirror by calling Pause during the receive while loop to stop
+        // receiving immediately!
         [Test]
-        public void ServerRespectsOnCheckEnabled()
+        public void ServerImmediatelyStopsReceivingWhenPaused()
         {
-            // server OnCheckEnabled should stop after first message
-            server.OnCheckEnabled = () => serverReceived.Count == 0;
+            // pause server in the middle of a receive while loop by sending two
+            // messages and pausing immediately after the first one.
+            server.OnData = (connectionId, message) => {
+                ServerOnData(connectionId, message);
+                server.Pause();
+            };
 
             // start
             server.Start(Port);
@@ -874,11 +887,12 @@ namespace kcp2k.Tests
             Assert.That(serverReceived.Count, Is.EqualTo(1));
             Assert.That(serverReceived[0].SequenceEqual(new byte[]{0x03, 0x04}), Is.True);
 
-            // enable again by clearing received and make sure it still works.
-            serverReceived.Clear();
+            // unpause again make sure the second message is received (not dropped!)
+            server.Unpause();
             UpdateSeveralTimes();
-            Assert.That(serverReceived.Count, Is.EqualTo(1));
-            Assert.That(serverReceived[0].SequenceEqual(new byte[]{0x05, 0x06}), Is.True);
+            Assert.That(serverReceived.Count, Is.EqualTo(2));
+            Assert.That(serverReceived[0].SequenceEqual(new byte[]{0x03, 0x04}), Is.True);
+            Assert.That(serverReceived[1].SequenceEqual(new byte[]{0x05, 0x06}), Is.True);
         }
     }
 }

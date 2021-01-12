@@ -20,7 +20,7 @@ namespace kcp2k
         public Action<ArraySegment<byte>> OnData;
         public Action OnDisconnected;
 
-        // Mirror needs a way to stop kcp message processing while loop
+        // Mirror needs a way to stop the kcp message processing while loop
         // immediately after a scene change message. Mirror can't process any
         // other messages during a scene change.
         // (could be useful for others too)

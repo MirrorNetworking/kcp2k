@@ -744,7 +744,7 @@ namespace kcp2k.Tests
         }
 
         [Test]
-        public void PingPreventsTimeout()
+        public void TimeoutIsResetByPing()
         {
             server.Start(Port);
             ConnectClientBlocking();

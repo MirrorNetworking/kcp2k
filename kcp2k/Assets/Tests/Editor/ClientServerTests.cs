@@ -763,6 +763,16 @@ namespace kcp2k.Tests
             Assert.That(server.connections.Count, Is.EqualTo(1));
         }
 
+        // Mirror scene changes might take > 10s timeout time.
+        // kcp connection should not time out while disabled.
+        //
+        // see also: https://github.com/vis2k/kcp2k/issues/8
+        [Test, Ignore("WIP")]
+        public void TimeoutIsPausedWhileDisabled()
+        {
+            Assert.Fail();
+        }
+
         // fake a kcp dead_link by setting state = -1.
         // KcpConnection should detect it and disconnect.
         [Test]

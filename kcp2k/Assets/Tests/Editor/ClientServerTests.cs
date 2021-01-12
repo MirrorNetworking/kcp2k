@@ -690,6 +690,60 @@ namespace kcp2k.Tests
         }
 
         [Test]
+        public void TimeoutIsResetByReliable()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+
+            // do nothing for 'Timeout / 2' seconds
+            int firstSleep = KcpConnection.TIMEOUT / 2;
+            Thread.Sleep(firstSleep);
+
+            // send one reliable message
+            client.Send(new ArraySegment<byte>(new byte[1]), KcpChannel.Reliable);
+
+            // update
+            UpdateSeveralTimes();
+
+            // do nothing for exactly the remaining timeout time + 1 to be sure
+            Thread.Sleep(KcpConnection.TIMEOUT - firstSleep + 1);
+
+            // now update
+            UpdateSeveralTimes();
+
+            // should still be connected
+            Assert.That(client.connected, Is.True);
+            Assert.That(server.connections.Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TimeoutIsResetByUnreliable()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+
+            // do nothing for 'Timeout / 2' seconds
+            int firstSleep = KcpConnection.TIMEOUT / 2;
+            Thread.Sleep(firstSleep);
+
+            // send one reliable message
+            client.Send(new ArraySegment<byte>(new byte[1]), KcpChannel.Unreliable);
+
+            // update
+            UpdateSeveralTimes();
+
+            // do nothing for exactly the remaining timeout time + 1 to be sure
+            Thread.Sleep(KcpConnection.TIMEOUT - firstSleep + 1);
+
+            // now update
+            UpdateSeveralTimes();
+
+            // should still be connected
+            Assert.That(client.connected, Is.True);
+            Assert.That(server.connections.Count, Is.EqualTo(1));
+        }
+
+        [Test]
         public void PingPreventsTimeout()
         {
             server.Start(Port);

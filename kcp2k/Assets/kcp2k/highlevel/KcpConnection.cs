@@ -437,6 +437,16 @@ namespace kcp2k
                                 ArraySegment<byte> message = new ArraySegment<byte>(buffer, 1, msgLength - 1);
                                 OnData?.Invoke(message);
                             }
+
+                            // set last receive time to avoid timeout.
+                            // -> we do this in ANY case even if not enabled.
+                            //    a message is a message.
+                            // -> we set last receive time for both reliable and
+                            //    unreliable messages. both count.
+                            //    otherwise a connection might time out even
+                            //    though unreliable were received, but no
+                            //    reliable was received.
+                            lastReceiveTime = (uint)refTime.ElapsedMilliseconds;
                         }
                         else
                         {

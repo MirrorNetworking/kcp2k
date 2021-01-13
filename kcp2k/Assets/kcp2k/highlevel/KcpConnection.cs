@@ -143,14 +143,7 @@ namespace kcp2k
             //       only ever happen if the connection is truly gone.
             if (time >= lastReceiveTime + TIMEOUT)
             {
-                // note that unreliable messages do not reset the timeout.
-                // so if the network gets slow and only unreliables get through
-                // then it's totally normal if for example monsters still move
-                // because they use unreliable messages, but kcp times out
-                // because not even the reliable ping message got through in a
-                // long time.
-                // => this is good!
-                Log.Warning($"KCP: Connection timed out after not receiving any reliable message for {TIMEOUT}ms. Disconnecting.");
+                Log.Warning($"KCP: Connection timed out after not receiving any message for {TIMEOUT}ms. Disconnecting.");
                 Disconnect();
             }
         }

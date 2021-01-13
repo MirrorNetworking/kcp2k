@@ -37,7 +37,10 @@ namespace kcp2k
         // debugging
         [Header("Debug")]
         public bool debugLog;
-        public bool debugGUI;
+        // show statistics in OnGUI
+        public bool statisticsGUI;
+        // log statistics for headless servers that can't show them in GUI
+        public bool statisticsLog;
 
         void Awake()
         {
@@ -70,6 +73,9 @@ namespace kcp2k
                 SendWindowSize,
                 ReceiveWindowSize
             );
+
+            if (statisticsLog)
+                InvokeRepeating(nameof(OnLogStatistics), 1, 1);
 
             Debug.Log("KcpTransport initialized!");
         }
@@ -235,7 +241,7 @@ namespace kcp2k
 
         void OnGUI()
         {
-            if (!debugGUI) return;
+            if (!statisticsGUI) return;
 
             GUILayout.BeginArea(new Rect(5, 110, 300, 300));
 
@@ -267,6 +273,34 @@ namespace kcp2k
             }
 
             GUILayout.EndArea();
+        }
+
+        void OnLogStatistics()
+        {
+            if (ServerActive())
+            {
+                string log = "kcp SERVER @ time: " + NetworkTime.time + "\n";
+                log += $"  connections: {server.connections.Count}\n";
+                log += $"  MaxSendRate (avg): {PrettyBytes(GetAverageMaxSendRate())}/s\n";
+                log += $"  MaxRecvRate (avg): {PrettyBytes(GetAverageMaxReceiveRate())}/s\n";
+                log += $"  SendQueue: {GetTotalSendQueue()}\n";
+                log += $"  ReceiveQueue: {GetTotalReceiveQueue()}\n";
+                log += $"  SendBuffer: {GetTotalSendBuffer()}\n";
+                log += $"  ReceiveBuffer: {GetTotalReceiveBuffer()}\n\n";
+                Debug.Log(log);
+            }
+
+            if (ClientConnected())
+            {
+                string log = "kcp CLIENT @ time: " + NetworkTime.time + "\n";
+                log += $"  MaxSendRate: {PrettyBytes(client.connection.MaxSendRate)}/s\n";
+                log += $"  MaxRecvRate: {PrettyBytes(client.connection.MaxReceiveRate)}/s\n";
+                log += $"  SendQueue: {client.connection.SendQueueCount}\n";
+                log += $"  ReceiveQueue: {client.connection.ReceiveQueueCount}\n";
+                log += $"  SendBuffer: {client.connection.SendBufferCount}\n";
+                log += $"  ReceiveBuffer: {client.connection.ReceiveBufferCount}\n\n";
+                Debug.Log(log);
+            }
         }
     }
 }

@@ -1,3 +1,14 @@
+V1.7 [2021-01-13]
+- fix: unreliable messages reset timeout now too
+- perf: KcpConnection OnCheckEnabled callback changed to a simple 'paused' boolean.
+  This is faster than invoking a Func<bool> every time and allows us to fix #8 more
+  easily later by calling .Pause/.Unpause from OnEnable/OnDisable in MirrorTransport.
+- fix #8: Unpause now resets timeout to fix a bug where Mirror would pause kcp,
+  change the scene which took >10s, then unpause and kcp would detect the lack of
+  any messages for >10s as timeout. Added test to make sure it never happens again.
+- MirrorTransport: statistics logging for headless servers
+- Mirror Transport: Send/Receive window size increased once more from 2048 to 4096.
+
 V1.6 [2021-01-10]
 - Unreliable channel added!
 - perf: KcpHeader byte added to every kcp message to indicate

@@ -83,7 +83,11 @@ namespace kcp2k
 
             // listen
             socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
+            // dual mode where available.
+            // (not available on nintendo switch, where it throws errors)
+#if !UNITY_SWITCH
             socket.DualMode = true;
+#endif
             socket.Bind(new IPEndPoint(IPAddress.IPv6Any, port));
         }
 

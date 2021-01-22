@@ -40,6 +40,7 @@ namespace kcp2k
         // state
         Socket socket;
 #if UNITY_SWITCH
+// switch does not support ipv6
         EndPoint newClientEP = new IPEndPoint(IPAddress.Any, 0);
 #else
         EndPoint newClientEP = new IPEndPoint(IPAddress.IPv6Any, 0);

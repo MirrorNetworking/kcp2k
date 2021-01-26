@@ -53,6 +53,15 @@ namespace kcp2k
         //    may not be a bug in original kcp. but since it uses the define, we
         //    can use that here too.
         // -> we add 1 byte KcpHeader enum to each message, so -1
+        //
+        // IMPORTANT: max message is MTU * WND_RCV, in other words it completely
+        //            fills the receive window! due to head of line blocking,
+        //            all other messages have to wait while a maxed size message
+        //            is being delivered.
+        //            => in other words, DO NOT use max size all the time like
+        //               for batching.
+        //            => sending UNRELIABLE max message size most of the time is
+        //               best for performance (use that one for batching!)
         public const int ReliableMaxMessageSize = (Kcp.MTU_DEF - Kcp.OVERHEAD - CHANNEL_HEADER_SIZE) * (Kcp.WND_RCV - 1) - 1;
 
         // unreliable max message size is simply MTU - channel header size

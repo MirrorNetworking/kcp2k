@@ -428,7 +428,7 @@ namespace kcp2k
                         // -> all unreliable messages are DATA messages anyway.
                         // -> let's skip the magic and call OnData directly if
                         //    the current state allows it.
-                        if (state == KcpState.Authenticated)
+                        if (state == KcpState.Connected || state == KcpState.Authenticated)
                         {
                             // only process messages while not paused for Mirror
                             // scene switching etc.
@@ -452,7 +452,7 @@ namespace kcp2k
                         }
                         else
                         {
-                            // should never
+                            // should never happen in Disconnected state
                             Log.Warning($"KCP: received unreliable message in state {state}. Disconnecting the connection.");
                             Disconnect();
                         }

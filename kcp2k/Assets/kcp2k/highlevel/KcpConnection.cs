@@ -558,9 +558,7 @@ namespace kcp2k
         // disconnect info needs to be delivered, so it goes over reliable
         void SendDisconnect() => SendReliable(KcpHeader.Disconnect, default);
 
-        protected virtual void Dispose()
-        {
-        }
+        protected virtual void Dispose() {}
 
         // disconnect this connection
         public void Disconnect()

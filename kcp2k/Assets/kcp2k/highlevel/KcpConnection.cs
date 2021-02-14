@@ -324,8 +324,18 @@ namespace kcp2k
                     }
                     case KcpHeader.Data:
                     {
-                        //Log.Warning($"Kcp recv msg: {BitConverter.ToString(message.Array, message.Offset, message.Count)}");
-                        OnData?.Invoke(message);
+                        // call OnData IF the message contained actual data
+                        if (message.Count > 0)
+                        {
+                            //Log.Warning($"Kcp recv msg: {BitConverter.ToString(message.Array, message.Offset, message.Count)}");
+                            OnData?.Invoke(message);
+                        }
+                        // empty data = attacker, or something went wrong
+                        else
+                        {
+                            Log.Warning("KCP: received empty Data message while Authenticated. Disconnecting the connection.");
+                            Disconnect();
+                        }
                         break;
                     }
                     case KcpHeader.Ping:

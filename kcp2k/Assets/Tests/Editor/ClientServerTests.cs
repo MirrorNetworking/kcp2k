@@ -226,6 +226,23 @@ namespace kcp2k.Tests
             Assert.That(serverReceived[0].SequenceEqual(message), Is.True);
         }
 
+        // empty data message should be detected instead of sent
+        // if the application tried to send an empty arraysegment then something
+        // wrong happened.
+        [Test]
+        public void ClientToServerReliableEmptyMessage()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+
+            // server receiving an empty message should disconnect the connection
+            LogAssert.Expect(LogType.Warning, "KCP: received empty Data message while Authenticated. Disconnecting the connection.");
+
+            byte[] message = new byte[0];
+            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
+            Assert.That(serverReceived.Count, Is.EqualTo(0));
+        }
+
         // max sized message should always work
         [Test]
         public void ClientToServerReliableMaxSizedMessage()
@@ -470,6 +487,24 @@ namespace kcp2k.Tests
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Unreliable);
             Assert.That(clientReceived.Count, Is.EqualTo(1));
             Assert.That(clientReceived[0].SequenceEqual(message), Is.True);
+        }
+
+        // empty data message should be detected instead of sent
+        // if the application tried to send an empty arraysegment then something
+        // wrong happened.
+        [Test]
+        public void ServerToClientReliableEmptyMessage()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+
+            // client receiving an empty message should disconnect the connection
+            LogAssert.Expect(LogType.Warning, "KCP: received empty Data message while Authenticated. Disconnecting the connection.");
+
+            byte[] message = new byte[0];
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Reliable);
+            Assert.That(clientReceived.Count, Is.EqualTo(0));
         }
 
         // max sized message should always work

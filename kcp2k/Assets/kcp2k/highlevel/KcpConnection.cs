@@ -540,6 +540,17 @@ namespace kcp2k
 
         public void SendData(ArraySegment<byte> data, KcpChannel channel)
         {
+            // sending empty segments is not allowed.
+            // nobody should ever try to send empty data.
+            // it means that something went wrong, e.g. in Mirror/DOTSNET.
+            // let's make it obvious so it's easy to debug.
+            if (data.Count == 0)
+            {
+                Log.Warning("KcpConnection: tried sending empty message. This should never happen. Disconnecting.");
+                Disconnect();
+                return;
+            }
+
             switch (channel)
             {
                 case KcpChannel.Reliable:

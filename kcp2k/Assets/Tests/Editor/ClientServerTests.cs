@@ -235,8 +235,8 @@ namespace kcp2k.Tests
             server.Start(Port);
             ConnectClientBlocking();
 
-            // server receiving an empty message should disconnect the connection
-            LogAssert.Expect(LogType.Warning, "KCP: received empty Data message while Authenticated. Disconnecting the connection.");
+            // sending empty messages is not allowed
+            LogAssert.Expect(LogType.Warning, "KcpConnection: tried sending empty message. This should never happen. Disconnecting.");
 
             byte[] message = new byte[0];
             SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
@@ -499,8 +499,8 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
-            // client receiving an empty message should disconnect the connection
-            LogAssert.Expect(LogType.Warning, "KCP: received empty Data message while Authenticated. Disconnecting the connection.");
+            // sending empty messages is not allowed.
+            LogAssert.Expect(LogType.Warning, "KcpConnection: tried sending empty message. This should never happen. Disconnecting.");
 
             byte[] message = new byte[0];
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Reliable);

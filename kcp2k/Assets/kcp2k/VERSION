@@ -1,3 +1,8 @@
+V1.9 [2021-03-02]
+- Tick() split into TickIncoming()/TickOutgoing() to use in Mirror's new update
+  functions. allows to minimize latency.
+  => original Tick() is still supported for convenience. simply processes both!
+
 V1.8 [2021-02-14]
 - fix: Unity IPv6 errors on Nintendo Switch
 - fix: KcpConnection now disconnects if data message was received without content.

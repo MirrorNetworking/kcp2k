@@ -23,7 +23,7 @@ namespace kcp2k
         [Header("Advanced")]
         [Tooltip("KCP fastresend parameter. Faster resend for the cost of higher bandwidth. 0 in normal mode, 2 in turbo mode.")]
         public int FastResend = 2;
-        [Tooltip("KCP congestion window. Enabled in normal mode, disabled in turbo mode. Disable this for high scale games if connections get chocked regularly.")]
+        [Tooltip("KCP congestion window. Enabled in normal mode, disabled in turbo mode. Disable this for high scale games if connections get choked regularly.")]
         public bool CongestionWindow = false; // KCP 'NoCongestionWindow' is false by default. here we negate it for ease of use.
         [Tooltip("KCP window size can be modified to support higher loads.")]
         public uint SendWindowSize = 4096; //Kcp.WND_SND; 32 by default. Mirror sends a lot, so we need a lot more.
@@ -106,25 +106,18 @@ namespace kcp2k
             }
         }
         public override void ClientDisconnect() => client.Disconnect();
-
-        // IMPORTANT: set script execution order to >1000 to call Transport's
-        //            LateUpdate after all others. Fixes race condition where
-        //            e.g. in uSurvival Transport would apply Cmds before
-        //            ShoulderRotation.LateUpdate, resulting in projectile
-        //            spawns at the point before shoulder rotation.
-        public void LateUpdate()
+        // process incoming in early update
+        public override void ClientEarlyUpdate()
         {
             // scene change messages disable transports to stop them from
             // processing while changing the scene.
             // -> we need to check enabled here
             // -> and in kcp's internal loops, see Awake() OnCheckEnabled setup!
             // (see also: https://github.com/vis2k/Mirror/pull/379)
-            if (!enabled)
-                return;
-
-            server.Tick();
-            client.Tick();
+            if (enabled) client.TickIncoming();
         }
+        // process outgoing in late update
+        public override void ClientLateUpdate() => client.TickOutgoing();
 
         // scene change message will disable transports.
         // kcp processes messages in an internal loop which should be
@@ -178,6 +171,17 @@ namespace kcp2k
         }
         public override string ServerGetClientAddress(int connectionId) => server.GetClientAddress(connectionId);
         public override void ServerStop() => server.Stop();
+        public override void ServerEarlyUpdate()
+        {
+            // scene change messages disable transports to stop them from
+            // processing while changing the scene.
+            // -> we need to check enabled here
+            // -> and in kcp's internal loops, see Awake() OnCheckEnabled setup!
+            // (see also: https://github.com/vis2k/Mirror/pull/379)
+            if (enabled) server.TickIncoming();
+        }
+        // process outgoing in late update
+        public override void ServerLateUpdate() => server.TickOutgoing();
 
         // common
         public override void Shutdown() {}
@@ -197,10 +201,16 @@ namespace kcp2k
             }
         }
 
-        public override string ToString()
-        {
-            return "KCP";
-        }
+        // kcp reliable channel max packet size is MTU * WND_RCV
+        // this allows 144kb messages. but due to head of line blocking, all
+        // other messages would have to wait until the maxed size one is
+        // delivered. batching 144kb messages each time would be EXTREMELY slow
+        // and fill the send queue nearly immediately when using it over the
+        // network.
+        // => instead we always use MTU sized batches.
+        // => people can still send maxed size if needed.
+        public override int GetMaxBatchSize(int channelId) =>
+            KcpConnection.UnreliableMaxMessageSize;
 
         // server statistics
         public int GetAverageMaxSendRate() =>
@@ -302,6 +312,8 @@ namespace kcp2k
                 Debug.Log(log);
             }
         }
+
+        public override string ToString() => "KCP";
     }
 }
 #endif

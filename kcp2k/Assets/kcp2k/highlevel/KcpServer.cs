@@ -78,7 +78,7 @@ namespace kcp2k
 
         public bool IsActive() => socket != null;
 
-        public void Start(ushort port)
+        public void Start(ushort port, IPAddress address = null)
         {
             // only start once
             if (socket != null)
@@ -94,7 +94,7 @@ namespace kcp2k
 #else
             socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
             socket.DualMode = true;
-            socket.Bind(new IPEndPoint(IPAddress.IPv6Any, port));
+            socket.Bind(new IPEndPoint(address ?? IPAddress.IPv6Any, port));
 #endif
         }
 

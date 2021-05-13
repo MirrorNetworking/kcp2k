@@ -16,6 +16,7 @@ namespace kcp2k
         // common
         [Header("Transport Configuration")]
         public ushort Port = 7777;
+        public IPAddress LocalIP = IPAddress.IPv6Any;
         [Tooltip("NoDelay is recommended to reduce latency. This also scales better without buffers getting full.")]
         public bool NoDelay = true;
         [Tooltip("KCP internal update interval. 100ms is KCP default, but a lower interval is recommended to minimize latency and to scale to more networked entities.")]
@@ -148,7 +149,7 @@ namespace kcp2k
             return builder.Uri;
         }
         public override bool ServerActive() => server.IsActive();
-        public override void ServerStart() => server.Start(Port);
+        public override void ServerStart() => server.Start(Port, LocalIP);
         public override void ServerSend(int connectionId, int channelId, ArraySegment<byte> segment)
         {
             // switch to kcp channel.

@@ -131,6 +131,10 @@ namespace kcp2k
             {
                 try
                 {
+                    // NOTE: ReceiveFrom allocates.
+                    //   we pass our IPEndPoint to ReceiveFrom.
+                    //   receive from calls newClientEP.Create(socketAddr).
+                    //   IPEndPoint.Create always returns a new IPEndPoint.
                     int msgLength = socket.ReceiveFrom(rawReceiveBuffer, 0, rawReceiveBuffer.Length, SocketFlags.None, ref newClientEP);
                     //Log.Info($"KCP: server raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
 

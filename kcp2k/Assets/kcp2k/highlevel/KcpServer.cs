@@ -135,10 +135,16 @@ namespace kcp2k
                     //   we pass our IPEndPoint to ReceiveFrom.
                     //   receive from calls newClientEP.Create(socketAddr).
                     //   IPEndPoint.Create always returns a new IPEndPoint.
+                    //   https://github.com/mono/mono/blob/f74eed4b09790a0929889ad7fc2cf96c9b6e3757/mcs/class/System/System.Net.Sockets/Socket.cs#L1761
                     int msgLength = socket.ReceiveFrom(rawReceiveBuffer, 0, rawReceiveBuffer.Length, SocketFlags.None, ref newClientEP);
                     //Log.Info($"KCP: server raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
 
                     // calculate connectionId from endpoint
+                    // NOTE: IPEndPoint.GetHashCode() allocates.
+                    //  it calls m_Address.GetHashCode().
+                    //  m_Address is an IPAddress.
+                    //  GetHashCode() allocates for IPv6:
+                    //  https://github.com/mono/mono/blob/bdd772531d379b4e78593587d15113c37edd4a64/mcs/class/referencesource/System/net/System/Net/IPAddress.cs#L699
                     int connectionId = newClientEP.GetHashCode();
 
                     // IMPORTANT: detect if buffer was too small for the received

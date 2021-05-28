@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.IO;
 
 namespace kcp2k
@@ -23,23 +22,16 @@ namespace kcp2k
         internal MemoryStream data = new MemoryStream();
 
         // pool ////////////////////////////////////////////////////////////////
-        internal static readonly Stack<Segment> Pool = new Stack<Segment>(32);
-
-        public static Segment Take()
-        {
-            if (Pool.Count > 0)
-            {
-                Segment seg = Pool.Pop();
-                return seg;
-            }
-            return new Segment();
-        }
-
-        public static void Return(Segment seg)
-        {
-            seg.Reset();
-            Pool.Push(seg);
-        }
+        internal static readonly Pool<Segment> Pool = new Pool<Segment>(
+            // create new segment
+            () => new Segment(),
+            // reset segment before reuse
+            (segment) => segment.Reset(),
+            // initial capacity
+            32
+        );
+        public static Segment Take() => Pool.Take();
+        public static void Return(Segment segment) => Pool.Return(segment);
         ////////////////////////////////////////////////////////////////////////
 
         // ikcp_encode_seg

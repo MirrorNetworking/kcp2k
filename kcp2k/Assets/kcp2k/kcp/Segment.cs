@@ -21,19 +21,6 @@ namespace kcp2k
         // note: no need to pool it, because Segment is already pooled.
         internal MemoryStream data = new MemoryStream();
 
-        // pool ////////////////////////////////////////////////////////////////
-        internal static readonly Pool<Segment> Pool = new Pool<Segment>(
-            // create new segment
-            () => new Segment(),
-            // reset segment before reuse
-            (segment) => segment.Reset(),
-            // initial capacity
-            32
-        );
-        public static Segment Take() => Pool.Take();
-        public static void Return(Segment segment) => Pool.Return(segment);
-        ////////////////////////////////////////////////////////////////////////
-
         // ikcp_encode_seg
         // encode a segment into buffer
         internal int Encode(byte[] ptr, int offset)

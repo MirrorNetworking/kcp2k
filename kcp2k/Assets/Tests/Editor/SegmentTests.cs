@@ -4,18 +4,11 @@ namespace kcp2k.Tests
 {
     public class SegmentTests
     {
-        [TearDown]
-        public void TearDown()
-        {
-            // always clear the pool
-            Segment.Pool.Clear();
-        }
-
         [Test]
         public void Encode()
         {
             // get a segment
-            Segment seg = Segment.Take();
+            Segment seg = new Segment();
 
             // set some unique values
             seg.conv = 0x04030201;
@@ -65,7 +58,7 @@ namespace kcp2k.Tests
         public void Reset()
         {
             // get a segment
-            Segment seg = Segment.Take();
+            Segment seg = new Segment();
 
             // set some unique values
             seg.conv = 0x04030201;

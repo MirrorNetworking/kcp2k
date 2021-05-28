@@ -5,13 +5,6 @@ namespace kcp2k.Tests
 {
     public class KcpTests
     {
-        [TearDown]
-        public void TearDown()
-        {
-            // clear segment pool because we do things with segments
-            Segment.Pool.Clear();
-        }
-
         [Test]
         public void InsertSegmentInReceiveBuffer()
         {

@@ -4,37 +4,11 @@ namespace kcp2k.Tests
 {
     public class SegmentTests
     {
-        [SetUp]
-        public void SetUp()
-        {
-        }
-
         [TearDown]
         public void TearDown()
         {
             // always clear the pool
             Segment.Pool.Clear();
-        }
-
-        [Test]
-        public void TakeFromEmptyPool()
-        {
-            Segment.Take();
-        }
-
-        [Test]
-        public void TakeReturnTake()
-        {
-            // take a new one from an empty pool
-            Segment seg = Segment.Take();
-
-            // return to pool
-            Segment.Return(seg);
-
-            // next take call should give our returned one instead of allocating
-            // a new one
-            Segment val = Segment.Take();
-            Assert.That(val, Is.EqualTo(seg));
         }
 
         [Test]

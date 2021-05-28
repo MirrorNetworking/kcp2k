@@ -17,6 +17,7 @@ namespace kcp2k.Tests
         const ushort Port = 7777;
         const bool NoDelay = true;
         const uint Interval = 1; // 1ms so at interval code at least runs.
+        const int Timeout = 2000;
 
         KcpServer server;
         List<byte[]> serverReceived;
@@ -64,7 +65,8 @@ namespace kcp2k.Tests
                 0,
                 true,
                 serverSendWindowSize,
-                serverReceiveWindowSize
+                serverReceiveWindowSize,
+                Timeout
             );
             server.NoDelay = NoDelay;
             server.Interval = Interval;
@@ -109,7 +111,7 @@ namespace kcp2k.Tests
         // connect and give it enough time to handle
         void ConnectClientBlocking()
         {
-            client.Connect("127.0.0.1", Port, NoDelay, Interval, 0, true, clientSendWindowSize, clientReceiveWindowSize);
+            client.Connect("127.0.0.1", Port, NoDelay, Interval, 0, true, clientSendWindowSize, clientReceiveWindowSize, Timeout);
             UpdateSeveralTimes();
         }
 
@@ -713,16 +715,16 @@ namespace kcp2k.Tests
         }
 
         [Test]
-        public void Timeout()
+        public void TimeoutDisconnects()
         {
             server.Start(Port);
             ConnectClientBlocking();
 
             // do nothing for 'Timeout + 1' seconds
-            Thread.Sleep(KcpConnection.TIMEOUT + 1);
+            Thread.Sleep(Timeout + 1);
 
             // now update
-            LogAssert.Expect(LogType.Warning, $"KCP: Connection timed out after not receiving any message for {KcpConnection.TIMEOUT}ms. Disconnecting.");
+            LogAssert.Expect(LogType.Warning, $"KCP: Connection timed out after not receiving any message for {Timeout}ms. Disconnecting.");
             UpdateSeveralTimes();
 
             // should be disconnected
@@ -737,7 +739,7 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
 
             // do nothing for 'Timeout / 2' seconds
-            int firstSleep = KcpConnection.TIMEOUT / 2;
+            int firstSleep = Timeout / 2;
             Thread.Sleep(firstSleep);
 
             // send one reliable message
@@ -747,7 +749,7 @@ namespace kcp2k.Tests
             UpdateSeveralTimes();
 
             // do nothing for exactly the remaining timeout time + 1 to be sure
-            Thread.Sleep(KcpConnection.TIMEOUT - firstSleep + 1);
+            Thread.Sleep(Timeout - firstSleep + 1);
 
             // now update
             UpdateSeveralTimes();
@@ -764,7 +766,7 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
 
             // do nothing for 'Timeout / 2' seconds
-            int firstSleep = KcpConnection.TIMEOUT / 2;
+            int firstSleep = Timeout / 2;
             Thread.Sleep(firstSleep);
 
             // send one reliable message
@@ -774,7 +776,7 @@ namespace kcp2k.Tests
             UpdateSeveralTimes();
 
             // do nothing for exactly the remaining timeout time + 1 to be sure
-            Thread.Sleep(KcpConnection.TIMEOUT - firstSleep + 1);
+            Thread.Sleep(Timeout - firstSleep + 1);
 
             // now update
             UpdateSeveralTimes();
@@ -794,7 +796,7 @@ namespace kcp2k.Tests
             // ping should be sent internally every second, preventing timeout.
             System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch();
             watch.Start();
-            while (watch.ElapsedMilliseconds < KcpConnection.TIMEOUT + 1)
+            while (watch.ElapsedMilliseconds < Timeout + 1)
             {
                 UpdateSeveralTimes();
             }
@@ -817,7 +819,7 @@ namespace kcp2k.Tests
             // pause for Timeout + 1 seconds
             client.Pause();
             server.Pause();
-            Thread.Sleep(KcpConnection.TIMEOUT + 1);
+            Thread.Sleep(Timeout + 1);
 
             // unpause
             client.Unpause();

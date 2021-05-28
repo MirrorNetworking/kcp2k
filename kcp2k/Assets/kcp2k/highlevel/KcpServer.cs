@@ -36,6 +36,8 @@ namespace kcp2k
         //  8192, 8192 for 20k monsters
         public uint SendWindowSize;
         public uint ReceiveWindowSize;
+        // timeout in milliseconds
+        public int Timeout;
 
         // state
         Socket socket;
@@ -63,7 +65,8 @@ namespace kcp2k
                          int FastResend = 0,
                          bool CongestionWindow = true,
                          uint SendWindowSize = Kcp.WND_SND,
-                         uint ReceiveWindowSize = Kcp.WND_RCV)
+                         uint ReceiveWindowSize = Kcp.WND_RCV,
+                         int Timeout = KcpConnection.DEFAULT_TIMEOUT)
         {
             this.OnConnected = OnConnected;
             this.OnData = OnData;
@@ -74,6 +77,7 @@ namespace kcp2k
             this.CongestionWindow = CongestionWindow;
             this.SendWindowSize = SendWindowSize;
             this.ReceiveWindowSize = ReceiveWindowSize;
+            this.Timeout = Timeout;
         }
 
         public bool IsActive() => socket != null;
@@ -160,7 +164,7 @@ namespace kcp2k
                         if (!connections.TryGetValue(connectionId, out KcpServerConnection connection))
                         {
                             // create a new KcpConnection
-                            connection = new KcpServerConnection(socket, newClientEP, NoDelay, Interval, FastResend, CongestionWindow, SendWindowSize, ReceiveWindowSize);
+                            connection = new KcpServerConnection(socket, newClientEP, NoDelay, Interval, FastResend, CongestionWindow, SendWindowSize, ReceiveWindowSize, Timeout);
 
                             // DO NOT add to connections yet. only if the first message
                             // is actually the kcp handshake. otherwise it's either:

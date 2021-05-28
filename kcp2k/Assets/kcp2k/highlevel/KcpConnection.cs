@@ -123,8 +123,10 @@ namespace kcp2k
         public uint MaxReceiveRate =>
             kcp.rcv_wnd * kcp.mtu * 1000 / kcp.interval;
 
-        // NoDelay, interval, window size are the most important configurations.
-        // let's force require the parameters so we don't forget it anywhere.
+        // SetupKcp creates and configures a new KCP instance.
+        // => useful to start from a fresh state every time the client connects
+        // => NoDelay, interval, wnd size are the most important configurations.
+        //    let's force require the parameters so we don't forget it anywhere.
         protected void SetupKcp(bool noDelay, uint interval = Kcp.INTERVAL, int fastResend = 0, bool congestionWindow = true, uint sendWindowSize = Kcp.WND_SND, uint receiveWindowSize = Kcp.WND_RCV)
         {
             // set up kcp over reliable channel (that's what kcp is for)

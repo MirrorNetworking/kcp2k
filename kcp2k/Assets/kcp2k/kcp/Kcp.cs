@@ -747,6 +747,7 @@ namespace kcp2k
 
             // calculate window size
             uint cwnd_ = Math.Min(snd_wnd, rmt_wnd);
+            // if congestion window:
             if (!nocwnd) cwnd_ = Math.Min(cwnd, cwnd_);
 
             // move data from snd_queue to snd_buf

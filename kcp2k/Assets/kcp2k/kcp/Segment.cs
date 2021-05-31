@@ -16,7 +16,8 @@ namespace kcp2k
         internal int rto;
         internal uint fastack;
         internal uint xmit;
-        // we need a auto scaling byte[] with a WriteBytes function.
+
+        // we need an auto scaling byte[] with a WriteBytes function.
         // MemoryStream does that perfectly, no need to reinvent the wheel.
         // note: no need to pool it, because Segment is already pooled.
         internal MemoryStream data = new MemoryStream();

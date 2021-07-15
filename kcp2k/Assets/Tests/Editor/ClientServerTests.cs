@@ -209,6 +209,23 @@ namespace kcp2k.Tests
             server.Stop();
         }
 
+        // test to prevent https://github.com/vis2k/kcp2k/issues/26
+        [Test]
+        public void ConnectInvalidHostname_CallsOnDisconnected()
+        {
+            // make sure OnDisconnected is called.
+            // otherwise Mirror etc. would be left hanging in 'Connecting' state
+            bool called = false;
+            client.OnDisconnected = () => called = true;
+
+            // connect to an invalid name
+            ConnectClientBlocking("asdasdasd");
+
+            // OnDisconnected should've been called
+            Assert.That(client.connected, Is.False);
+            Assert.That(called, Is.True);
+        }
+
         [Test]
         public void ClientToServerReliableMessage()
         {

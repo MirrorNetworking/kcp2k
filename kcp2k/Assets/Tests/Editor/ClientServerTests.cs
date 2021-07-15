@@ -4,8 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using NUnit.Framework;
-using UnityEngine;
-using UnityEngine.TestTools;
+// DON'T import UnityEngine. kcp2k should be platform independent.
 
 namespace kcp2k.Tests
 {
@@ -50,9 +49,15 @@ namespace kcp2k.Tests
         public void SetUp()
         {
             // logging
-            Log.Info = Debug.Log;
-            Log.Warning = Debug.LogWarning;
-            Log.Error = Debug.LogError;
+#if UNITY_2018_3_OR_NEWER
+            Log.Info = UnityEngine.Debug.Log;
+            Log.Warning = UnityEngine.Debug.LogWarning;
+            Log.Error = UnityEngine.Debug.LogError;
+#else
+            Log.Info = Console.WriteLine;
+            Log.Warning = Console.WriteLine;
+            Log.Error = Console.WriteLine;
+#endif
 
             // create new server & received list for each test
             serverReceived = new List<byte[]>();
@@ -238,8 +243,9 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
 
             // sending empty messages is not allowed
-            LogAssert.Expect(LogType.Warning, "KcpConnection: tried sending empty message. This should never happen. Disconnecting.");
-
+#if UNITY_2018_3_OR_NEWER
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, "KcpConnection: tried sending empty message. This should never happen. Disconnecting.");
+#endif
             byte[] message = new byte[0];
             SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
             Assert.That(serverReceived.Count, Is.EqualTo(0));
@@ -255,7 +261,7 @@ namespace kcp2k.Tests
             byte[] message = new byte[KcpConnection.ReliableMaxMessageSize];
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
-            Debug.Log($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
+            Log.Info($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
             SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
             Assert.That(serverReceived.Count, Is.EqualTo(1));
             Assert.That(serverReceived[0].SequenceEqual(message), Is.True);
@@ -271,7 +277,7 @@ namespace kcp2k.Tests
             byte[] message = new byte[KcpConnection.UnreliableMaxMessageSize];
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
-            Debug.Log($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
+            Log.Info($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
             SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Unreliable);
             Assert.That(serverReceived.Count, Is.EqualTo(1));
             Assert.That(serverReceived[0].SequenceEqual(message), Is.True);
@@ -291,7 +297,7 @@ namespace kcp2k.Tests
             byte[] message = new byte[Kcp.MTU_DEF - 5];
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
-            Debug.Log($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
+            Log.Info($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
             SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
             Assert.That(serverReceived.Count, Is.EqualTo(1));
             Assert.That(serverReceived[0].SequenceEqual(message), Is.True);
@@ -306,7 +312,7 @@ namespace kcp2k.Tests
             byte[] message = new byte[Kcp.MTU_DEF - 5];
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
-            Debug.Log($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
+            Log.Info($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
             SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Unreliable);
             Assert.That(serverReceived.Count, Is.EqualTo(1));
             Assert.That(serverReceived[0].SequenceEqual(message), Is.True);
@@ -320,7 +326,10 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
 
             byte[] message = new byte[KcpConnection.ReliableMaxMessageSize + 1];
-            LogAssert.Expect(LogType.Error, $"Failed to send reliable message of size {message.Length} because it's larger than ReliableMaxMessageSize={KcpConnection.ReliableMaxMessageSize}");
+
+#if UNITY_2018_3_OR_NEWER
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Error, $"Failed to send reliable message of size {message.Length} because it's larger than ReliableMaxMessageSize={KcpConnection.ReliableMaxMessageSize}");
+#endif
             SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
             Assert.That(serverReceived.Count, Is.EqualTo(0));
         }
@@ -332,7 +341,9 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
 
             byte[] message = new byte[KcpConnection.UnreliableMaxMessageSize + 1];
-            LogAssert.Expect(LogType.Error, $"Failed to send unreliable message of size {message.Length} because it's larger than UnreliableMaxMessageSize={KcpConnection.UnreliableMaxMessageSize}");
+#if UNITY_2018_3_OR_NEWER
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Error, $"Failed to send unreliable message of size {message.Length} because it's larger than UnreliableMaxMessageSize={KcpConnection.UnreliableMaxMessageSize}");
+#endif
             SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Unreliable);
             Assert.That(serverReceived.Count, Is.EqualTo(0));
         }
@@ -502,7 +513,9 @@ namespace kcp2k.Tests
             int connectionId = ServerFirstConnectionId();
 
             // sending empty messages is not allowed.
-            LogAssert.Expect(LogType.Warning, "KcpConnection: tried sending empty message. This should never happen. Disconnecting.");
+#if UNITY_2018_3_OR_NEWER
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, "KcpConnection: tried sending empty message. This should never happen. Disconnecting.");
+#endif
 
             byte[] message = new byte[0];
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Reliable);
@@ -589,7 +602,9 @@ namespace kcp2k.Tests
             int connectionId = ServerFirstConnectionId();
 
             byte[] message = new byte[KcpConnection.ReliableMaxMessageSize + 1];
-            LogAssert.Expect(LogType.Error, $"Failed to send reliable message of size {message.Length} because it's larger than ReliableMaxMessageSize={KcpConnection.ReliableMaxMessageSize}");
+#if UNITY_2018_3_OR_NEWER
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Error, $"Failed to send reliable message of size {message.Length} because it's larger than ReliableMaxMessageSize={KcpConnection.ReliableMaxMessageSize}");
+#endif
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Reliable);
             Assert.That(clientReceived.Count, Is.EqualTo(0));
         }
@@ -603,7 +618,10 @@ namespace kcp2k.Tests
             int connectionId = ServerFirstConnectionId();
 
             byte[] message = new byte[KcpConnection.UnreliableMaxMessageSize + 1];
-            LogAssert.Expect(LogType.Error, $"Failed to send unreliable message of size {message.Length} because it's larger than UnreliableMaxMessageSize={KcpConnection.UnreliableMaxMessageSize}");
+
+#if UNITY_2018_3_OR_NEWER
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Error, $"Failed to send unreliable message of size {message.Length} because it's larger than UnreliableMaxMessageSize={KcpConnection.UnreliableMaxMessageSize}");
+#endif
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Unreliable);
             Assert.That(clientReceived.Count, Is.EqualTo(0));
         }
@@ -724,7 +742,9 @@ namespace kcp2k.Tests
             Thread.Sleep(Timeout + 1);
 
             // now update
-            LogAssert.Expect(LogType.Warning, $"KCP: Connection timed out after not receiving any message for {Timeout}ms. Disconnecting.");
+#if UNITY_2018_3_OR_NEWER
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, $"KCP: Connection timed out after not receiving any message for {Timeout}ms. Disconnecting.");
+#endif
             UpdateSeveralTimes();
 
             // should be disconnected
@@ -845,7 +865,9 @@ namespace kcp2k.Tests
             server.connections[connectionId].kcp.state = -1;
 
             // now update
-            LogAssert.Expect(LogType.Warning, $"KCP Connection dead_link detected. Disconnecting.");
+#if UNITY_2018_3_OR_NEWER
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, $"KCP Connection dead_link detected. Disconnecting.");
+#endif
             UpdateSeveralTimes();
 
             // should be disconnected
@@ -871,7 +893,9 @@ namespace kcp2k.Tests
             client.OnData = _ => {};
 
             // update should detect the choked connection and disconnect it.
-            LogAssert.Expect(LogType.Warning, new Regex("KCP: disconnecting connection because it can't process data fast enough.*"));
+#if UNITY_2018_3_OR_NEWER
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new Regex("KCP: disconnecting connection because it can't process data fast enough.*"));
+#endif
             UpdateSeveralTimes();
 
             // client should've disconnected, server should've dropped it

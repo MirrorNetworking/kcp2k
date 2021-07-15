@@ -109,9 +109,9 @@ namespace kcp2k.Tests
         }
 
         // connect and give it enough time to handle
-        void ConnectClientBlocking()
+        void ConnectClientBlocking(string hostname = "127.0.0.1")
         {
-            client.Connect("127.0.0.1", Port, NoDelay, Interval, 0, true, clientSendWindowSize, clientReceiveWindowSize, Timeout);
+            client.Connect(hostname, Port, NoDelay, Interval, 0, true, clientSendWindowSize, clientReceiveWindowSize, Timeout);
             UpdateSeveralTimes();
         }
 

@@ -5,6 +5,8 @@ namespace kcp2k
 {
     public class KcpServerConnection : KcpConnection
     {
+        // Constructor & Send functions can be overwritten for where-allocation:
+        // https://github.com/vis2k/where-allocation
         public KcpServerConnection(Socket socket, EndPoint remoteEndPoint, bool noDelay, uint interval = Kcp.INTERVAL, int fastResend = 0, bool congestionWindow = true, uint sendWindowSize = Kcp.WND_SND, uint receiveWindowSize = Kcp.WND_RCV, int timeout = DEFAULT_TIMEOUT)
         {
             this.socket = socket;

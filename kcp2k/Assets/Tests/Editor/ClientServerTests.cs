@@ -13,35 +13,35 @@ namespace kcp2k.Tests
         // force NoDelay and minimum interval.
         // this way UpdateSeveralTimes() doesn't need to wait very long and
         // tests run a lot faster.
-        const ushort Port = 7777;
+        protected const ushort Port = 7777;
         // not all platforms support DualMode.
         // run tests without it so they work on all platforms.
-        const bool DualMode = false;
-        const bool NoDelay = true;
-        const uint Interval = 1; // 1ms so at interval code at least runs.
-        const int Timeout = 2000;
+        protected const bool DualMode = false;
+        protected const bool NoDelay = true;
+        protected const uint Interval = 1; // 1ms so at interval code at least runs.
+        protected const int Timeout = 2000;
 
-        KcpServer server;
-        List<byte[]> serverReceived;
+        protected KcpServer server;
+        protected List<byte[]> serverReceived;
         // server windows can be configured separate to test differently sized windows
-        const int serverSendWindowSize = 128;
-        const int serverReceiveWindowSize = 128;
+        protected const int serverSendWindowSize = 128;
+        protected const int serverReceiveWindowSize = 128;
 
-        KcpClient client;
-        List<byte[]> clientReceived;
+        protected KcpClient client;
+        protected List<byte[]> clientReceived;
         // client windows can be configured separate to test differently sized windows
-        const int clientSendWindowSize = 128;
-        const int clientReceiveWindowSize = 128;
+        protected const int clientSendWindowSize = 128;
+        protected const int clientReceiveWindowSize = 128;
 
         // setup ///////////////////////////////////////////////////////////////
-        void ClientOnData(ArraySegment<byte> message)
+        protected void ClientOnData(ArraySegment<byte> message)
         {
             byte[] copy = new byte[message.Count];
             Buffer.BlockCopy(message.Array, message.Offset, copy, 0, message.Count);
             clientReceived.Add(copy);
         }
 
-        void ServerOnData(int connectionId, ArraySegment<byte> message)
+        protected void ServerOnData(int connectionId, ArraySegment<byte> message)
         {
             byte[] copy = new byte[message.Count];
             Buffer.BlockCopy(message.Array, message.Offset, copy, 0, message.Count);
@@ -62,7 +62,8 @@ namespace kcp2k.Tests
 #endif
         }
 
-        protected void CreateServer()
+        // virtual so that we can overwrite for where-allocation nonalloc tests
+        protected virtual void CreateServer()
         {
             server = new KcpServer(
                 (connectionId) => {},
@@ -81,7 +82,8 @@ namespace kcp2k.Tests
             server.Interval = Interval;
         }
 
-        protected void CreateClient()
+        // virtual so that we can overwrite for where-allocation nonalloc tests
+        protected virtual void CreateClient()
         {
             client = new KcpClient(
                 () => {},
@@ -90,7 +92,6 @@ namespace kcp2k.Tests
             );
         }
 
-        // virtual so that we can overwrite for where-allocation nonalloc tests
         [SetUp]
         public void SetUp()
         {

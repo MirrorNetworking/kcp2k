@@ -14,6 +14,9 @@ namespace kcp2k.Tests
         // this way UpdateSeveralTimes() doesn't need to wait very long and
         // tests run a lot faster.
         const ushort Port = 7777;
+        // not all platforms support DualMode.
+        // run tests without it so they work on all platforms.
+        const bool DualMode = false;
         const bool NoDelay = true;
         const uint Interval = 1; // 1ms so at interval code at least runs.
         const int Timeout = 2000;
@@ -65,6 +68,7 @@ namespace kcp2k.Tests
                 (connectionId) => {},
                 ServerOnData,
                 (connectionId) => {},
+                DualMode,
                 NoDelay,
                 Interval,
                 0,
@@ -746,7 +750,10 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
-            Assert.That(server.GetClientAddress(connectionId), Is.EqualTo("::ffff:127.0.0.1"));
+            if (server.DualMode)
+                Assert.That(server.GetClientAddress(connectionId), Is.EqualTo("::ffff:127.0.0.1"));
+            else
+                Assert.That(server.GetClientAddress(connectionId), Is.EqualTo("127.0.0.1"));
         }
 
         [Test]

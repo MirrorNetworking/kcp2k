@@ -15,6 +15,9 @@ namespace kcp2k
         public Action<int> OnDisconnected;
 
         // configuration
+        // DualMode uses both IPv6 and IPv4. not all platforms support it.
+        // (Nintendo Switch, etc.)
+        public bool DualMode;
         // NoDelay is recommended to reduce latency. This also scales better
         // without buffers getting full.
         public bool NoDelay;
@@ -41,12 +44,8 @@ namespace kcp2k
 
         // state
         Socket socket;
-#if UNITY_SWITCH
-        // switch does not support ipv6
-        EndPoint newClientEP = new IPEndPoint(IPAddress.Any, 0);
-#else
-        EndPoint newClientEP = new IPEndPoint(IPAddress.IPv6Any, 0);
-#endif
+        EndPoint newClientEP;
+
         // IMPORTANT: raw receive buffer always needs to be of 'MTU' size, even
         //            if MaxMessageSize is larger. kcp always sends in MTU
         //            segments and having a buffer smaller than MTU would
@@ -60,6 +59,7 @@ namespace kcp2k
         public KcpServer(Action<int> OnConnected,
                          Action<int, ArraySegment<byte>> OnData,
                          Action<int> OnDisconnected,
+                         bool DualMode,
                          bool NoDelay,
                          uint Interval,
                          int FastResend = 0,
@@ -71,6 +71,7 @@ namespace kcp2k
             this.OnConnected = OnConnected;
             this.OnData = OnData;
             this.OnDisconnected = OnDisconnected;
+            this.DualMode = DualMode;
             this.NoDelay = NoDelay;
             this.Interval = Interval;
             this.FastResend = FastResend;
@@ -78,6 +79,11 @@ namespace kcp2k
             this.SendWindowSize = SendWindowSize;
             this.ReceiveWindowSize = ReceiveWindowSize;
             this.Timeout = Timeout;
+
+            // create newClientEP either IPv4 or IPv6
+            newClientEP = DualMode
+                          ? new IPEndPoint(IPAddress.IPv6Any, 0)
+                          : new IPEndPoint(IPAddress.Any, 0);
         }
 
         public bool IsActive() => socket != null;
@@ -91,15 +97,19 @@ namespace kcp2k
             }
 
             // listen
-#if UNITY_SWITCH
-            // Switch does not support ipv6
-            socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            socket.Bind(new IPEndPoint(IPAddress.Any, port));
-#else
-            socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
-            socket.DualMode = true;
-            socket.Bind(new IPEndPoint(IPAddress.IPv6Any, port));
-#endif
+            if (DualMode)
+            {
+                // IPv6 socket with DualMode
+                socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
+                socket.DualMode = true;
+                socket.Bind(new IPEndPoint(IPAddress.IPv6Any, port));
+            }
+            else
+            {
+                // IPv4 socket
+                socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                socket.Bind(new IPEndPoint(IPAddress.Any, port));
+            }
         }
 
         public void Send(int connectionId, ArraySegment<byte> segment, KcpChannel channel)

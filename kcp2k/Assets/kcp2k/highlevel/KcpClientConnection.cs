@@ -35,9 +35,9 @@ namespace kcp2k
             // try resolve host name
             if (ResolveHostname(host, out IPAddress[] addresses))
             {
-                remoteEndpoint = new IPEndPoint(addresses[0], port);
-                socket = new Socket(remoteEndpoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-                socket.Connect(remoteEndpoint);
+                remoteEndPoint = new IPEndPoint(addresses[0], port);
+                socket = new Socket(remoteEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+                socket.Connect(remoteEndPoint);
                 SetupKcp(noDelay, interval, fastResend, congestionWindow, sendWindowSize, receiveWindowSize, timeout);
 
                 // client should send handshake to server as very first message
@@ -58,7 +58,7 @@ namespace kcp2k
                 {
                     while (socket.Poll(0, SelectMode.SelectRead))
                     {
-                        int msgLength = socket.ReceiveFrom(rawReceiveBuffer, ref remoteEndpoint);
+                        int msgLength = socket.ReceiveFrom(rawReceiveBuffer, ref remoteEndPoint);
                         // IMPORTANT: detect if buffer was too small for the
                         //            received msgLength. otherwise the excess
                         //            data would be silently lost.

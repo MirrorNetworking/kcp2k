@@ -48,8 +48,7 @@ namespace kcp2k.Tests
             serverReceived.Add(copy);
         }
 
-        [SetUp]
-        public void SetUp()
+        protected void SetupLogging()
         {
             // logging
 #if UNITY_2018_3_OR_NEWER
@@ -61,6 +60,13 @@ namespace kcp2k.Tests
             Log.Warning = Console.WriteLine;
             Log.Error = Console.WriteLine;
 #endif
+        }
+
+        // virtual so that we can overwrite for where-allocation nonalloc tests
+        [SetUp]
+        public void SetUp()
+        {
+            SetupLogging();
 
             // create new server & received list for each test
             serverReceived = new List<byte[]>();

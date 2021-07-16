@@ -62,14 +62,8 @@ namespace kcp2k.Tests
 #endif
         }
 
-        // virtual so that we can overwrite for where-allocation nonalloc tests
-        [SetUp]
-        public void SetUp()
+        protected void CreateServer()
         {
-            SetupLogging();
-
-            // create new server & received list for each test
-            serverReceived = new List<byte[]>();
             server = new KcpServer(
                 (connectionId) => {},
                 ServerOnData,
@@ -85,14 +79,30 @@ namespace kcp2k.Tests
             );
             server.NoDelay = NoDelay;
             server.Interval = Interval;
+        }
 
-            // create new client & received list for each test
-            clientReceived = new List<byte[]>();
+        protected void CreateClient()
+        {
             client = new KcpClient(
                 () => {},
                 ClientOnData,
                 () => {}
             );
+        }
+
+        // virtual so that we can overwrite for where-allocation nonalloc tests
+        [SetUp]
+        public void SetUp()
+        {
+            SetupLogging();
+
+            // create new server & client received list for each test
+            serverReceived = new List<byte[]>();
+            clientReceived = new List<byte[]>();
+
+            // create server & client
+            CreateServer();
+            CreateClient();
         }
 
         [TearDown]

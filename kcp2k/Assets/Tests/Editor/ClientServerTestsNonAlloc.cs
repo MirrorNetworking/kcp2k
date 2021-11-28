@@ -14,8 +14,8 @@ namespace kcp2k.Tests
                 Interval,
                 0,
                 true,
-                serverSendWindowSize,
-                serverReceiveWindowSize,
+                SendWindowSize,
+                ReceiveWindowSize,
                 Timeout
             );
             server.NoDelay = NoDelay;

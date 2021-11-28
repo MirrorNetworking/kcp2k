@@ -31,20 +31,16 @@ namespace kcp2k.Tests
         protected const bool NoDelay = true;
         protected const uint Interval = 1; // 1ms so at interval code at least runs.
         protected const int Timeout = 2000;
+        // windows can be configured separately to test differently sized windows
+        // use 2x defaults so we can test larger max message than defaults too.
+        protected const int SendWindowSize = Kcp.WND_SND * 2;
+        protected const int ReceiveWindowSize = Kcp.WND_RCV * 2;
 
         protected KcpServer server;
         protected List<Message> serverReceived;
-        // server windows can be configured separately to test differently sized windows
-        // use 2x defaults so we can test larger max message than defaults too.
-        protected const int serverSendWindowSize = Kcp.WND_SND * 2;
-        protected const int serverReceiveWindowSize = Kcp.WND_RCV * 2;
 
         protected KcpClient client;
         protected List<Message> clientReceived;
-        // client windows can be configured separately to test differently sized windows
-        // use 2x defaults so we can test larger max message than defaults too.
-        protected const int clientSendWindowSize = Kcp.WND_SND * 2;
-        protected const int clientReceiveWindowSize = Kcp.WND_RCV * 2;
 
         // setup ///////////////////////////////////////////////////////////////
         protected void ClientOnData(ArraySegment<byte> message, KcpChannel channel)
@@ -87,8 +83,8 @@ namespace kcp2k.Tests
                 Interval,
                 0,
                 true,
-                serverSendWindowSize,
-                serverReceiveWindowSize,
+                SendWindowSize,
+                ReceiveWindowSize,
                 Timeout
             );
             server.NoDelay = NoDelay;
@@ -150,7 +146,7 @@ namespace kcp2k.Tests
         // connect and give it enough time to handle
         void ConnectClientBlocking(string hostname = "127.0.0.1")
         {
-            client.Connect(hostname, Port, NoDelay, Interval, 0, true, clientSendWindowSize, clientReceiveWindowSize, Timeout);
+            client.Connect(hostname, Port, NoDelay, Interval, 0, true, SendWindowSize, ReceiveWindowSize, Timeout);
             UpdateSeveralTimes();
         }
 

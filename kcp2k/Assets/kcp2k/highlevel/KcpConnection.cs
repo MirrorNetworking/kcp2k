@@ -17,7 +17,7 @@ namespace kcp2k
         KcpState state = KcpState.Disconnected;
 
         public Action OnAuthenticated;
-        public Action<ArraySegment<byte>> OnData;
+        public Action<ArraySegment<byte>, KcpChannel> OnData;
         public Action OnDisconnected;
 
         // Mirror needs a way to stop the kcp message processing while loop
@@ -328,7 +328,7 @@ namespace kcp2k
                         if (message.Count > 0)
                         {
                             //Log.Warning($"Kcp recv msg: {BitConverter.ToString(message.Array, message.Offset, message.Count)}");
-                            OnData?.Invoke(message);
+                            OnData?.Invoke(message, KcpChannel.Reliable);
                         }
                         // empty data = attacker, or something went wrong
                         else
@@ -489,7 +489,7 @@ namespace kcp2k
                             if (!paused)
                             {
                                 ArraySegment<byte> message = new ArraySegment<byte>(buffer, 1, msgLength - 1);
-                                OnData?.Invoke(message);
+                                OnData?.Invoke(message, KcpChannel.Unreliable);
                             }
 
                             // set last receive time to avoid timeout.

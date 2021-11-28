@@ -12,7 +12,7 @@ namespace kcp2k.Examples
         // server
         public KcpServer server = new KcpServer(
             (connectionId) => {},
-            (connectionId, message) => Debug.Log($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)})"),
+            (connectionId, message, channel) => Debug.Log($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)} @ {channel})"),
             (connectionId) => {},
             false,
             true,

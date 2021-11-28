@@ -11,7 +11,7 @@ namespace kcp2k.Examples
         // client
         public KcpClient client = new KcpClient(
             () => {},
-            (message) => Debug.Log($"KCP: OnClientDataReceived({BitConverter.ToString(message.Array, message.Offset, message.Count)})"),
+            (message, channel) => Debug.Log($"KCP: OnClientDataReceived({BitConverter.ToString(message.Array, message.Offset, message.Count)} @ {channel})"),
             () => {}
         );
 

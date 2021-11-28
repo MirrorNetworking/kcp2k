@@ -264,9 +264,10 @@ namespace kcp2k
 
             // original kcp uses WND_RCV const instead of rcv_wnd runtime:
             // https://github.com/skywind3000/kcp/pull/291/files
-            // which always limits max message size to 144 KB.
-            // this might be a bug.
-            if (count >= WND_RCV) return -2;
+            // which always limits max message size to 144 KB:
+            //if (count >= WND_RCV) return -2;
+            // using configured rcv_wnd uncorks max message size to 'any':
+            if (count >= rcv_wnd) return -2;
 
             if (count == 0) count = 1;
 

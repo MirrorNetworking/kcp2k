@@ -43,7 +43,7 @@ namespace kcp2k
         const int CHANNEL_HEADER_SIZE = 1;
 
         // reliable channel (= kcp) MaxMessageSize so the outside knows largest
-        // allowed message to send the calculation in Send() is not obvious at
+        // allowed message to send. the calculation in Send() is not obvious at
         // all, so let's provide the helper here.
         //
         // kcp does fragmentation, so max message is way larger than MTU.

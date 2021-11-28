@@ -1,3 +1,10 @@
+V1.13 [2021-11-28]
+- fix: perf: uncork max message size from 144 KB to as much as we want based on
+  receive window size.
+    fixes https://github.com/vis2k/kcp2k/issues/22
+    fixes https://github.com/skywind3000/kcp/pull/291
+- feature: OnData now includes channel it was received on
+
 V1.12 [2021-07-16]
 - Tests: don't depend on Unity anymore
 - fix: #26 - Kcp now catches exception if host couldn't be resolved, and calls

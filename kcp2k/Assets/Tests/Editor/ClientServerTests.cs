@@ -35,14 +35,16 @@ namespace kcp2k.Tests
         protected KcpServer server;
         protected List<Message> serverReceived;
         // server windows can be configured separately to test differently sized windows
-        protected const int serverSendWindowSize = 128;
-        protected const int serverReceiveWindowSize = 128;
+        // use 2x defaults so we can test larger max message than defaults too.
+        protected const int serverSendWindowSize = Kcp.WND_SND * 2;
+        protected const int serverReceiveWindowSize = Kcp.WND_RCV * 2;
 
         protected KcpClient client;
         protected List<Message> clientReceived;
         // client windows can be configured separately to test differently sized windows
-        protected const int clientSendWindowSize = 128;
-        protected const int clientReceiveWindowSize = 128;
+        // use 2x defaults so we can test larger max message than defaults too.
+        protected const int clientSendWindowSize = Kcp.WND_SND * 2;
+        protected const int clientReceiveWindowSize = Kcp.WND_RCV * 2;
 
         // setup ///////////////////////////////////////////////////////////////
         protected void ClientOnData(ArraySegment<byte> message, KcpChannel channel)

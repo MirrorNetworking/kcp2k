@@ -131,9 +131,10 @@ namespace kcp2k.Tests
         void UpdateSeveralTimes()
         {
             // update serveral times to avoid flaky tests.
-            // => need to update at 120 times for maxed sized message tests
-            //    where it requires 120+ fragments
-            for (int i = 0; i < 200; ++i)
+            // => need to update at 120 times for default maxed sized messages
+            //    where it requires 120+ fragments.
+            // => need to update even more often for 2x default max sized
+            for (int i = 0; i < 500; ++i)
             {
                 client.Tick();
                 server.Tick();

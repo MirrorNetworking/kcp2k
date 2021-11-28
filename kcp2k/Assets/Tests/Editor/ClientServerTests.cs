@@ -261,36 +261,27 @@ namespace kcp2k.Tests
         }
 
         [Test]
-        public void ClientToServerReliableMessage()
+        [TestCase(KcpChannel.Reliable)]
+        [TestCase(KcpChannel.Unreliable)]
+        public void ClientToServerMessage(KcpChannel channel)
         {
             server.Start(Port);
             ConnectClientBlocking();
 
             byte[] message = {0x01, 0x02};
-            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
+            SendClientToServerBlocking(new ArraySegment<byte>(message), channel);
             Assert.That(serverReceived.Count, Is.EqualTo(1));
             Assert.That(serverReceived[0].data.SequenceEqual(message), Is.True);
-            Assert.That(serverReceived[0].channel, Is.EqualTo(KcpChannel.Reliable));
-        }
-
-        [Test]
-        public void ClientToServerUnreliableMessage()
-        {
-            server.Start(Port);
-            ConnectClientBlocking();
-
-            byte[] message = {0x01, 0x02};
-            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Unreliable);
-            Assert.That(serverReceived.Count, Is.EqualTo(1));
-            Assert.That(serverReceived[0].data.SequenceEqual(message), Is.True);
-            Assert.That(serverReceived[0].channel, Is.EqualTo(KcpChannel.Unreliable));
+            Assert.That(serverReceived[0].channel, Is.EqualTo(channel));
         }
 
         // empty data message should be detected instead of sent
         // if the application tried to send an empty arraysegment then something
         // wrong happened.
         [Test]
-        public void ClientToServerReliableEmptyMessage()
+        [TestCase(KcpChannel.Reliable)]
+        [TestCase(KcpChannel.Unreliable)]
+        public void ClientToServerEmptyMessage(KcpChannel channel)
         {
             server.Start(Port);
             ConnectClientBlocking();
@@ -300,7 +291,7 @@ namespace kcp2k.Tests
             UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, "KcpConnection: tried sending empty message. This should never happen. Disconnecting.");
 #endif
             byte[] message = new byte[0];
-            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
+            SendClientToServerBlocking(new ArraySegment<byte>(message), channel);
             Assert.That(serverReceived.Count, Is.EqualTo(0));
         }
 
@@ -344,7 +335,9 @@ namespace kcp2k.Tests
         // drop the last 5 bytes because buffer was too small.
         // => let's make sure that never happens again.
         [Test]
-        public void ClientToServerSlightlySmallerThanMTUSizedReliableMessage()
+        [TestCase(KcpChannel.Reliable)]
+        [TestCase(KcpChannel.Unreliable)]
+        public void ClientToServerSlightlySmallerThanMTUSizedMessage(KcpChannel channel)
         {
             server.Start(Port);
             ConnectClientBlocking();
@@ -353,26 +346,10 @@ namespace kcp2k.Tests
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
             Log.Info($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
-            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
+            SendClientToServerBlocking(new ArraySegment<byte>(message), channel);
             Assert.That(serverReceived.Count, Is.EqualTo(1));
             Assert.That(serverReceived[0].data.SequenceEqual(message), Is.True);
-            Assert.That(serverReceived[0].channel, Is.EqualTo(KcpChannel.Reliable));
-        }
-
-        [Test]
-        public void ClientToServerSlightlySmallerThanMTUSizedUnreliableMessage()
-        {
-            server.Start(Port);
-            ConnectClientBlocking();
-
-            byte[] message = new byte[Kcp.MTU_DEF - 5];
-            for (int i = 0; i < message.Length; ++i)
-                message[i] = (byte)(i & 0xFF);
-            Log.Info($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
-            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Unreliable);
-            Assert.That(serverReceived.Count, Is.EqualTo(1));
-            Assert.That(serverReceived[0].data.SequenceEqual(message), Is.True);
-            Assert.That(serverReceived[0].channel, Is.EqualTo(KcpChannel.Unreliable));
+            Assert.That(serverReceived[0].channel, Is.EqualTo(channel));
         }
 
         // > max sized message should not work
@@ -407,44 +384,25 @@ namespace kcp2k.Tests
 
         // test to see if successive messages still work fine.
         [Test]
-        public void ClientToServerTwoReliableMessages()
+        [TestCase(KcpChannel.Reliable)]
+        [TestCase(KcpChannel.Unreliable)]
+        public void ClientToServerTwoMessages(KcpChannel channel)
         {
             server.Start(Port);
             ConnectClientBlocking();
 
             byte[] message = {0x01, 0x02};
-            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
+            SendClientToServerBlocking(new ArraySegment<byte>(message), channel);
 
             byte[] message2 = {0x03, 0x04};
-            SendClientToServerBlocking(new ArraySegment<byte>(message2), KcpChannel.Reliable);
+            SendClientToServerBlocking(new ArraySegment<byte>(message2), channel);
 
             Assert.That(serverReceived.Count, Is.EqualTo(2));
             Assert.That(serverReceived[0].data.SequenceEqual(message), Is.True);
-            Assert.That(serverReceived[0].channel, Is.EqualTo(KcpChannel.Reliable));
+            Assert.That(serverReceived[0].channel, Is.EqualTo(channel));
 
             Assert.That(serverReceived[1].data.SequenceEqual(message2), Is.True);
-            Assert.That(serverReceived[1].channel, Is.EqualTo(KcpChannel.Reliable));
-        }
-
-        // test to see if successive messages still work fine.
-        [Test]
-        public void ClientToServerTwoUnreliableMessages()
-        {
-            server.Start(Port);
-            ConnectClientBlocking();
-
-            byte[] message = {0x01, 0x02};
-            SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Unreliable);
-
-            byte[] message2 = {0x03, 0x04};
-            SendClientToServerBlocking(new ArraySegment<byte>(message2), KcpChannel.Unreliable);
-
-            Assert.That(serverReceived.Count, Is.EqualTo(2));
-            Assert.That(serverReceived[0].data.SequenceEqual(message), Is.True);
-            Assert.That(serverReceived[0].channel, Is.EqualTo(KcpChannel.Unreliable));
-
-            Assert.That(serverReceived[1].data.SequenceEqual(message2), Is.True);
-            Assert.That(serverReceived[1].channel, Is.EqualTo(KcpChannel.Unreliable));
+            Assert.That(serverReceived[1].channel, Is.EqualTo(channel));
         }
 
         // test to see if mixed reliable & unreliable messages still work fine.
@@ -634,7 +592,9 @@ namespace kcp2k.Tests
         // drop the last 5 bytes because buffer was too small.
         // => let's make sure that never happens again.
         [Test]
-        public void ServerToClientSlightlySmallerThanMTUSizedReliableMessage()
+        [TestCase(KcpChannel.Reliable)]
+        [TestCase(KcpChannel.Unreliable)]
+        public void ServerToClientSlightlySmallerThanMTUSizedMessage(KcpChannel channel)
         {
             server.Start(Port);
             ConnectClientBlocking();
@@ -644,27 +604,10 @@ namespace kcp2k.Tests
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
 
-            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Reliable);
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), channel);
             Assert.That(clientReceived.Count, Is.EqualTo(1));
             Assert.That(clientReceived[0].data.SequenceEqual(message), Is.True);
-            Assert.That(clientReceived[0].channel, Is.EqualTo(KcpChannel.Reliable));
-        }
-
-        [Test]
-        public void ServerToClientSlightlySmallerThanMTUSizedUnreliableMessage()
-        {
-            server.Start(Port);
-            ConnectClientBlocking();
-            int connectionId = ServerFirstConnectionId();
-
-            byte[] message = new byte[Kcp.MTU_DEF - 5];
-            for (int i = 0; i < message.Length; ++i)
-                message[i] = (byte)(i & 0xFF);
-
-            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Unreliable);
-            Assert.That(clientReceived.Count, Is.EqualTo(1));
-            Assert.That(clientReceived[0].data.SequenceEqual(message), Is.True);
-            Assert.That(clientReceived[0].channel, Is.EqualTo(KcpChannel.Unreliable));
+            Assert.That(clientReceived[0].channel, Is.EqualTo(channel));
         }
 
         // > max sized message should not work
@@ -723,26 +666,27 @@ namespace kcp2k.Tests
             client.Disconnect();
             server.Stop();
         }
-
         // test to see if successive messages still work fine.
         [Test]
-        public void ServerToClientTwoUnreliableMessages()
+        [TestCase(KcpChannel.Reliable)]
+        [TestCase(KcpChannel.Unreliable)]
+        public void ServerToClientTwoMessages(KcpChannel channel)
         {
             server.Start(Port);
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
             byte[] message = {0x03, 0x04};
-            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Unreliable);
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), channel);
 
             byte[] message2 = {0x05, 0x06};
-            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message2), KcpChannel.Unreliable);
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message2), channel);
 
             Assert.That(clientReceived.Count, Is.EqualTo(2));
             Assert.That(clientReceived[0].data.SequenceEqual(message), Is.True);
-            Assert.That(clientReceived[0].channel, Is.EqualTo(KcpChannel.Unreliable));
+            Assert.That(clientReceived[0].channel, Is.EqualTo(channel));
             Assert.That(clientReceived[1].data.SequenceEqual(message2), Is.True);
-            Assert.That(clientReceived[1].channel, Is.EqualTo(KcpChannel.Unreliable));
+            Assert.That(clientReceived[1].channel, Is.EqualTo(channel));
 
             client.Disconnect();
             server.Stop();
@@ -836,7 +780,9 @@ namespace kcp2k.Tests
         }
 
         [Test]
-        public void TimeoutIsResetByReliable()
+        [TestCase(KcpChannel.Reliable)]
+        [TestCase(KcpChannel.Unreliable)]
+        public void TimeoutIsResetByMessage(KcpChannel channel)
         {
             server.Start(Port);
             ConnectClientBlocking();
@@ -846,34 +792,7 @@ namespace kcp2k.Tests
             Thread.Sleep(firstSleep);
 
             // send one reliable message
-            client.Send(new ArraySegment<byte>(new byte[1]), KcpChannel.Reliable);
-
-            // update
-            UpdateSeveralTimes();
-
-            // do nothing for exactly the remaining timeout time + 1 to be sure
-            Thread.Sleep(Timeout - firstSleep + 1);
-
-            // now update
-            UpdateSeveralTimes();
-
-            // should still be connected
-            Assert.That(client.connected, Is.True);
-            Assert.That(server.connections.Count, Is.EqualTo(1));
-        }
-
-        [Test]
-        public void TimeoutIsResetByUnreliable()
-        {
-            server.Start(Port);
-            ConnectClientBlocking();
-
-            // do nothing for 'Timeout / 2' seconds
-            int firstSleep = Timeout / 2;
-            Thread.Sleep(firstSleep);
-
-            // send one reliable message
-            client.Send(new ArraySegment<byte>(new byte[1]), KcpChannel.Unreliable);
+            client.Send(new ArraySegment<byte>(new byte[1]), channel);
 
             // update
             UpdateSeveralTimes();

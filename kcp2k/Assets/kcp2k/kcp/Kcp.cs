@@ -263,7 +263,7 @@ namespace kcp2k
             else count = (int)((len + mss - 1) / mss);
 
             // original kcp uses WND_RCV const even though rcv_wnd is the
-            // runtime variable. may or may not be correct, see also:
+            // runtime variable. may or may not be correct.
             // see also: https://github.com/skywind3000/kcp/pull/291/files
             if (count >= WND_RCV) return -2;
 

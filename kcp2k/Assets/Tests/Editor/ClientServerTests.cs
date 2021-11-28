@@ -34,13 +34,13 @@ namespace kcp2k.Tests
 
         protected KcpServer server;
         protected List<Message> serverReceived;
-        // server windows can be configured separate to test differently sized windows
+        // server windows can be configured separately to test differently sized windows
         protected const int serverSendWindowSize = 128;
         protected const int serverReceiveWindowSize = 128;
 
         protected KcpClient client;
         protected List<Message> clientReceived;
-        // client windows can be configured separate to test differently sized windows
+        // client windows can be configured separately to test differently sized windows
         protected const int clientSendWindowSize = 128;
         protected const int clientReceiveWindowSize = 128;
 

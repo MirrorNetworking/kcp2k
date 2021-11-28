@@ -36,6 +36,7 @@ Library
 Temp
 UnityPackageManager
 CodeCoverage
+kcp2k/UserSettings/Layouts/
 com.unity.testtools.codecoverage
 Logs
 Obj

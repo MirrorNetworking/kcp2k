@@ -7,7 +7,7 @@ namespace kcp2k
     {
         internal uint conv;     // conversation
         internal uint cmd;      // command, e.g. Kcp.CMD_ACK etc.
-        internal uint frg;      // fragment (sent as 1 byte)
+        internal uint frg;      // fragment (sent as 1 ushort)
         internal uint wnd;      // window size that the receive can currently receive
         internal uint ts;       // timestamp
         internal uint sn;       // serial number
@@ -30,10 +30,10 @@ namespace kcp2k
             int offset_ = offset;
             offset += Utils.Encode32U(ptr, offset, conv);
             offset += Utils.Encode8u(ptr, offset, (byte)cmd);
-            // IMPORTANT kcp encodes 'frg' as 1 byte.
-            // so we can only support up to 255 fragments.
-            // (which limits max message size to around 288 KB)
-            offset += Utils.Encode8u(ptr, offset, (byte)frg);
+            // IMPORTANT kcp encodes 'frg' as 1 ushort.
+            // so we can only support up to 65355 fragments.
+            // (which limits max message size to around 70 MB)
+            offset += Utils.Encode16U(ptr, offset, (ushort)frg);
             offset += Utils.Encode16U(ptr, offset, (ushort)wnd);
             offset += Utils.Encode32U(ptr, offset, ts);
             offset += Utils.Encode32U(ptr, offset, sn);

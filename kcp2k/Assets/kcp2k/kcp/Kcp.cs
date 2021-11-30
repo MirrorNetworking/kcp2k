@@ -25,8 +25,8 @@ namespace kcp2k
         public const int MTU_DEF = 1200;           // default MTU (reduced to 1200 to fit all cases: https://en.wikipedia.org/wiki/Maximum_transmission_unit ; steam uses 1200 too!)
         public const int ACK_FAST = 3;
         public const int INTERVAL = 100;
-        public const int OVERHEAD = 24;
-        public const int FRG_MAX = byte.MaxValue;  // kcp encodes 'frg' as byte. so we can only ever send up to 255 fragments.
+        public const int OVERHEAD = 25;              // original kcp uses 24 byte. we add 1 more byte for frg ushort max
+        public const int FRG_MAX = ushort.MaxValue;  // kcp encodes 'frg' as ushort. so we can only ever send up to 65535 fragments.
         public const int DEADLINK = 20;
         public const int THRESH_INIT = 2;
         public const int THRESH_MIN = 2;
@@ -263,9 +263,9 @@ namespace kcp2k
             if (len <= mss) count = 1;
             else count = (int)((len + mss - 1) / mss);
 
-            // IMPORTANT kcp encodes 'frg' as 1 byte.
-            // so we can only support up to 255 fragments.
-            // (which limits max message size to around 288 KB)
+            // IMPORTANT kcp encodes 'frg' as 1 ushort.
+            // so we can only support up to 65535 fragments.
+            // (which limits max message size to around 70 MB)
             // this is really nasty to debug. let's make this 100% obvious.
             if (count > FRG_MAX)
                 throw new Exception($"Send len={len} requires {count} fragments, but kcp can only handle up to {FRG_MAX} fragments.");
@@ -290,7 +290,7 @@ namespace kcp2k
                     seg.data.Write(buffer, offset, size);
                 }
                 // seg.len = size: WriteBytes sets segment.Position!
-                seg.frg = (byte)(count - i - 1);
+                seg.frg = (ushort)(count - i - 1);
                 snd_queue.Enqueue(seg);
                 offset += size;
                 len -= size;
@@ -511,7 +511,7 @@ namespace kcp2k
                 uint conv_ = 0;
                 ushort wnd = 0;
                 byte cmd = 0;
-                byte frg = 0;
+                ushort frg = 0;
 
                 // enough data left to decode segment (aka OVERHEAD bytes)?
                 if (size < OVERHEAD) break;
@@ -521,10 +521,10 @@ namespace kcp2k
                 if (conv_ != conv) return -1;
 
                 offset += Utils.Decode8u(data, offset, ref cmd);
-                // IMPORTANT kcp encodes 'frg' as 1 byte.
-                // so we can only support up to 255 fragments.
-                // (which limits max message size to around 288 KB)
-                offset += Utils.Decode8u(data, offset, ref frg);
+                // IMPORTANT kcp encodes 'frg' as 1 ushort.
+                // so we can only support up to 65355 fragments.
+                // (which limits max message size to around 70 MB)
+                offset += Utils.Decode16U(data, offset, ref frg);
                 offset += Utils.Decode16U(data, offset, ref wnd);
                 offset += Utils.Decode32U(data, offset, ref ts);
                 offset += Utils.Decode32U(data, offset, ref sn);

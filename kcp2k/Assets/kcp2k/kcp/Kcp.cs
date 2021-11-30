@@ -265,7 +265,7 @@ namespace kcp2k
 
             // IMPORTANT kcp encodes 'frg' as 1 ushort.
             // so we can only support up to 65535 fragments.
-            // (which limits max message size to around 70,000 KB)
+            // (which limits max message size to around 70 MB)
             // this is really nasty to debug. let's make this 100% obvious.
             if (count > FRG_MAX)
                 throw new Exception($"Send len={len} requires {count} fragments, but kcp can only handle up to {FRG_MAX} fragments.");

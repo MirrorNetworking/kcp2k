@@ -33,8 +33,12 @@ namespace kcp2k.Tests
         protected const int Timeout = 2000;
         // windows can be configured separately to test differently sized windows
         // use 2x defaults so we can test larger max message than defaults too.
-        protected const int SendWindowSize = Kcp.WND_SND * 2;
-        protected const int ReceiveWindowSize = Kcp.WND_RCV * 2;
+        // IMPORTANT: default max message needs 127 fragments.
+        //            default x2 needs 255 fragments.
+        //            kcp sends 'frg' as 1 byte, so 255 still fits.
+        //            need to try x3 to find possible bugs.
+        protected const int SendWindowSize = Kcp.WND_SND * 3;
+        protected const int ReceiveWindowSize = Kcp.WND_RCV * 3;
 
         protected KcpServer server;
         protected List<Message> serverReceived;

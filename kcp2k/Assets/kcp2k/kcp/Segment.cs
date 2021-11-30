@@ -32,7 +32,7 @@ namespace kcp2k
             offset += Utils.Encode8u(ptr, offset, (byte)cmd);
             // IMPORTANT kcp encodes 'frg' as 1 ushort.
             // so we can only support up to 65355 fragments.
-            // (which limits max message size to around 70,000 KB)
+            // (which limits max message size to around 70 MB)
             offset += Utils.Encode16U(ptr, offset, (ushort)frg);
             offset += Utils.Encode16U(ptr, offset, (ushort)wnd);
             offset += Utils.Encode32U(ptr, offset, ts);

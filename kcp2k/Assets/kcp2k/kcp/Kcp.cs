@@ -513,6 +513,9 @@ namespace kcp2k
                 if (conv_ != conv) return -1;
 
                 offset += Utils.Decode8u(data, offset, ref cmd);
+                // IMPORTANT kcp encodes 'frg' as 1 byte.
+                // so we can only support up to 255 fragments.
+                // (which limits max message size to around 288 KB)
                 offset += Utils.Decode8u(data, offset, ref frg);
                 offset += Utils.Decode16U(data, offset, ref wnd);
                 offset += Utils.Decode32U(data, offset, ref ts);

@@ -25,7 +25,7 @@ namespace kcp2k
         public const int MTU_DEF = 1200;           // default MTU (reduced to 1200 to fit all cases: https://en.wikipedia.org/wiki/Maximum_transmission_unit ; steam uses 1200 too!)
         public const int ACK_FAST = 3;
         public const int INTERVAL = 100;
-        public const int OVERHEAD = 25;         // original kcp uses 24 byte. we add 1 more byte for frg ushort max
+        public const int OVERHEAD = 25;            // original kcp uses 24 byte. we add 1 more byte for frg ushort max
         public const int FRG_MAX = ushort.MaxValue;  // kcp encodes 'frg' as ushort. so we can only ever send up to 65535 fragments.
         public const int DEADLINK = 20;
         public const int THRESH_INIT = 2;

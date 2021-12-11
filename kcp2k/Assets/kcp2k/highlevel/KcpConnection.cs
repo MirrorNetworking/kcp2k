@@ -179,7 +179,7 @@ namespace kcp2k
             // kcp has 'dead_link' detection. might as well use it.
             if (kcp.state == -1)
             {
-                Log.Warning("KCP Connection dead_link detected. Disconnecting.");
+                Log.Warning($"KCP Connection dead_link detected: a message was retransmitted {kcp.dead_link} times without ack. Disconnecting.");
                 Disconnect();
             }
         }

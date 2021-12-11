@@ -869,7 +869,7 @@ namespace kcp2k.Tests
 
             // now update
 #if UNITY_2018_3_OR_NEWER
-            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, $"KCP Connection dead_link detected. Disconnecting.");
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, $"KCP Connection dead_link detected: a message was retransmitted {server.connections[connectionId].kcp.dead_link} times without ack. Disconnecting.");
 #endif
             UpdateSeveralTimes();
 

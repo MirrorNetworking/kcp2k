@@ -63,7 +63,6 @@ namespace kcp2k
             else OnDisconnected();
         }
 
-
         // call from transport update
         public void RawReceive()
         {

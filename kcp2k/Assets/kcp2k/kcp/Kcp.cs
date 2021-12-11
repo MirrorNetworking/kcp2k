@@ -853,6 +853,8 @@ namespace kcp2k
                         offset += (int)segment.data.Position;
                     }
 
+                    // dead link happens if a message was resent N times, but an
+                    // ack was still not received.
                     if (segment.xmit >= dead_link)
                     {
                         state = -1;

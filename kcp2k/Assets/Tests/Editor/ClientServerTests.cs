@@ -39,6 +39,9 @@ namespace kcp2k.Tests
         //            need to try x3 to find possible bugs.
         protected const int SendWindowSize = Kcp.WND_SND * 3;
         protected const int ReceiveWindowSize = Kcp.WND_RCV * 3;
+        // maximum retransmit attempts until dead_link detected
+        // default * 2 to check if configuration works
+        protected uint MaxRetransmits = Kcp.DEADLINK * 2;
 
         protected KcpServer server;
         protected List<Message> serverReceived;
@@ -89,7 +92,8 @@ namespace kcp2k.Tests
                 true,
                 SendWindowSize,
                 ReceiveWindowSize,
-                Timeout
+                Timeout,
+                MaxRetransmits
             );
             server.NoDelay = NoDelay;
             server.Interval = Interval;
@@ -151,7 +155,7 @@ namespace kcp2k.Tests
         // connect and give it enough time to handle
         void ConnectClientBlocking(string hostname = "127.0.0.1")
         {
-            client.Connect(hostname, Port, NoDelay, Interval, 0, true, SendWindowSize, ReceiveWindowSize, Timeout);
+            client.Connect(hostname, Port, NoDelay, Interval, 0, true, SendWindowSize, ReceiveWindowSize, Timeout, MaxRetransmits);
             UpdateSeveralTimes();
         }
 
@@ -869,7 +873,7 @@ namespace kcp2k.Tests
 
             // now update
 #if UNITY_2018_3_OR_NEWER
-            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, $"KCP Connection dead_link detected: a message was retransmitted {server.connections[connectionId].kcp.dead_link} times without ack. Disconnecting.");
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, $"KCP Connection dead_link detected: a message was retransmitted {MaxRetransmits} times without ack. Disconnecting.");
 #endif
             UpdateSeveralTimes();
 

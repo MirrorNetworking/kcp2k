@@ -535,7 +535,8 @@ namespace kcp2k
                 size -= OVERHEAD;
 
                 // enough remaining to read 'len' bytes of the actual payload?
-                if (size < len || len < 0) return -2;
+                // note: original kcp casts uint len to int for <0 check.
+                if (size < len || (int)len < 0) return -2;
 
                 if (cmd != CMD_PUSH && cmd != CMD_ACK &&
                     cmd != CMD_WASK && cmd != CMD_WINS)

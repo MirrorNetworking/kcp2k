@@ -521,6 +521,22 @@ namespace kcp2k.Tests
             Assert.That(clientReceived[0].channel, Is.EqualTo(KcpChannel.Reliable));
         }
 
+        // make sure that Sending an arraysegment checks the segment's offset
+        [Test]
+        public void ServerToClientReliableMessage_RespectsOffset()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+
+            byte[] message = {0xFF, 0x03, 0x04};
+            ArraySegment<byte> segment = new ArraySegment<byte>(message, 1, 2);
+            SendServerToClientBlocking(connectionId, segment, KcpChannel.Reliable);
+            Assert.That(clientReceived.Count, Is.EqualTo(1));
+            Assert.That(clientReceived[0].data.SequenceEqual(segment), Is.True);
+            Assert.That(clientReceived[0].channel, Is.EqualTo(KcpChannel.Reliable));
+        }
+
         [Test]
         public void ServerToClientUnreliableMessage()
         {
@@ -532,6 +548,22 @@ namespace kcp2k.Tests
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Unreliable);
             Assert.That(clientReceived.Count, Is.EqualTo(1));
             Assert.That(clientReceived[0].data.SequenceEqual(message), Is.True);
+            Assert.That(clientReceived[0].channel, Is.EqualTo(KcpChannel.Unreliable));
+        }
+
+        // make sure that Sending an arraysegment checks the segment's offset
+        [Test]
+        public void ServerToClientUnreliableMessage_RespectsOffset()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+
+            byte[] message = {0xFF, 0x03, 0x04};
+            ArraySegment<byte> segment = new ArraySegment<byte>(message, 1, 2);
+            SendServerToClientBlocking(connectionId, segment, KcpChannel.Unreliable);
+            Assert.That(clientReceived.Count, Is.EqualTo(1));
+            Assert.That(clientReceived[0].data.SequenceEqual(segment), Is.True);
             Assert.That(clientReceived[0].channel, Is.EqualTo(KcpChannel.Unreliable));
         }
 

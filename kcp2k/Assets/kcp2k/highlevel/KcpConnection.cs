@@ -578,7 +578,7 @@ namespace kcp2k
             {
                 // copy channel header, data into raw send buffer, then send
                 rawSendBuffer[0] = (byte)KcpChannel.Unreliable;
-                Buffer.BlockCopy(message.Array, 0, rawSendBuffer, 1, message.Count);
+                Buffer.BlockCopy(message.Array, message.Offset, rawSendBuffer, 1, message.Count);
                 RawSend(rawSendBuffer, message.Count + 1);
             }
             // otherwise content is larger than MaxMessageSize. let user know!

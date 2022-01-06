@@ -865,32 +865,6 @@ namespace kcp2k.Tests
             Assert.That(server.connections.Count, Is.EqualTo(1));
         }
 
-        // Mirror scene changes might take > 10s timeout time.
-        // kcp connection should not time out while paused.
-        //
-        // see also: https://github.com/vis2k/kcp2k/issues/8
-        [Test]
-        public void TimeoutIsResetWhenUnpaused()
-        {
-            server.Start(Port);
-            ConnectClientBlocking();
-
-            // pause for Timeout + 1 seconds
-            client.Pause();
-            server.Pause();
-            Thread.Sleep(Timeout + 1);
-
-            // unpause
-            client.Unpause();
-            server.Unpause();
-
-            // update both. neither should time out if Unpause has reset the
-            // timeout.
-            UpdateSeveralTimes();
-            Assert.That(client.connected, Is.True);
-            Assert.That(server.connections.Count, Is.EqualTo(1));
-        }
-
         // fake a kcp dead_link by setting state = -1.
         // KcpConnection should detect it and disconnect.
         [Test]
@@ -940,81 +914,6 @@ namespace kcp2k.Tests
             // client should've disconnected, server should've dropped it
             Assert.That(client.connected, Is.False);
             Assert.That(server.connections.Count, Is.EqualTo(0));
-        }
-
-        // client paused test to make sure we can savely support scene changes
-        // in Mirror by calling Pause during the receive while loop to stop
-        // receiving immediately!
-        [Test]
-        public void ClientImmediatelyStopsReceivingWhenPaused()
-        {
-            // pause client in the middle of a receive while loop by sending two
-            // messages and pausing immediately after the first one.
-            client.OnData = (message, channel) => {
-                ClientOnData(message, channel);
-                client.Pause();
-            };
-
-            // start
-            server.Start(Port);
-            ConnectClientBlocking();
-            int connectionId = ServerFirstConnectionId();
-
-            // send two messages to client
-            server.Send(connectionId, new ArraySegment<byte>(new byte[]{0x03, 0x04}), KcpChannel.Reliable);
-            server.Send(connectionId, new ArraySegment<byte>(new byte[]{0x05, 0x06}), KcpChannel.Reliable);
-
-            // update should process only the first message and then stop.
-            UpdateSeveralTimes();
-            Assert.That(clientReceived.Count, Is.EqualTo(1));
-            Assert.That(clientReceived[0].data.SequenceEqual(new byte[]{0x03, 0x04}), Is.True);
-            Assert.That(clientReceived[0].channel, Is.EqualTo(KcpChannel.Reliable));
-
-            // unpause again make sure the second message is received (not dropped!)
-            client.Unpause();
-            UpdateSeveralTimes();
-            Assert.That(clientReceived.Count, Is.EqualTo(2));
-            Assert.That(clientReceived[0].data.SequenceEqual(new byte[]{0x03, 0x04}), Is.True);
-            Assert.That(clientReceived[0].channel, Is.EqualTo(KcpChannel.Reliable));
-            Assert.That(clientReceived[1].data.SequenceEqual(new byte[]{0x05, 0x06}), Is.True);
-            Assert.That(clientReceived[1].channel, Is.EqualTo(KcpChannel.Reliable));
-        }
-
-        // server paused test to make sure we can savely support scene changes
-        // in Mirror by calling Pause during the receive while loop to stop
-        // receiving immediately!
-        [Test]
-        public void ServerImmediatelyStopsReceivingWhenPaused()
-        {
-            // pause server in the middle of a receive while loop by sending two
-            // messages and pausing immediately after the first one.
-            server.OnData = (connectionId, message, channel) => {
-                ServerOnData(connectionId, message, channel);
-                server.Pause();
-            };
-
-            // start
-            server.Start(Port);
-            ConnectClientBlocking();
-
-            // send two messages to server
-            client.Send(new ArraySegment<byte>(new byte[]{0x03, 0x04}), KcpChannel.Reliable);
-            client.Send(new ArraySegment<byte>(new byte[]{0x05, 0x06}), KcpChannel.Reliable);
-
-            // update should process only the first message and then stop.
-            UpdateSeveralTimes();
-            Assert.That(serverReceived.Count, Is.EqualTo(1));
-            Assert.That(serverReceived[0].data.SequenceEqual(new byte[]{0x03, 0x04}), Is.True);
-            Assert.That(serverReceived[0].channel, Is.EqualTo(KcpChannel.Reliable));
-
-            // unpause again make sure the second message is received (not dropped!)
-            server.Unpause();
-            UpdateSeveralTimes();
-            Assert.That(serverReceived.Count, Is.EqualTo(2));
-            Assert.That(serverReceived[0].data.SequenceEqual(new byte[]{0x03, 0x04}), Is.True);
-            Assert.That(serverReceived[0].channel, Is.EqualTo(KcpChannel.Reliable));
-            Assert.That(serverReceived[1].data.SequenceEqual(new byte[]{0x05, 0x06}), Is.True);
-            Assert.That(serverReceived[1].channel, Is.EqualTo(KcpChannel.Reliable));
         }
     }
 }

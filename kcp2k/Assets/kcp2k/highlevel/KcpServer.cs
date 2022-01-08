@@ -14,10 +14,12 @@ namespace kcp2k
         public Action<int, ArraySegment<byte>, KcpChannel> OnData;
         public Action<int> OnDisconnected;
 
-        // configuration
+        // socket configuration
         // DualMode uses both IPv6 and IPv4. not all platforms support it.
         // (Nintendo Switch, etc.)
         public bool DualMode;
+
+        // kcp configuration
         // NoDelay is recommended to reduce latency. This also scales better
         // without buffers getting full.
         public bool NoDelay;

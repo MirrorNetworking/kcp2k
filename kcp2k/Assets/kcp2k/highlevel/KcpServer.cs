@@ -18,6 +18,9 @@ namespace kcp2k
         // DualMode uses both IPv6 and IPv4. not all platforms support it.
         // (Nintendo Switch, etc.)
         public bool DualMode;
+        // too small send/receive buffers might cause connection drops under
+        // heavy load. using the OS max size can make a difference already.
+        public bool MaximizeSendReceiveBuffersToOSLimit;
 
         // kcp configuration
         // NoDelay is recommended to reduce latency. This also scales better
@@ -71,7 +74,8 @@ namespace kcp2k
                          uint SendWindowSize = Kcp.WND_SND,
                          uint ReceiveWindowSize = Kcp.WND_RCV,
                          int Timeout = KcpConnection.DEFAULT_TIMEOUT,
-                         uint MaxRetransmits = Kcp.DEADLINK)
+                         uint MaxRetransmits = Kcp.DEADLINK,
+                         bool MaximizeSendReceiveBuffersToOSLimit = false)
         {
             this.OnConnected = OnConnected;
             this.OnData = OnData;
@@ -85,6 +89,7 @@ namespace kcp2k
             this.ReceiveWindowSize = ReceiveWindowSize;
             this.Timeout = Timeout;
             this.MaxRetransmits = MaxRetransmits;
+            this.MaximizeSendReceiveBuffersToOSLimit = MaximizeSendReceiveBuffersToOSLimit;
 
             // create newClientEP either IPv4 or IPv6
             newClientEP = DualMode
@@ -93,6 +98,43 @@ namespace kcp2k
         }
 
         public bool IsActive() => socket != null;
+
+        // if connections drop under heavy load, increase to OS limit.
+        // if still not enough, increase the OS limit.
+        void ConfigureSocketBufferSizes()
+        {
+            if (MaximizeSendReceiveBuffersToOSLimit)
+            {
+                // log initial size for comparison.
+                // remember initial size for log comparison
+                int initialReceive = socket.ReceiveBufferSize;
+                int initialSend = socket.SendBufferSize;
+
+                // 100k attempts of 1 KB increases = default + 100 MB max
+                const int attempts = 100_000;
+                const int increase = 1024;
+
+                // setting a too large size throws a socket exception.
+                // so let's keep increasing until we encounter it.
+                for (int i = 0; i < attempts; ++i)
+                {
+                    // increase in 1 KB steps
+                    try { socket.ReceiveBufferSize += increase; }
+                    catch (SocketException) { break; }
+                }
+
+                for (int i = 0; i < attempts; ++i)
+                {
+                    // increase in 1 KB steps
+                    try { socket.SendBufferSize += increase; }
+                    catch (SocketException) { break; }
+                }
+
+                Log.Info($"KcpServer: RecvBuf = {initialReceive}=>{socket.ReceiveBufferSize} ({socket.ReceiveBufferSize/initialReceive}x) SendBuf = {initialSend}=>{socket.SendBufferSize} ({socket.SendBufferSize/initialSend}x) increased to OS limits!");
+            }
+            // otherwise still log the defaults for info.
+            else Log.Info($"KcpServer: RecvBuf = {socket.ReceiveBufferSize} SendBuf = {socket.SendBufferSize}. If connections drop under heavy load, enable {nameof(MaximizeSendReceiveBuffersToOSLimit)} to increase it to OS limit. If they still drop, increase the OS limit.");
+        }
 
         public void Start(ushort port)
         {
@@ -117,10 +159,8 @@ namespace kcp2k
                 socket.Bind(new IPEndPoint(IPAddress.Any, port));
             }
 
-            // show socket buffer size.
-            // if connections drop under heavy load, increase to OS limit.
-            // if still not enough, increase the OS limit.
-            Log.Info($"KcpServer: RecvBuf = {socket.ReceiveBufferSize} SendBuf = {socket.SendBufferSize}. If connections drop under heavy load, increase to OS limit. If they still drop, increase the OS limit.");
+            // configure socket buffer size.
+            ConfigureSocketBufferSizes();
         }
 
         public void Send(int connectionId, ArraySegment<byte> segment, KcpChannel channel)

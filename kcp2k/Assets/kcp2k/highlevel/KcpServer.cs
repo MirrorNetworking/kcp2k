@@ -114,6 +114,11 @@ namespace kcp2k
                 socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                 socket.Bind(new IPEndPoint(IPAddress.Any, port));
             }
+
+            // show socket buffer size.
+            // if connections drop under heavy load, increase to OS limit.
+            // if still not enough, increase the OS limit.
+            Log.Info($"KcpServer: RecvBuf = {socket.ReceiveBufferSize} SendBuf = {socket.SendBufferSize}. If connections drop under heavy load, increase to OS limit. If they still drop, increase the OS limit.");
         }
 
         public void Send(int connectionId, ArraySegment<byte> segment, KcpChannel channel)

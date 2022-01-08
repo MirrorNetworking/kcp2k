@@ -50,6 +50,13 @@ namespace kcp2k
 
                 // create socket
                 socket = new Socket(remoteEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+
+                // show socket buffer size.
+                // if connections drop under heavy load, increase to OS limit.
+                // if still not enough, increase the OS limit.
+                Log.Info($"KcpClient: RecvBuf = {socket.ReceiveBufferSize} SendBuf = {socket.SendBufferSize}. If connections drop under heavy load, increase to OS limit. If they still drop, increase the OS limit.");
+
+                // connect
                 socket.Connect(remoteEndPoint);
 
                 // set up kcp

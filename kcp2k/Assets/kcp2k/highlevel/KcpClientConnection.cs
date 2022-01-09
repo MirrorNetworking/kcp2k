@@ -38,6 +38,25 @@ namespace kcp2k
         protected virtual int ReceiveFrom(byte[] buffer) =>
             socket.ReceiveFrom(buffer, ref remoteEndPoint);
 
+        // if connections drop under heavy load, increase to OS limit.
+        // if still not enough, increase the OS limit.
+        void ConfigureSocketBufferSizes(bool maximizeSendReceiveBuffersToOSLimit)
+        {
+            if (maximizeSendReceiveBuffersToOSLimit)
+            {
+                // log initial size for comparison.
+                // remember initial size for log comparison
+                int initialReceive = socket.ReceiveBufferSize;
+                int initialSend = socket.SendBufferSize;
+
+                socket.SetReceiveBufferToOSLimit();
+                socket.SetSendBufferToOSLimit();
+                Log.Info($"KcpClient: RecvBuf = {initialReceive}=>{socket.ReceiveBufferSize} ({socket.ReceiveBufferSize/initialReceive}x) SendBuf = {initialSend}=>{socket.SendBufferSize} ({socket.SendBufferSize/initialSend}x) increased to OS limits!");
+            }
+            // otherwise still log the defaults for info.
+            else Log.Info($"KcpClient: RecvBuf = {socket.ReceiveBufferSize} SendBuf = {socket.SendBufferSize}. If connections drop under heavy load, enable {nameof(maximizeSendReceiveBuffersToOSLimit)} to increase it to OS limit. If they still drop, increase the OS limit.");
+        }
+
         public void Connect(string host,
                             ushort port,
                             bool noDelay,
@@ -47,7 +66,8 @@ namespace kcp2k
                             uint sendWindowSize = Kcp.WND_SND,
                             uint receiveWindowSize = Kcp.WND_RCV,
                             int timeout = DEFAULT_TIMEOUT,
-                            uint maxRetransmits = Kcp.DEADLINK)
+                            uint maxRetransmits = Kcp.DEADLINK,
+                            bool maximizeSendReceiveBuffersToOSLimit = false)
         {
             Log.Info($"KcpClient: connect to {host}:{port}");
 
@@ -60,10 +80,8 @@ namespace kcp2k
                 // create socket
                 socket = new Socket(remoteEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
 
-                // show socket buffer size.
-                // if connections drop under heavy load, increase to OS limit.
-                // if still not enough, increase the OS limit.
-                Log.Info($"KcpClient: RecvBuf = {socket.ReceiveBufferSize} SendBuf = {socket.SendBufferSize}. If connections drop under heavy load, increase to OS limit. If they still drop, increase the OS limit.");
+                // configure buffer sizes
+                ConfigureSocketBufferSizes(maximizeSendReceiveBuffersToOSLimit);
 
                 // connect
                 socket.Connect(remoteEndPoint);

@@ -38,7 +38,16 @@ namespace kcp2k
         protected virtual int ReceiveFrom(byte[] buffer) =>
             socket.ReceiveFrom(buffer, ref remoteEndPoint);
 
-        public void Connect(string host, ushort port, bool noDelay, uint interval = Kcp.INTERVAL, int fastResend = 0, bool congestionWindow = true, uint sendWindowSize = Kcp.WND_SND, uint receiveWindowSize = Kcp.WND_RCV, int timeout = DEFAULT_TIMEOUT, uint maxRetransmits = Kcp.DEADLINK)
+        public void Connect(string host,
+                            ushort port,
+                            bool noDelay,
+                            uint interval = Kcp.INTERVAL,
+                            int fastResend = 0,
+                            bool congestionWindow = true,
+                            uint sendWindowSize = Kcp.WND_SND,
+                            uint receiveWindowSize = Kcp.WND_RCV,
+                            int timeout = DEFAULT_TIMEOUT,
+                            uint maxRetransmits = Kcp.DEADLINK)
         {
             Log.Info($"KcpClient: connect to {host}:{port}");
 

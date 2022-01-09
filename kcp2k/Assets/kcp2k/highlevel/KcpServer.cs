@@ -110,26 +110,8 @@ namespace kcp2k
                 int initialReceive = socket.ReceiveBufferSize;
                 int initialSend = socket.SendBufferSize;
 
-                // 100k attempts of 1 KB increases = default + 100 MB max
-                const int attempts = 100_000;
-                const int increase = 1024;
-
-                // setting a too large size throws a socket exception.
-                // so let's keep increasing until we encounter it.
-                for (int i = 0; i < attempts; ++i)
-                {
-                    // increase in 1 KB steps
-                    try { socket.ReceiveBufferSize += increase; }
-                    catch (SocketException) { break; }
-                }
-
-                for (int i = 0; i < attempts; ++i)
-                {
-                    // increase in 1 KB steps
-                    try { socket.SendBufferSize += increase; }
-                    catch (SocketException) { break; }
-                }
-
+                socket.SetReceiveBufferToOSLimit();
+                socket.SetSendBufferToOSLimit();
                 Log.Info($"KcpServer: RecvBuf = {initialReceive}=>{socket.ReceiveBufferSize} ({socket.ReceiveBufferSize/initialReceive}x) SendBuf = {initialSend}=>{socket.SendBufferSize} ({socket.SendBufferSize/initialSend}x) increased to OS limits!");
             }
             // otherwise still log the defaults for info.

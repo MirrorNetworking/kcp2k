@@ -161,6 +161,7 @@ namespace kcp2k
             }
         }
 
+        // expose the whole IPEndPoint, not just the IP address. some need it.
         public IPEndPoint GetClientEndPoint(int connectionId)
         {
             if (connections.TryGetValue(connectionId, out KcpServerConnection connection))

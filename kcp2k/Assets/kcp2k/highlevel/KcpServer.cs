@@ -161,13 +161,14 @@ namespace kcp2k
             }
         }
 
-        public string GetClientAddress(int connectionId)
+        // expose the whole IPEndPoint, not just the IP address. some need it.
+        public IPEndPoint GetClientEndPoint(int connectionId)
         {
             if (connections.TryGetValue(connectionId, out KcpServerConnection connection))
             {
-                return (connection.GetRemoteEndPoint() as IPEndPoint).Address.ToString();
+                return (connection.GetRemoteEndPoint() as IPEndPoint);
             }
-            return "";
+            return null;
         }
 
         // EndPoint & Receive functions can be overwritten for where-allocation:

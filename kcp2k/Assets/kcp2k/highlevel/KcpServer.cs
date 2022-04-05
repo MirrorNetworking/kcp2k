@@ -168,7 +168,6 @@ namespace kcp2k
             {
                 return (connection.GetRemoteEndPoint() as IPEndPoint);
             }
-         
             return null;
         }
 

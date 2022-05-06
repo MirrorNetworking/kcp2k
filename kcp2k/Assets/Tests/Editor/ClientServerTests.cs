@@ -791,9 +791,9 @@ namespace kcp2k.Tests
             int connectionId = ServerFirstConnectionId();
 
             if (server.DualMode)
-                Assert.That(server.GetClientAddress(connectionId), Is.EqualTo("::ffff:127.0.0.1"));
+                Assert.That(server.GetClientEndPoint(connectionId).Address.ToString(), Is.EqualTo("::ffff:127.0.0.1"));
             else
-                Assert.That(server.GetClientAddress(connectionId), Is.EqualTo("127.0.0.1"));
+                Assert.That(server.GetClientEndPoint(connectionId).Address.ToString(), Is.EqualTo("127.0.0.1"));
         }
 
         [Test]

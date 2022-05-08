@@ -21,7 +21,7 @@ namespace kcp2k
         public Action OnDisconnected;
         // error callback instead of logging.
         // allows libraries to show popups etc.
-        // (string instead of Exception for ease of use)
+        // (string instead of Exception for ease of use and to avoid user panic)
         public Action<string> OnError;
 
         // If we don't receive anything these many milliseconds

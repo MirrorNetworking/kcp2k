@@ -15,7 +15,7 @@ namespace kcp2k
         public Action<int> OnDisconnected;
         // error callback instead of logging.
         // allows libraries to show popups etc.
-        // (string instead of Exception for ease of use)
+        // (string instead of Exception for ease of use and to avoid user panic)
         public Action<int, string> OnError;
 
         // socket configuration

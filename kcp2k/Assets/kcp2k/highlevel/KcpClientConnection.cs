@@ -95,7 +95,12 @@ namespace kcp2k
                 RawReceive();
             }
             // otherwise call OnDisconnected to let the user know.
-            else OnDisconnected();
+            else
+            {
+                // pass error to user callback. no need to log it manually.
+                OnError($"Failed to resolve host: {host}");
+                OnDisconnected();
+            }
         }
 
         // call from transport update
@@ -119,7 +124,8 @@ namespace kcp2k
                         }
                         else
                         {
-                            Log.Error($"KCP ClientConnection: message of size {msgLength} does not fit into buffer of size {rawReceiveBuffer.Length}. The excess was silently dropped. Disconnecting.");
+                            // pass error to user callback. no need to log it manually.
+                            OnError($"KCP ClientConnection: message of size {msgLength} does not fit into buffer of size {rawReceiveBuffer.Length}. The excess was silently dropped. Disconnecting.");
                             Disconnect();
                         }
                     }

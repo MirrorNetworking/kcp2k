@@ -12,9 +12,9 @@ namespace kcp2k
         IPEndPointNonAlloc reusableClientEP;
 
         public KcpServerNonAlloc(Action<int> OnConnected,
-                                 Action<int, ArraySegment<byte>,
-                                 KcpChannel> OnData,
+                                 Action<int, ArraySegment<byte>, KcpChannel> OnData,
                                  Action<int> OnDisconnected,
+                                 Action<int, string> OnError,
                                  bool DualMode,
                                  bool NoDelay,
                                  uint Interval,
@@ -28,6 +28,7 @@ namespace kcp2k
             : base(OnConnected,
                    OnData,
                    OnDisconnected,
+                   OnError,
                    DualMode,
                    NoDelay,
                    Interval,

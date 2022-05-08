@@ -12,7 +12,8 @@ namespace kcp2k.Examples
         public KcpClient client = new KcpClient(
             () => {},
             (message, channel) => Debug.Log($"KCP: OnClientDataReceived({BitConverter.ToString(message.Array, message.Offset, message.Count)} @ {channel})"),
-            () => {}
+            () => {},
+            Debug.LogWarning
         );
 
         // MonoBehaviour ///////////////////////////////////////////////////////

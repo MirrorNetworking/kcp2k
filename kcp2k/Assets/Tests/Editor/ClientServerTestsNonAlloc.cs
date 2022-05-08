@@ -1,4 +1,6 @@
 // where-allocation version for client server tests
+using UnityEngine;
+
 namespace kcp2k.Tests
 {
     public class ClientServerTestsNonAlloc : ClientServerTests
@@ -9,6 +11,7 @@ namespace kcp2k.Tests
                 (connectionId) => {},
                 ServerOnData,
                 (connectionId) => {},
+                (connectionId, error) => Debug.LogWarning($"connId={connectionId}: {error}"),
                 DualMode,
                 NoDelay,
                 Interval,
@@ -28,7 +31,8 @@ namespace kcp2k.Tests
             client = new KcpClientNonAlloc(
                 () => {},
                 ClientOnData,
-                () => {}
+                () => {},
+                Debug.LogWarning
             );
         }
     }

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using NUnit.Framework;
+using UnityEngine;
+
 // DON'T import UnityEngine. kcp2k should be platform independent.
 
 namespace kcp2k.Tests
@@ -85,6 +87,7 @@ namespace kcp2k.Tests
                 (connectionId) => {},
                 ServerOnData,
                 (connectionId) => {},
+                (connectionId, error) => Debug.LogWarning($"connId={connectionId}: {error}"),
                 DualMode,
                 NoDelay,
                 Interval,
@@ -105,7 +108,8 @@ namespace kcp2k.Tests
             client = new KcpClient(
                 () => {},
                 ClientOnData,
-                () => {}
+                () => {},
+                Debug.LogWarning
             );
         }
 

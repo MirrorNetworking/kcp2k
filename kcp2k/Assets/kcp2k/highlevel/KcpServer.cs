@@ -309,7 +309,13 @@ namespace kcp2k
                     }
                 }
                 // this is fine, the socket might have been closed in the other end
-                catch (SocketException) {}
+                catch (SocketException ex)
+                {
+                    // the other end closing the connection is not an 'error'.
+                    // but connections should never just end silently.
+                    // at least log a message for easier debugging.
+                    Log.Info($"KCP ClientConnection: looks like the other end has closed the connection. This is fine: {ex}");
+                }
             }
 
             // process inputs for all server connections

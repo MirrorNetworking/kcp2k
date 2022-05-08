@@ -132,6 +132,7 @@ namespace kcp2k
                 // but connections should never just end silently.
                 // at least log a message for easier debugging.
                 Log.Info($"KCP ClientConnection: looks like the other end has closed the connection. This is fine: {ex}");
+                Disconnect();
             }
         }
 

@@ -282,7 +282,7 @@ namespace kcp2k
 
                                 // finally, call mirror OnConnected event
                                 Log.Info($"KCP: OnServerConnected({connectionId})");
-                                OnConnected.Invoke(connectionId);
+                                OnConnected(connectionId);
                             };
 
                             // now input the message & process received ones

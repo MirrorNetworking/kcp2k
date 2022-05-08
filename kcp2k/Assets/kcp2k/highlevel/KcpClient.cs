@@ -53,19 +53,19 @@ namespace kcp2k
             {
                 Log.Info($"KCP: OnClientConnected");
                 connected = true;
-                OnConnected.Invoke();
+                OnConnected();
             };
             connection.OnData = (message, channel) =>
             {
                 //Log.Debug($"KCP: OnClientData({BitConverter.ToString(message.Array, message.Offset, message.Count)})");
-                OnData.Invoke(message, channel);
+                OnData(message, channel);
             };
             connection.OnDisconnected = () =>
             {
                 Log.Info($"KCP: OnClientDisconnected");
                 connected = false;
                 connection = null;
-                OnDisconnected.Invoke();
+                OnDisconnected();
             };
 
             // connect

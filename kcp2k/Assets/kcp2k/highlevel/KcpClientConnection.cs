@@ -21,9 +21,9 @@ namespace kcp2k
                 addresses = Dns.GetHostAddresses(hostname);
                 return addresses.Length >= 1;
             }
-            catch (SocketException)
+            catch (SocketException exception)
             {
-                Log.Info($"Failed to resolve host: {hostname}");
+                Log.Info($"Failed to resolve host: {hostname} reason: {exception}");
                 addresses = null;
                 return false;
             }

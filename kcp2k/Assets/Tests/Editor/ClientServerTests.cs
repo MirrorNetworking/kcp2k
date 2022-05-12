@@ -87,7 +87,7 @@ namespace kcp2k.Tests
                 (connectionId) => {},
                 ServerOnData,
                 (connectionId) => {},
-                (connectionId, error) => Debug.LogWarning($"connId={connectionId}: {error}"),
+                (connectionId, error, reason) => Debug.LogWarning($"connId={connectionId}: {error}, {reason}"),
                 DualMode,
                 NoDelay,
                 Interval,
@@ -109,7 +109,7 @@ namespace kcp2k.Tests
                 () => {},
                 ClientOnData,
                 () => {},
-                Debug.LogWarning
+                (error, reason) => Debug.LogWarning($"{error}, {reason}")
             );
         }
 

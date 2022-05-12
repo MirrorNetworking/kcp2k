@@ -14,7 +14,7 @@ namespace kcp2k.Examples
             (connectionId) => {},
             (connectionId, message, channel) => Debug.Log($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)} @ {channel})"),
             (connectionId) => {},
-            (connectionId, error) => Debug.LogWarning($"connId={connectionId}: {error}"),
+            (connectionId, error, reason) => Debug.LogWarning($"KCP: OnServerError({connectionId}, {error}, {reason}"),
             false,
             true,
             10

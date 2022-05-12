@@ -13,7 +13,7 @@ namespace kcp2k.Examples
             () => {},
             (message, channel) => Debug.Log($"KCP: OnClientDataReceived({BitConverter.ToString(message.Array, message.Offset, message.Count)} @ {channel})"),
             () => {},
-            Debug.LogWarning
+            (error, reason) => Debug.LogWarning($"KCP: OnClientError({error}, {reason}")
         );
 
         // MonoBehaviour ///////////////////////////////////////////////////////

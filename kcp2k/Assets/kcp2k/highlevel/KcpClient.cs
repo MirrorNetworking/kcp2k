@@ -19,7 +19,11 @@ namespace kcp2k
         public KcpClientConnection connection;
         public bool connected;
 
-        public KcpClient(Action OnConnected, Action<ArraySegment<byte>, KcpChannel> OnData, Action OnDisconnected, Action<string> OnError)
+        public KcpClient(Action OnConnected,
+                         Action<ArraySegment<byte>,
+                         KcpChannel> OnData,
+                         Action OnDisconnected,
+                         Action<string> OnError)
         {
             this.OnConnected = OnConnected;
             this.OnData = OnData;

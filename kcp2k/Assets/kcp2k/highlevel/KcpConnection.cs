@@ -634,8 +634,13 @@ namespace kcp2k
                 return;
 
             // send a disconnect message
-            if (socket.Connected)
-            {
+            //
+            // previously we checked socket.Connected here before SendDisconnect.
+            // but this only worked in Unity's mono version.
+            // in netcore, socket.Connected can't be used for UDP sockets.
+            // as it should, because there's no actual connection in UDP.
+            //if (socket.Connected)
+            //{
                 try
                 {
                     SendDisconnect();
@@ -654,7 +659,7 @@ namespace kcp2k
                     // the clients will eventually timeout and realize they
                     // were disconnected
                 }
-            }
+            //}
 
             // set as Disconnected, call event
             Log.Info("KCP Connection: Disconnected.");

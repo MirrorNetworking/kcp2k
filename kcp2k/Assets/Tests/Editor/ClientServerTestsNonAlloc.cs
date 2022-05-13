@@ -1,5 +1,6 @@
 // where-allocation version for client server tests
-using UnityEngine;
+
+// DON'T import UnityEngine. kcp2k should be platform independent.
 
 namespace kcp2k.Tests
 {
@@ -11,7 +12,7 @@ namespace kcp2k.Tests
                 (connectionId) => {},
                 ServerOnData,
                 (connectionId) => {},
-                (connectionId, error, reason) => Debug.LogWarning($"connId={connectionId}: {error}, {reason}"),
+                (connectionId, error, reason) => Log.Warning($"connId={connectionId}: {error}, {reason}"),
                 DualMode,
                 NoDelay,
                 Interval,
@@ -32,7 +33,7 @@ namespace kcp2k.Tests
                 () => {},
                 ClientOnData,
                 () => {},
-                (error, reason) => Debug.LogWarning($"{error}, {reason}")
+                (error, reason) => Log.Warning($"{error}, {reason}")
             );
         }
     }

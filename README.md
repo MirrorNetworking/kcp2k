@@ -9,3 +9,8 @@ C# [kcp](https://github.com/skywind3000/kcp) for Unity.
 * Optional [where-allocation](https://github.com/vis2k/where-allocation) KcpClient/Server/Connection **NonAlloc** versions
 
 Pull requests for bug fixes & tests welcome.
+
+# Unity
+kcp2k works perfectly in netcore.
+where-allocation only works with Unity's mono sockets.
+In order to run the nonalloc tests, kcp2k remains a Unity project until Unity moves to netcore.

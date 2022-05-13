@@ -578,12 +578,12 @@ namespace kcp2k
                 if (sent < 0)
                 {
                     // GetType() shows Server/ClientConn instead of just Connection.
-                    Log.Warning($"{GetType()}: Send failed with error={sent} for content with length={content.Count}");
+                    OnError(ErrorCode.InvalidSend, $"{GetType()}: Send failed with error={sent} for content with length={content.Count}");
                 }
             }
             // otherwise content is larger than MaxMessageSize. let user know!
-                // GetType() shows Server/ClientConn instead of just Connection.
-            else Log.Error($"{GetType()}: Failed to send reliable message of size {content.Count} because it's larger than ReliableMaxMessageSize={ReliableMaxMessageSize(kcp.rcv_wnd)}");
+            // GetType() shows Server/ClientConn instead of just Connection.
+            else OnError(ErrorCode.InvalidSend, $"{GetType()}: Failed to send reliable message of size {content.Count} because it's larger than ReliableMaxMessageSize={ReliableMaxMessageSize(kcp.rcv_wnd)}");
         }
 
         void SendUnreliable(ArraySegment<byte> message)

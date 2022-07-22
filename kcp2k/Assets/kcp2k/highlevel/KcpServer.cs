@@ -130,6 +130,7 @@ namespace kcp2k
             if (socket != null)
             {
                 Log.Warning("KCP: server already started!");
+                return;
             }
 
             // listen

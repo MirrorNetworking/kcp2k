@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Net.Sockets;
 
@@ -5,13 +6,17 @@ namespace kcp2k
 {
     public class KcpClientConnection : KcpConnection
     {
+        // IO
+        protected Socket socket;
+        protected EndPoint remoteEndPoint;
+        public EndPoint GetRemoteEndPoint() => remoteEndPoint;
+
         // IMPORTANT: raw receive buffer always needs to be of 'MTU' size, even
         //            if MaxMessageSize is larger. kcp always sends in MTU
         //            segments and having a buffer smaller than MTU would
         //            silently drop excess data.
         //            => we need the MTU to fit channel + message!
         readonly byte[] rawReceiveBuffer = new byte[Kcp.MTU_DEF];
-
 
         // EndPoint & Receive functions can be overwritten for where-allocation:
         // https://github.com/vis2k/where-allocation
@@ -56,7 +61,7 @@ namespace kcp2k
                 socket.Connect(remoteEndPoint);
 
                 // set up kcp
-                SetupKcp(noDelay, interval, fastResend, congestionWindow, sendWindowSize, receiveWindowSize, timeout, maxRetransmits);
+                SetupKcp(RawSend, noDelay, interval, fastResend, congestionWindow, sendWindowSize, receiveWindowSize, timeout, maxRetransmits);
 
                 // client should send handshake to server as very first message
                 SendHandshake();
@@ -116,15 +121,15 @@ namespace kcp2k
             }
         }
 
-        protected override void Dispose()
+        protected void Dispose()
         {
             socket.Close();
             socket = null;
         }
 
-        protected override void RawSend(byte[] data, int length)
+        protected virtual void RawSend(ArraySegment<byte> data)
         {
-            socket.Send(data, length, SocketFlags.None);
+            socket.Send(data.Array, data.Offset, data.Count, SocketFlags.None);
         }
     }
 }

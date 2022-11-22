@@ -1,5 +1,6 @@
 // where-allocation version of KcpServerConnection.
 // may not be wanted on all platforms, so it's an extra optional class.
+using System;
 using System.Net;
 using System.Net.Sockets;
 using WhereAllocation;
@@ -16,10 +17,10 @@ namespace kcp2k
             this.reusableSendEndPoint = reusableSendEndPoint;
         }
 
-        protected override void RawSend(byte[] data, int length)
+        protected override void RawSend(ArraySegment<byte> data)
         {
             // where-allocation nonalloc send
-            socket.SendTo_NonAlloc(data, 0, length, SocketFlags.None, reusableSendEndPoint);
+            socket.SendTo_NonAlloc(data.Array, data.Offset, data.Count, SocketFlags.None, reusableSendEndPoint);
         }
     }
 }

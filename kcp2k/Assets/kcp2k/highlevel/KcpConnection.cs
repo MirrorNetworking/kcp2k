@@ -1,6 +1,7 @@
+// implements timeouts, channels, auth, state, etc. around kcp.
+// still IO agnostic to work with udp, nonalloc, relays, native, etc.
 using System;
 using System.Diagnostics;
-using System.Net;
 using System.Net.Sockets;
 
 namespace kcp2k
@@ -9,9 +10,11 @@ namespace kcp2k
 
     public abstract class KcpConnection
     {
-        protected Socket socket;
-        protected EndPoint remoteEndPoint;
+        // kcp reliability algorithm
         internal Kcp kcp;
+
+        // IO agnostic
+        Action<ArraySegment<byte>> RawSend;
 
         // kcp can have several different states, let's use a state machine
         KcpState state = KcpState.Disconnected;
@@ -134,6 +137,7 @@ namespace kcp2k
         // => NoDelay, interval, wnd size are the most important configurations.
         //    let's force require the parameters so we don't forget it anywhere.
         protected void SetupKcp(
+            Action<ArraySegment<byte>> output,
             bool noDelay,
             uint interval = Kcp.INTERVAL,
             int fastResend = 0,
@@ -143,8 +147,11 @@ namespace kcp2k
             int timeout = DEFAULT_TIMEOUT,
             uint maxRetransmits = Kcp.DEADLINK)
         {
+            this.RawSend = output;
+
             // set up kcp over reliable channel (that's what kcp is for)
             kcp = new Kcp(0, RawSendReliable);
+
             // set nodelay.
             // note that kcp uses 'nocwnd' internally so we negate the parameter
             kcp.SetNoDelay(noDelay ? 1u : 0u, interval, fastResend, !congestionWindow);
@@ -405,6 +412,7 @@ namespace kcp2k
                     }
                 }
             }
+            // TODO KcpConnection is IO agnostic. move this to outside later.
             catch (SocketException exception)
             {
                 // this is ok, the connection was closed
@@ -453,6 +461,7 @@ namespace kcp2k
                     }
                 }
             }
+            // TODO KcpConnection is IO agnostic. move this to outside later.
             catch (SocketException exception)
             {
                 // this is ok, the connection was closed
@@ -557,16 +566,16 @@ namespace kcp2k
             }
         }
 
-        // raw send puts the data into the socket
-        protected abstract void RawSend(byte[] data, int length);
-
         // raw send called by kcp
         void RawSendReliable(byte[] data, int length)
         {
             // copy channel header, data into raw send buffer, then send
             rawSendBuffer[0] = (byte)KcpChannel.Reliable;
             Buffer.BlockCopy(data, 0, rawSendBuffer, 1, length);
-            RawSend(rawSendBuffer, length + 1);
+
+            // IO send
+            ArraySegment<byte> segment = new ArraySegment<byte>(rawSendBuffer, 0, length + 1);
+            RawSend(segment);
         }
 
         void SendReliable(KcpHeader header, ArraySegment<byte> content)
@@ -600,7 +609,10 @@ namespace kcp2k
                 // copy channel header, data into raw send buffer, then send
                 rawSendBuffer[0] = (byte)KcpChannel.Unreliable;
                 Buffer.BlockCopy(message.Array, message.Offset, rawSendBuffer, 1, message.Count);
-                RawSend(rawSendBuffer, message.Count + 1);
+
+                // IO send
+                ArraySegment<byte> segment = new ArraySegment<byte>(rawSendBuffer, 0, message.Count + 1);
+                RawSend(segment);
             }
             // otherwise content is larger than MaxMessageSize. let user know!
             // GetType() shows Server/ClientConn instead of just Connection.
@@ -653,8 +665,6 @@ namespace kcp2k
         // disconnect info needs to be delivered, so it goes over reliable
         void SendDisconnect() => SendReliable(KcpHeader.Disconnect, default);
 
-        protected virtual void Dispose() {}
-
         // disconnect this connection
         public void Disconnect()
         {
@@ -663,32 +673,25 @@ namespace kcp2k
                 return;
 
             // send a disconnect message
-            //
-            // previously we checked socket.Connected here before SendDisconnect.
-            // but this only worked in Unity's mono version.
-            // in netcore, socket.Connected can't be used for UDP sockets.
-            // as it should, because there's no actual connection in UDP.
-            //if (socket.Connected)
-            //{
-                try
-                {
-                    SendDisconnect();
-                    kcp.Flush();
-                }
-                catch (SocketException)
-                {
-                    // this is ok, the connection was already closed
-                }
-                catch (ObjectDisposedException)
-                {
-                    // this is normal when we stop the server
-                    // the socket is stopped so we can't send anything anymore
-                    // to the clients
+            try
+            {
+                SendDisconnect();
+                kcp.Flush();
+            }
+            // TODO KcpConnection is IO agnostic. move this to outside later.
+            catch (SocketException)
+            {
+                // this is ok, the connection was already closed
+            }
+            catch (ObjectDisposedException)
+            {
+                // this is normal when we stop the server
+                // the socket is stopped so we can't send anything anymore
+                // to the clients
 
-                    // the clients will eventually timeout and realize they
-                    // were disconnected
-                }
-            //}
+                // the clients will eventually timeout and realize they
+                // were disconnected
+            }
 
             // set as Disconnected, call event
             // GetType() shows Server/ClientConn instead of just Connection.
@@ -696,8 +699,5 @@ namespace kcp2k
             state = KcpState.Disconnected;
             OnDisconnected?.Invoke();
         }
-
-        // get remote endpoint
-        public EndPoint GetRemoteEndPoint() => remoteEndPoint;
     }
 }

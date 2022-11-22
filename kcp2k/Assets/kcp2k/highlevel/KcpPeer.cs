@@ -1,4 +1,6 @@
-// implements timeouts, channels, auth, state, etc. around kcp.
+// Kcp Peer, similar to UDP Peer but wrapped with reliability, channels,
+// timeouts, authentication, state, etc.
+//
 // still IO agnostic to work with udp, nonalloc, relays, native, etc.
 using System;
 using System.Diagnostics;
@@ -8,7 +10,7 @@ namespace kcp2k
 {
     enum KcpState { Connected, Authenticated, Disconnected }
 
-    public class KcpConnection
+    public class KcpPeer
     {
         // kcp reliability algorithm
         internal Kcp kcp;
@@ -91,7 +93,7 @@ namespace kcp2k
         byte[] kcpSendBuffer;// = new byte[1 + ReliableMaxMessageSize];
 
         // raw send buffer is exactly MTU.
-        byte[] rawSendBuffer = new byte[Kcp.MTU_DEF];
+        readonly byte[] rawSendBuffer = new byte[Kcp.MTU_DEF];
 
         // send a ping occasionally so we don't time out on the other end.
         // for example, creating a character in an MMO could easily take a

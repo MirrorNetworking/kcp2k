@@ -7,7 +7,7 @@ namespace kcp2k
     public class KcpServerConnection
     {
         // kcp
-        internal KcpConnection peer = new KcpConnection();
+        internal KcpPeer peer = new KcpPeer();
 
         // IO
         protected Socket socket;
@@ -16,7 +16,7 @@ namespace kcp2k
 
         // Constructor & Send functions can be overwritten for where-allocation:
         // https://github.com/vis2k/where-allocation
-        public KcpServerConnection(Socket socket, EndPoint remoteEndPoint, bool noDelay, uint interval = Kcp.INTERVAL, int fastResend = 0, bool congestionWindow = true, uint sendWindowSize = Kcp.WND_SND, uint receiveWindowSize = Kcp.WND_RCV, int timeout = KcpConnection.DEFAULT_TIMEOUT, uint maxRetransmits = Kcp.DEADLINK)
+        public KcpServerConnection(Socket socket, EndPoint remoteEndPoint, bool noDelay, uint interval = Kcp.INTERVAL, int fastResend = 0, bool congestionWindow = true, uint sendWindowSize = Kcp.WND_SND, uint receiveWindowSize = Kcp.WND_RCV, int timeout = KcpPeer.DEFAULT_TIMEOUT, uint maxRetransmits = Kcp.DEADLINK)
         {
             this.socket = socket;
             this.remoteEndPoint = remoteEndPoint;

@@ -44,7 +44,7 @@ namespace kcp2k
                             bool congestionWindow = true,
                             uint sendWindowSize = Kcp.WND_SND,
                             uint receiveWindowSize = Kcp.WND_RCV,
-                            int timeout = KcpConnection.DEFAULT_TIMEOUT,
+                            int timeout = KcpPeer.DEFAULT_TIMEOUT,
                             uint maxRetransmits = Kcp.DEADLINK,
                             bool maximizeSendReceiveBuffersToOSLimit = false)
         {

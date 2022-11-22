@@ -133,7 +133,15 @@ namespace kcp2k
         // => useful to start from a fresh state every time the client connects
         // => NoDelay, interval, wnd size are the most important configurations.
         //    let's force require the parameters so we don't forget it anywhere.
-        protected void SetupKcp(bool noDelay, uint interval = Kcp.INTERVAL, int fastResend = 0, bool congestionWindow = true, uint sendWindowSize = Kcp.WND_SND, uint receiveWindowSize = Kcp.WND_RCV, int timeout = DEFAULT_TIMEOUT, uint maxRetransmits = Kcp.DEADLINK)
+        protected void SetupKcp(
+            bool noDelay,
+            uint interval = Kcp.INTERVAL,
+            int fastResend = 0,
+            bool congestionWindow = true,
+            uint sendWindowSize = Kcp.WND_SND,
+            uint receiveWindowSize = Kcp.WND_RCV,
+            int timeout = DEFAULT_TIMEOUT,
+            uint maxRetransmits = Kcp.DEADLINK)
         {
             // set up kcp over reliable channel (that's what kcp is for)
             kcp = new Kcp(0, RawSendReliable);

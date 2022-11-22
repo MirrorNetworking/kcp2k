@@ -610,7 +610,7 @@ namespace kcp2k
         public void SendHandshake()
         {
                 // GetType() shows Server/ClientConn instead of just Connection.
-            Log.Info("${GetType()}: sending Handshake to other end!");
+            Log.Info($"{GetType()}: sending Handshake to other end!");
             SendReliable(KcpHeader.Handshake, default);
         }
 

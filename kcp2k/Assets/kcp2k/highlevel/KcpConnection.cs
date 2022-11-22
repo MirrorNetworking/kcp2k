@@ -62,7 +62,8 @@ namespace kcp2k
         //               for batching.
         //            => sending UNRELIABLE max message size most of the time is
         //               best for performance (use that one for batching!)
-        static int ReliableMaxMessageSize_Unconstrained(uint rcv_wnd) => (Kcp.MTU_DEF - Kcp.OVERHEAD - CHANNEL_HEADER_SIZE) * ((int)rcv_wnd - 1) - 1;
+        static int ReliableMaxMessageSize_Unconstrained(uint rcv_wnd) =>
+            (Kcp.MTU_DEF - Kcp.OVERHEAD - CHANNEL_HEADER_SIZE) * ((int)rcv_wnd - 1) - 1;
 
         // kcp encodes 'frg' as 1 byte.
         // max message size can only ever allow up to 255 fragments.

@@ -29,7 +29,7 @@ namespace kcp2k.Tests
 
         protected override void CreateClient()
         {
-            client = new KcpClientNonAlloc(
+            client = new KcpClient(
                 () => {},
                 ClientOnData,
                 () => {},

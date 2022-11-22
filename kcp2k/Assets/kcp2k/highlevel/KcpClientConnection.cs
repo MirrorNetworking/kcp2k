@@ -19,9 +19,6 @@ namespace kcp2k
         protected virtual void CreateRemoteEndPoint(IPAddress[] addresses, ushort port) =>
             remoteEndPoint = new IPEndPoint(addresses[0], port);
 
-        protected virtual int ReceiveFrom(byte[] buffer) =>
-            socket.ReceiveFrom(buffer, ref remoteEndPoint);
-
         // if connections drop under heavy load, increase to OS limit.
         // if still not enough, increase the OS limit.
         void ConfigureSocketBufferSizes(bool maximizeSendReceiveBuffersToOSLimit)
@@ -96,7 +93,12 @@ namespace kcp2k
                 {
                     while (socket.Poll(0, SelectMode.SelectRead))
                     {
-                        int msgLength = ReceiveFrom(rawReceiveBuffer);
+                        // ReceiveFrom allocates.
+                        // use Connect() to bind the UDP socket to the end point.
+                        // then we can use Receive() instead.
+                        // socket.ReceiveFrom(buffer, ref remoteEndPoint);
+                        int msgLength = socket.Receive(rawReceiveBuffer);
+
                         // IMPORTANT: detect if buffer was too small for the
                         //            received msgLength. otherwise the excess
                         //            data would be silently lost.

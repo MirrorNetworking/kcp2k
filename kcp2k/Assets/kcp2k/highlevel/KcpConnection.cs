@@ -125,11 +125,8 @@ namespace kcp2k
         //   => 43.75KB * 1000 / INTERVAL(10) = 4375KB/s
         //
         // returns bytes/second!
-        public uint MaxSendRate =>
-            kcp.snd_wnd * kcp.mtu * 1000 / kcp.interval;
-
-        public uint MaxReceiveRate =>
-            kcp.rcv_wnd * kcp.mtu * 1000 / kcp.interval;
+        public uint MaxSendRate    => kcp.snd_wnd * kcp.mtu * 1000 / kcp.interval;
+        public uint MaxReceiveRate => kcp.rcv_wnd * kcp.mtu * 1000 / kcp.interval;
 
         // SetupKcp creates and configures a new KCP instance.
         // => useful to start from a fresh state every time the client connects

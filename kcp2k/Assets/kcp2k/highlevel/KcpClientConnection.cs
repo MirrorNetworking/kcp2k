@@ -11,8 +11,7 @@ namespace kcp2k
 
         // IO
         protected Socket socket;
-        protected EndPoint remoteEndPoint;
-        public EndPoint GetRemoteEndPoint() => remoteEndPoint;
+        public EndPoint remoteEndPoint;
 
         // IMPORTANT: raw receive buffer always needs to be of 'MTU' size, even
         //            if MaxMessageSize is larger. kcp always sends in MTU

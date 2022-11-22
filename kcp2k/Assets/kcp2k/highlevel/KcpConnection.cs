@@ -8,7 +8,7 @@ namespace kcp2k
 {
     enum KcpState { Connected, Authenticated, Disconnected }
 
-    public abstract class KcpConnection
+    public class KcpConnection
     {
         // kcp reliability algorithm
         internal Kcp kcp;
@@ -136,7 +136,8 @@ namespace kcp2k
         // => useful to start from a fresh state every time the client connects
         // => NoDelay, interval, wnd size are the most important configurations.
         //    let's force require the parameters so we don't forget it anywhere.
-        protected void SetupKcp(
+        // TODO make constructor soon
+        public void SetupKcp(
             Action<ArraySegment<byte>> output,
             bool noDelay,
             uint interval = Kcp.INTERVAL,

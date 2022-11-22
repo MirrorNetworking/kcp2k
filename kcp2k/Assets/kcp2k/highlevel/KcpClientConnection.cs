@@ -12,22 +12,6 @@ namespace kcp2k
         //            => we need the MTU to fit channel + message!
         readonly byte[] rawReceiveBuffer = new byte[Kcp.MTU_DEF];
 
-        // helper function to resolve host to IPAddress
-        public static bool ResolveHostname(string hostname, out IPAddress[] addresses)
-        {
-            try
-            {
-                // NOTE: dns lookup is blocking. this can take a second.
-                addresses = Dns.GetHostAddresses(hostname);
-                return addresses.Length >= 1;
-            }
-            catch (SocketException exception)
-            {
-                Log.Info($"Failed to resolve host: {hostname} reason: {exception}");
-                addresses = null;
-                return false;
-            }
-        }
 
         // EndPoint & Receive functions can be overwritten for where-allocation:
         // https://github.com/vis2k/where-allocation
@@ -72,7 +56,7 @@ namespace kcp2k
             Log.Info($"KcpClient: connect to {host}:{port}");
 
             // try resolve host name
-            if (ResolveHostname(host, out IPAddress[] addresses))
+            if (Common.ResolveHostname(host, out IPAddress[] addresses))
             {
                 // create remote endpoint
                 CreateRemoteEndPoint(addresses, port);

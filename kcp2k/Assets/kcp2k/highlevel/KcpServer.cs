@@ -143,7 +143,7 @@ namespace kcp2k
         {
             if (connections.TryGetValue(connectionId, out KcpServerConnection connection))
             {
-                connection.SendData(segment, channel);
+                connection.peer.SendData(segment, channel);
             }
         }
 
@@ -151,7 +151,7 @@ namespace kcp2k
         {
             if (connections.TryGetValue(connectionId, out KcpServerConnection connection))
             {
-                connection.Disconnect();
+                connection.peer.Disconnect();
             }
         }
 
@@ -236,13 +236,13 @@ namespace kcp2k
                             // for now, this is fine.
 
                             // setup authenticated event that also adds to connections
-                            connection.OnAuthenticated = () =>
+                            connection.peer.OnAuthenticated = () =>
                             {
                                 // only send handshake to client AFTER we received his
                                 // handshake in OnAuthenticated.
                                 // we don't want to reply to random internet messages
                                 // with handshakes each time.
-                                connection.SendHandshake();
+                                connection.peer.SendHandshake();
 
                                 // add to connections dict after being authenticated.
                                 connections.Add(connectionId, connection);
@@ -254,7 +254,7 @@ namespace kcp2k
                                 // internet.
 
                                 // setup data event
-                                connection.OnData = (message, channel) =>
+                                connection.peer.OnData = (message, channel) =>
                                 {
                                     // call mirror event
                                     //Log.Info($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)})");
@@ -262,7 +262,7 @@ namespace kcp2k
                                 };
 
                                 // setup disconnected event
-                                connection.OnDisconnected = () =>
+                                connection.peer.OnDisconnected = () =>
                                 {
                                     // flag for removal
                                     // (can't remove directly because connection is updated
@@ -275,7 +275,7 @@ namespace kcp2k
                                 };
 
                                 // setup error event
-                                connection.OnError = (error, reason) =>
+                                connection.peer.OnError = (error, reason) =>
                                 {
                                     OnError(connectionId, error, reason);
                                 };
@@ -289,8 +289,8 @@ namespace kcp2k
                             // connected event was set up.
                             // tick will process the first message and adds the
                             // connection if it was the handshake.
-                            connection.RawInput(rawReceiveBuffer, msgLength);
-                            connection.TickIncoming();
+                            connection.peer.RawInput(rawReceiveBuffer, msgLength);
+                            connection.peer.TickIncoming();
 
                             // again, do not add to connections.
                             // if the first message wasn't the kcp handshake then
@@ -299,7 +299,7 @@ namespace kcp2k
                         // existing connection: simply input the message into kcp
                         else
                         {
-                            connection.RawInput(rawReceiveBuffer, msgLength);
+                            connection.peer.RawInput(rawReceiveBuffer, msgLength);
                         }
                     }
                     else
@@ -322,7 +322,7 @@ namespace kcp2k
             // (even if we didn't receive anything. need to tick ping etc.)
             foreach (KcpServerConnection connection in connections.Values)
             {
-                connection.TickIncoming();
+                connection.peer.TickIncoming();
             }
 
             // remove disconnected connections
@@ -341,7 +341,7 @@ namespace kcp2k
             // flush all server connections
             foreach (KcpServerConnection connection in connections.Values)
             {
-                connection.TickOutgoing();
+                connection.peer.TickOutgoing();
             }
         }
 

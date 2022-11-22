@@ -878,7 +878,7 @@ namespace kcp2k.Tests
             int connectionId = ServerFirstConnectionId();
 
             // fake dead_link by setting kcp.state to -1
-            server.connections[connectionId].kcp.state = -1;
+            server.connections[connectionId].peer.kcp.state = -1;
 
             // now update
 #if UNITY_2018_3_OR_NEWER

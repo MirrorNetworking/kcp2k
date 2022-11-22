@@ -291,7 +291,7 @@ namespace kcp2k
                         // we were waiting for a handshake.
                         // it proves that the other end speaks our protocol.
                         // GetType() shows Server/ClientConn instead of just Connection.
-                        Log.Info("${GetType()}: received handshake");
+                        Log.Info($"{GetType()}: received handshake");
                         state = KcpState.Authenticated;
                         OnAuthenticated?.Invoke();
                         break;

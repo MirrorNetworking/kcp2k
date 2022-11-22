@@ -58,25 +58,25 @@ namespace kcp2k
             connection = CreateConnection();
 
             // setup events
-            connection.OnAuthenticated = () =>
+            connection.peer.OnAuthenticated = () =>
             {
                 Log.Info($"KCP: OnClientConnected");
                 connected = true;
                 OnConnected();
             };
-            connection.OnData = (message, channel) =>
+            connection.peer.OnData = (message, channel) =>
             {
                 //Log.Debug($"KCP: OnClientData({BitConverter.ToString(message.Array, message.Offset, message.Count)})");
                 OnData(message, channel);
             };
-            connection.OnDisconnected = () =>
+            connection.peer.OnDisconnected = () =>
             {
                 Log.Info($"KCP: OnClientDisconnected");
                 connected = false;
                 connection = null;
                 OnDisconnected();
             };
-            connection.OnError = (error, reason) =>
+            connection.peer.OnError = (error, reason) =>
             {
                 OnError(error, reason);
             };
@@ -99,7 +99,7 @@ namespace kcp2k
         {
             if (connected)
             {
-                connection.SendData(segment, channel);
+                connection.peer.SendData(segment, channel);
             }
             else Log.Warning("KCP: can't send because client not connected!");
         }
@@ -114,7 +114,7 @@ namespace kcp2k
                 // call Disconnect and let the connection handle it.
                 // DO NOT set it to null yet. it needs to be updated a few more
                 // times first. let the connection handle it!
-                connection?.Disconnect();
+                connection?.peer.Disconnect();
             }
         }
 
@@ -125,7 +125,7 @@ namespace kcp2k
             // (even if we didn't receive anything. need to tick ping etc.)
             // (connection is null if not active)
             connection?.RawReceive();
-            connection?.TickIncoming();
+            connection?.peer.TickIncoming();
         }
 
         // process outgoing messages. should be called after updating the world.
@@ -133,7 +133,7 @@ namespace kcp2k
         {
             // process outgoing
             // (connection is null if not active)
-            connection?.TickOutgoing();
+            connection?.peer.TickOutgoing();
         }
 
         // process incoming and outgoing for convenience

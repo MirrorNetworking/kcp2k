@@ -4,8 +4,11 @@ using System.Net.Sockets;
 
 namespace kcp2k
 {
-    public class KcpClientConnection : KcpConnection
+    public class KcpClientConnection
     {
+        // kcp
+        internal KcpConnection peer = new KcpConnection();
+
         // IO
         protected Socket socket;
         protected EndPoint remoteEndPoint;
@@ -32,7 +35,7 @@ namespace kcp2k
                             bool congestionWindow = true,
                             uint sendWindowSize = Kcp.WND_SND,
                             uint receiveWindowSize = Kcp.WND_RCV,
-                            int timeout = DEFAULT_TIMEOUT,
+                            int timeout = KcpConnection.DEFAULT_TIMEOUT,
                             uint maxRetransmits = Kcp.DEADLINK,
                             bool maximizeSendReceiveBuffersToOSLimit = false)
         {
@@ -61,10 +64,11 @@ namespace kcp2k
                 socket.Connect(remoteEndPoint);
 
                 // set up kcp
-                SetupKcp(RawSend, noDelay, interval, fastResend, congestionWindow, sendWindowSize, receiveWindowSize, timeout, maxRetransmits);
+                // TODO ctor
+                peer.SetupKcp(RawSend, noDelay, interval, fastResend, congestionWindow, sendWindowSize, receiveWindowSize, timeout, maxRetransmits);
 
                 // client should send handshake to server as very first message
-                SendHandshake();
+                peer.SendHandshake();
 
                 RawReceive();
             }
@@ -72,8 +76,8 @@ namespace kcp2k
             else
             {
                 // pass error to user callback. no need to log it manually.
-                OnError(ErrorCode.DnsResolve, $"Failed to resolve host: {host}");
-                OnDisconnected();
+                peer.OnError(ErrorCode.DnsResolve, $"Failed to resolve host: {host}");
+                peer.OnDisconnected();
             }
         }
 
@@ -99,13 +103,13 @@ namespace kcp2k
                         if (msgLength <= rawReceiveBuffer.Length)
                         {
                             //Log.Debug($"KCP: client raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
-                            RawInput(rawReceiveBuffer, msgLength);
+                            peer.RawInput(rawReceiveBuffer, msgLength);
                         }
                         else
                         {
                             // pass error to user callback. no need to log it manually.
-                            OnError(ErrorCode.InvalidReceive, $"KCP ClientConnection: message of size {msgLength} does not fit into buffer of size {rawReceiveBuffer.Length}. The excess was silently dropped. Disconnecting.");
-                            Disconnect();
+                            peer.OnError(ErrorCode.InvalidReceive, $"KCP ClientConnection: message of size {msgLength} does not fit into buffer of size {rawReceiveBuffer.Length}. The excess was silently dropped. Disconnecting.");
+                            peer.Disconnect();
                         }
                     }
                 }
@@ -117,7 +121,7 @@ namespace kcp2k
                 // but connections should never just end silently.
                 // at least log a message for easier debugging.
                 Log.Info($"KCP ClientConnection: looks like the other end has closed the connection. This is fine: {ex}");
-                Disconnect();
+                peer.Disconnect();
             }
         }
 

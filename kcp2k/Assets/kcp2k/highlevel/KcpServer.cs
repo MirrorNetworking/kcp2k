@@ -160,7 +160,7 @@ namespace kcp2k
         {
             if (connections.TryGetValue(connectionId, out KcpServerConnection connection))
             {
-                return (connection.GetRemoteEndPoint() as IPEndPoint);
+                return connection.remoteEndPoint as IPEndPoint;
             }
             return null;
         }

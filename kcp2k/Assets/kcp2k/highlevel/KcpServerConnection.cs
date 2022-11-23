@@ -11,8 +11,7 @@ namespace kcp2k
         internal readonly KcpPeer peer;
 
         // IO
-        protected EndPoint remoteEndPoint;
-        public EndPoint GetRemoteEndPoint() => remoteEndPoint; // TODO simplify
+        public EndPoint remoteEndPoint;
 
         // Constructor can be overwritten for where-allocation:
         // https://github.com/vis2k/where-allocation

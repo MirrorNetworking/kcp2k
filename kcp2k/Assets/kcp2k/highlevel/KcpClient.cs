@@ -104,10 +104,8 @@ namespace kcp2k
                 return;
             }
 
-            // create remote endpoint
-            remoteEndPoint = new IPEndPoint(addresses[0], port);
-
             // create socket
+            remoteEndPoint = new IPEndPoint(addresses[0], port);
             socket = new Socket(remoteEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
 
             // configure buffer sizes:
@@ -120,7 +118,7 @@ namespace kcp2k
             // otherwise still log the defaults for info.
             else Log.Info($"KcpClient: RecvBuf = {socket.ReceiveBufferSize} SendBuf = {socket.SendBufferSize}. If connections drop under heavy load, enable {nameof(maximizeSendReceiveBuffersToOSLimit)} to increase it to OS limit. If they still drop, increase the OS limit.");
 
-            // connect
+            // bind to endpoint so we can use send/recv instead of sendto/recvfrom.
             socket.Connect(remoteEndPoint);
 
             // client should send handshake to server as very first message

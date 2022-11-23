@@ -166,9 +166,10 @@ namespace kcp2k
             return null;
         }
 
-        // EndPoint & Receive functions can be overwritten for where-allocation:
+        // io - input.
+        // virtual so it may be modified for relays, nonalloc workaround, etc.
         // https://github.com/vis2k/where-allocation
-        protected virtual int ReceiveFrom(byte[] buffer, out int connectionHash)
+        protected virtual int RawReceive(byte[] buffer, out int connectionHash)
         {
             // NOTE: ReceiveFrom allocates.
             //   we pass our IPEndPoint to ReceiveFrom.
@@ -190,7 +191,8 @@ namespace kcp2k
             return read;
         }
 
-        // send byte[] to endpoint
+        // io - out.
+        // virtual so it may be modified for relays, nonalloc workaround, etc.
         protected virtual void RawSend(ArraySegment<byte> data, EndPoint remoteEndPoint)
         {
             socket.SendTo(data.Array, data.Offset, data.Count, SocketFlags.None, remoteEndPoint);
@@ -216,7 +218,7 @@ namespace kcp2k
                 try
                 {
                     // receive
-                    int msgLength = ReceiveFrom(rawReceiveBuffer, out int connectionId);
+                    int msgLength = RawReceive(rawReceiveBuffer, out int connectionId);
                     //Log.Info($"KCP: server raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
 
                     // IMPORTANT: detect if buffer was too small for the received

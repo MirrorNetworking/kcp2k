@@ -85,6 +85,7 @@ namespace kcp2k
                 Log.Info($"KCP: OnClientDisconnected");
                 connected = false;
                 peer = null;
+                socket?.Close();
                 socket = null;
                 remoteEndPoint = null;
                 OnDisconnected();
@@ -230,13 +231,6 @@ namespace kcp2k
         {
             TickIncoming();
             TickOutgoing();
-        }
-
-        // TODO call this
-        protected void Dispose()
-        {
-            socket.Close();
-            socket = null;
         }
     }
 }

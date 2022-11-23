@@ -65,7 +65,9 @@ namespace kcp2k
             }
 
             // create fresh peer for each new session
+            // TODO SetupKcp needs to be ctor
             peer = new KcpPeer();
+            peer.SetupKcp(RawSend, noDelay, interval, fastResend, congestionWindow, sendWindowSize, receiveWindowSize, timeout, maxRetransmits);
 
             // setup events
             peer.OnAuthenticated = () =>
@@ -122,10 +124,6 @@ namespace kcp2k
 
             // connect
             socket.Connect(remoteEndPoint);
-
-            // set up kcp
-            // TODO ctor
-            peer.SetupKcp(RawSend, noDelay, interval, fastResend, congestionWindow, sendWindowSize, receiveWindowSize, timeout, maxRetransmits);
 
             // client should send handshake to server as very first message
             peer.SendHandshake();

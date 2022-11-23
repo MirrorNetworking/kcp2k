@@ -127,8 +127,9 @@ namespace kcp2k
             RawReceive();
         }
 
-        // io - input
-        protected void RawReceive()
+        // io - input.
+        // virtual so it may be modified for relays, etc.
+        protected virtual void RawReceive()
         {
             if (socket == null) return;
 
@@ -157,7 +158,8 @@ namespace kcp2k
             }
         }
 
-        // io - output
+        // io - output.
+        // virtual so it may be modified for relays, etc.
         protected virtual void RawSend(ArraySegment<byte> data)
         {
             socket.Send(data.Array, data.Offset, data.Count, SocketFlags.None);

@@ -6,11 +6,8 @@ namespace kcp2k
 {
     public class KcpServerConnection
     {
-        // kcp
-        internal readonly KcpPeer peer;
-
-        // IO
-        public EndPoint remoteEndPoint;
+        public readonly KcpPeer peer;
+        public readonly EndPoint remoteEndPoint;
 
         public KcpServerConnection(KcpPeer peer, EndPoint remoteEndPoint)
         {

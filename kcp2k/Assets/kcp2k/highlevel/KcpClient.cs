@@ -31,11 +31,6 @@ namespace kcp2k
             this.OnError = OnError;
         }
 
-        // CreateConnection can be overwritten for where-allocation:
-        // https://github.com/vis2k/where-allocation
-        protected virtual KcpClientConnection CreateConnection() =>
-            new KcpClientConnection();
-
         public void Connect(string address,
                             ushort port,
                             bool noDelay,
@@ -55,7 +50,7 @@ namespace kcp2k
             }
 
             // create connection
-            connection = CreateConnection();
+            connection = new KcpClientConnection();
 
             // setup events
             connection.peer.OnAuthenticated = () =>

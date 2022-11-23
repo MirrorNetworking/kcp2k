@@ -65,7 +65,8 @@ namespace kcp2k
         readonly byte[] rawReceiveBuffer = new byte[Kcp.MTU_DEF];
 
         // connections <connectionId, connection> where connectionId is EndPoint.GetHashCode
-        public Dictionary<int, KcpServerConnection> connections = new Dictionary<int, KcpServerConnection>();
+        public Dictionary<int, KcpServerConnection> connections =
+            new Dictionary<int, KcpServerConnection>();
 
         public KcpServer(Action<int> OnConnected,
                          Action<int, ArraySegment<byte>, KcpChannel> OnData,

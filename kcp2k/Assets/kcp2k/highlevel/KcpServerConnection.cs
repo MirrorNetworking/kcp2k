@@ -4,7 +4,8 @@ using System.Net;
 
 namespace kcp2k
 {
-    public class KcpServerConnection
+    // struct to avoid memory indirection
+    public struct KcpServerConnection
     {
         public readonly KcpPeer peer;
         public readonly EndPoint remoteEndPoint;

@@ -175,7 +175,6 @@ namespace kcp2k
             kcpSendBuffer    = new byte[1 + ReliableMaxMessageSize(receiveWindowSize)];
 
             this.timeout = timeout;
-            state = KcpState.Connected;
 
             refTime.Start();
         }

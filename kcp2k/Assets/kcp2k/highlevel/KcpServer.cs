@@ -215,112 +215,103 @@ namespace kcp2k
         {
             try
             {
-                // receive
+                // receive from socket.
+                // returns amount of bytes written into buffer.
+                // throws SocketException if datagram was larger than buffer.
+                // https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.receive?view=net-6.0
                 int msgLength = RawReceive(rawReceiveBuffer, out int connectionId);
                 //Log.Info($"KCP: server raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
 
-                // IMPORTANT: detect if buffer was too small for the received
-                //            msgLength. otherwise the excess data would be
-                //            silently lost.
-                //            (see ReceiveFrom documentation)
-                if (msgLength <= rawReceiveBuffer.Length)
+                // is this a new connection?
+                if (!connections.TryGetValue(connectionId, out KcpServerConnection connection))
                 {
-                    // is this a new connection?
-                    if (!connections.TryGetValue(connectionId, out KcpServerConnection connection))
+                    // create a new KcpConnection based on last received
+                    // EndPoint. can be overwritten for where-allocation.
+                    connection = CreateConnection();
+
+                    // DO NOT add to connections yet. only if the first message
+                    // is actually the kcp handshake. otherwise it's either:
+                    // * random data from the internet
+                    // * or from a client connection that we just disconnected
+                    //   but that hasn't realized it yet, still sending data
+                    //   from last session that we should absolutely ignore.
+                    //
+                    //
+                    // TODO this allocates a new KcpConnection for each new
+                    // internet connection. not ideal, but C# UDP Receive
+                    // already allocated anyway.
+                    //
+                    // expecting a MAGIC byte[] would work, but sending the raw
+                    // UDP message without kcp's reliability will have low
+                    // probability of being received.
+                    //
+                    // for now, this is fine.
+
+                    // setup authenticated event that also adds to connections
+                    connection.peer.OnAuthenticated = () =>
                     {
-                        // create a new KcpConnection based on last received
-                        // EndPoint. can be overwritten for where-allocation.
-                        connection = CreateConnection();
+                        // only send handshake to client AFTER we received his
+                        // handshake in OnAuthenticated.
+                        // we don't want to reply to random internet messages
+                        // with handshakes each time.
+                        connection.peer.SendHandshake();
 
-                        // DO NOT add to connections yet. only if the first message
-                        // is actually the kcp handshake. otherwise it's either:
-                        // * random data from the internet
-                        // * or from a client connection that we just disconnected
-                        //   but that hasn't realized it yet, still sending data
-                        //   from last session that we should absolutely ignore.
-                        //
-                        //
-                        // TODO this allocates a new KcpConnection for each new
-                        // internet connection. not ideal, but C# UDP Receive
-                        // already allocated anyway.
-                        //
-                        // expecting a MAGIC byte[] would work, but sending the raw
-                        // UDP message without kcp's reliability will have low
-                        // probability of being received.
-                        //
-                        // for now, this is fine.
+                        // add to connections dict after being authenticated.
+                        connections.Add(connectionId, connection);
+                        Log.Info($"KCP: server added connection({connectionId})");
 
-                        // setup authenticated event that also adds to connections
-                        connection.peer.OnAuthenticated = () =>
+                        // setup Data + Disconnected events only AFTER the
+                        // handshake. we don't want to fire OnServerDisconnected
+                        // every time we receive invalid random data from the
+                        // internet.
+
+                        // setup data event
+                        connection.peer.OnData = (message, channel) =>
                         {
-                            // only send handshake to client AFTER we received his
-                            // handshake in OnAuthenticated.
-                            // we don't want to reply to random internet messages
-                            // with handshakes each time.
-                            connection.peer.SendHandshake();
-
-                            // add to connections dict after being authenticated.
-                            connections.Add(connectionId, connection);
-                            Log.Info($"KCP: server added connection({connectionId})");
-
-                            // setup Data + Disconnected events only AFTER the
-                            // handshake. we don't want to fire OnServerDisconnected
-                            // every time we receive invalid random data from the
-                            // internet.
-
-                            // setup data event
-                            connection.peer.OnData = (message, channel) =>
-                            {
-                                // call mirror event
-                                //Log.Info($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)})");
-                                OnData.Invoke(connectionId, message, channel);
-                            };
-
-                            // setup disconnected event
-                            connection.peer.OnDisconnected = () =>
-                            {
-                                // flag for removal
-                                // (can't remove directly because connection is updated
-                                //  and event is called while iterating all connections)
-                                connectionsToRemove.Add(connectionId);
-
-                                // call mirror event
-                                Log.Info($"KCP: OnServerDisconnected({connectionId})");
-                                OnDisconnected(connectionId);
-                            };
-
-                            // setup error event
-                            connection.peer.OnError = (error, reason) =>
-                            {
-                                OnError(connectionId, error, reason);
-                            };
-
-                            // finally, call mirror OnConnected event
-                            Log.Info($"KCP: OnServerConnected({connectionId})");
-                            OnConnected(connectionId);
+                            // call mirror event
+                            //Log.Info($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)})");
+                            OnData.Invoke(connectionId, message, channel);
                         };
 
-                        // now input the message & process received ones
-                        // connected event was set up.
-                        // tick will process the first message and adds the
-                        // connection if it was the handshake.
-                        connection.peer.RawInput(rawReceiveBuffer, msgLength);
-                        connection.peer.TickIncoming();
+                        // setup disconnected event
+                        connection.peer.OnDisconnected = () =>
+                        {
+                            // flag for removal
+                            // (can't remove directly because connection is updated
+                            //  and event is called while iterating all connections)
+                            connectionsToRemove.Add(connectionId);
 
-                        // again, do not add to connections.
-                        // if the first message wasn't the kcp handshake then
-                        // connection will simply be garbage collected.
-                    }
-                    // existing connection: simply input the message into kcp
-                    else
-                    {
-                        connection.peer.RawInput(rawReceiveBuffer, msgLength);
-                    }
+                            // call mirror event
+                            Log.Info($"KCP: OnServerDisconnected({connectionId})");
+                            OnDisconnected(connectionId);
+                        };
+
+                        // setup error event
+                        connection.peer.OnError = (error, reason) =>
+                        {
+                            OnError(connectionId, error, reason);
+                        };
+
+                        // finally, call mirror OnConnected event
+                        Log.Info($"KCP: OnServerConnected({connectionId})");
+                        OnConnected(connectionId);
+                    };
+
+                    // now input the message & process received ones
+                    // connected event was set up.
+                    // tick will process the first message and adds the
+                    // connection if it was the handshake.
+                    connection.peer.RawInput(rawReceiveBuffer, msgLength);
+                    connection.peer.TickIncoming();
+
+                    // again, do not add to connections.
+                    // if the first message wasn't the kcp handshake then
+                    // connection will simply be garbage collected.
                 }
+                // existing connection: simply input the message into kcp
                 else
                 {
-                    Log.Error($"KCP Server: message of size {msgLength} does not fit into buffer of size {rawReceiveBuffer.Length}. The excess was silently dropped. Disconnecting connectionId={connectionId}.");
-                    Disconnect(connectionId);
+                    connection.peer.RawInput(rawReceiveBuffer, msgLength);
                 }
             }
             // this is fine, the socket might have been closed in the other end

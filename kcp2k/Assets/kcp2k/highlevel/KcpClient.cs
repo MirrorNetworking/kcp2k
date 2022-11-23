@@ -181,11 +181,13 @@ namespace kcp2k
 
         public void Send(ArraySegment<byte> segment, KcpChannel channel)
         {
-            if (connected)
+            if (!connected)
             {
-                peer.SendData(segment, channel);
+                Log.Warning("KCP: can't send because client not connected!");
+                return;
             }
-            else Log.Warning("KCP: can't send because client not connected!");
+
+            peer.SendData(segment, channel);
         }
 
         public void Disconnect()

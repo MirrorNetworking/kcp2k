@@ -20,12 +20,6 @@ namespace kcp2k
         //            => we need the MTU to fit channel + message!
         readonly byte[] rawReceiveBuffer = new byte[Kcp.MTU_DEF];
 
-        // EndPoint & Receive functions can be overwritten for where-allocation:
-        // https://github.com/vis2k/where-allocation
-        // NOTE: Client's SendTo doesn't allocate, don't need a virtual.
-        protected virtual void CreateRemoteEndPoint(IPAddress[] addresses, ushort port) =>
-            remoteEndPoint = new IPEndPoint(addresses[0], port);
-
         public void Connect(string host,
                             ushort port,
                             bool noDelay,
@@ -44,7 +38,7 @@ namespace kcp2k
             if (Common.ResolveHostname(host, out IPAddress[] addresses))
             {
                 // create remote endpoint
-                CreateRemoteEndPoint(addresses, port);
+                remoteEndPoint = new IPEndPoint(addresses[0], port);
 
                 // create socket
                 socket = new Socket(remoteEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);

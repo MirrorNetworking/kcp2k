@@ -127,7 +127,7 @@ namespace kcp2k
             RawReceive();
         }
 
-        // call from transport update
+        // io - input
         public void RawReceive()
         {
             if (socket == null) return;
@@ -157,6 +157,7 @@ namespace kcp2k
             }
         }
 
+        // io - output
         protected virtual void RawSend(ArraySegment<byte> data)
         {
             socket.Send(data.Array, data.Offset, data.Count, SocketFlags.None);

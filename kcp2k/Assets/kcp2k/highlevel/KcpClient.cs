@@ -96,43 +96,41 @@ namespace kcp2k
             Log.Info($"KcpClient: connect to {address}:{port}");
 
             // try resolve host name
-            if (Common.ResolveHostname(address, out IPAddress[] addresses))
-            {
-                // create remote endpoint
-                remoteEndPoint = new IPEndPoint(addresses[0], port);
-
-                // create socket
-                socket = new Socket(remoteEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-
-                // configure buffer sizes:
-                // if connections drop under heavy load, increase to OS limit.
-                // if still not enough, increase the OS limit.
-                if (maximizeSendReceiveBuffersToOSLimit)
-                {
-                    Common.MaximizeSocketBuffers(socket);
-                }
-                // otherwise still log the defaults for info.
-                else Log.Info($"KcpClient: RecvBuf = {socket.ReceiveBufferSize} SendBuf = {socket.SendBufferSize}. If connections drop under heavy load, enable {nameof(maximizeSendReceiveBuffersToOSLimit)} to increase it to OS limit. If they still drop, increase the OS limit.");
-
-                // connect
-                socket.Connect(remoteEndPoint);
-
-                // set up kcp
-                // TODO ctor
-                peer.SetupKcp(RawSend, noDelay, interval, fastResend, congestionWindow, sendWindowSize, receiveWindowSize, timeout, maxRetransmits);
-
-                // client should send handshake to server as very first message
-                peer.SendHandshake();
-
-                RawReceive();
-            }
-            // otherwise call OnDisconnected to let the user know.
-            else
+            if (!Common.ResolveHostname(address, out IPAddress[] addresses))
             {
                 // pass error to user callback. no need to log it manually.
                 peer.OnError(ErrorCode.DnsResolve, $"Failed to resolve host: {address}");
                 peer.OnDisconnected();
+                return;
             }
+
+            // create remote endpoint
+            remoteEndPoint = new IPEndPoint(addresses[0], port);
+
+            // create socket
+            socket = new Socket(remoteEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+
+            // configure buffer sizes:
+            // if connections drop under heavy load, increase to OS limit.
+            // if still not enough, increase the OS limit.
+            if (maximizeSendReceiveBuffersToOSLimit)
+            {
+                Common.MaximizeSocketBuffers(socket);
+            }
+            // otherwise still log the defaults for info.
+            else Log.Info($"KcpClient: RecvBuf = {socket.ReceiveBufferSize} SendBuf = {socket.SendBufferSize}. If connections drop under heavy load, enable {nameof(maximizeSendReceiveBuffersToOSLimit)} to increase it to OS limit. If they still drop, increase the OS limit.");
+
+            // connect
+            socket.Connect(remoteEndPoint);
+
+            // set up kcp
+            // TODO ctor
+            peer.SetupKcp(RawSend, noDelay, interval, fastResend, congestionWindow, sendWindowSize, receiveWindowSize, timeout, maxRetransmits);
+
+            // client should send handshake to server as very first message
+            peer.SendHandshake();
+
+            RawReceive();
         }
 
         // call from transport update

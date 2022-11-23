@@ -139,6 +139,7 @@ namespace kcp2k
         // => NoDelay, interval, wnd size are the most important configurations.
         //    let's force require the parameters so we don't forget it anywhere.
         // TODO change to constructor soon. can't call SetupKcp immediatel yet.
+        //      need to pass KcpServerConnection RawSend as parameter first.
         public void SetupKcp(
             Action<ArraySegment<byte>> output,
             bool noDelay,

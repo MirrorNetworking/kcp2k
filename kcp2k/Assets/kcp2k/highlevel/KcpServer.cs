@@ -105,25 +105,6 @@ namespace kcp2k
 
         public bool IsActive() => socket != null;
 
-        // if connections drop under heavy load, increase to OS limit.
-        // if still not enough, increase the OS limit.
-        void ConfigureSocketBufferSizes()
-        {
-            if (MaximizeSendReceiveBuffersToOSLimit)
-            {
-                // log initial size for comparison.
-                // remember initial size for log comparison
-                int initialReceive = socket.ReceiveBufferSize;
-                int initialSend = socket.SendBufferSize;
-
-                socket.SetReceiveBufferToOSLimit();
-                socket.SetSendBufferToOSLimit();
-                Log.Info($"KcpServer: RecvBuf = {initialReceive}=>{socket.ReceiveBufferSize} ({socket.ReceiveBufferSize/initialReceive}x) SendBuf = {initialSend}=>{socket.SendBufferSize} ({socket.SendBufferSize/initialSend}x) increased to OS limits!");
-            }
-            // otherwise still log the defaults for info.
-            else Log.Info($"KcpServer: RecvBuf = {socket.ReceiveBufferSize} SendBuf = {socket.SendBufferSize}. If connections drop under heavy load, enable {nameof(MaximizeSendReceiveBuffersToOSLimit)} to increase it to OS limit. If they still drop, increase the OS limit.");
-        }
-
         public void Start(ushort port)
         {
             // only start once
@@ -147,8 +128,15 @@ namespace kcp2k
                 socket.Bind(new IPEndPoint(IPAddress.Any, port));
             }
 
-            // configure socket buffer size.
-            ConfigureSocketBufferSizes();
+            // configure buffer sizes:
+            // if connections drop under heavy load, increase to OS limit.
+            // if still not enough, increase the OS limit.
+            if (MaximizeSendReceiveBuffersToOSLimit)
+            {
+                Common.MaximizeSocketBuffers(socket);
+            }
+            // otherwise still log the defaults for info.
+            else Log.Info($"KcpServer: RecvBuf = {socket.ReceiveBufferSize} SendBuf = {socket.SendBufferSize}. If connections drop under heavy load, enable {nameof(MaximizeSendReceiveBuffersToOSLimit)} to increase it to OS limit. If they still drop, increase the OS limit.");
         }
 
         public void Send(int connectionId, ArraySegment<byte> segment, KcpChannel channel)

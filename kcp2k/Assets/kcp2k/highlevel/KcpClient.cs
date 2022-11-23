@@ -128,7 +128,7 @@ namespace kcp2k
         }
 
         // io - input
-        public void RawReceive()
+        protected void RawReceive()
         {
             if (socket == null) return;
 

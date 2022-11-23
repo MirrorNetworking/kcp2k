@@ -189,8 +189,21 @@ namespace kcp2k
             return read;
         }
 
-        protected virtual KcpServerConnection CreateConnection() =>
-            new KcpServerConnection(socket, newClientEP, NoDelay, Interval, FastResend, CongestionWindow, SendWindowSize, ReceiveWindowSize, Timeout, MaxRetransmits);
+        // send byte[] to endpoint
+        protected virtual void RawSend(ArraySegment<byte> data, EndPoint remoteEndPoint)
+        {
+            socket.SendTo(data.Array, data.Offset, data.Count, SocketFlags.None, remoteEndPoint);
+        }
+
+        protected virtual KcpServerConnection CreateConnection()
+        {
+            // attach EndPoint EP to RawSend.
+            // kcp needs a simple RawSend(byte[]) function.
+            Action<ArraySegment<byte>> RawSendWrap =
+                data => RawSend(data, newClientEP);
+
+            return new KcpServerConnection(RawSendWrap, newClientEP, NoDelay, Interval, FastResend, CongestionWindow, SendWindowSize, ReceiveWindowSize, Timeout, MaxRetransmits);
+        }
 
         // process incoming messages. should be called before updating the world.
         HashSet<int> connectionsToRemove = new HashSet<int>();

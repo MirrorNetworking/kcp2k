@@ -134,33 +134,32 @@ namespace kcp2k
         // call from transport update
         public void RawReceive()
         {
+            if (socket == null) return;
+
             try
             {
-                if (socket != null)
+                while (socket.Poll(0, SelectMode.SelectRead))
                 {
-                    while (socket.Poll(0, SelectMode.SelectRead))
-                    {
-                        // ReceiveFrom allocates.
-                        // use Connect() to bind the UDP socket to the end point.
-                        // then we can use Receive() instead.
-                        // socket.ReceiveFrom(buffer, ref remoteEndPoint);
-                        int msgLength = socket.Receive(rawReceiveBuffer);
+                    // ReceiveFrom allocates.
+                    // use Connect() to bind the UDP socket to the end point.
+                    // then we can use Receive() instead.
+                    // socket.ReceiveFrom(buffer, ref remoteEndPoint);
+                    int msgLength = socket.Receive(rawReceiveBuffer);
 
-                        // IMPORTANT: detect if buffer was too small for the
-                        //            received msgLength. otherwise the excess
-                        //            data would be silently lost.
-                        //            (see ReceiveFrom documentation)
-                        if (msgLength <= rawReceiveBuffer.Length)
-                        {
-                            //Log.Debug($"KCP: client raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
-                            peer.RawInput(rawReceiveBuffer, msgLength);
-                        }
-                        else
-                        {
-                            // pass error to user callback. no need to log it manually.
-                            peer.OnError(ErrorCode.InvalidReceive, $"KCP ClientConnection: message of size {msgLength} does not fit into buffer of size {rawReceiveBuffer.Length}. The excess was silently dropped. Disconnecting.");
-                            peer.Disconnect();
-                        }
+                    // IMPORTANT: detect if buffer was too small for the
+                    //            received msgLength. otherwise the excess
+                    //            data would be silently lost.
+                    //            (see ReceiveFrom documentation)
+                    if (msgLength <= rawReceiveBuffer.Length)
+                    {
+                        //Log.Debug($"KCP: client raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
+                        peer.RawInput(rawReceiveBuffer, msgLength);
+                    }
+                    else
+                    {
+                        // pass error to user callback. no need to log it manually.
+                        peer.OnError(ErrorCode.InvalidReceive, $"KCP ClientConnection: message of size {msgLength} does not fit into buffer of size {rawReceiveBuffer.Length}. The excess was silently dropped. Disconnecting.");
+                        peer.Disconnect();
                     }
                 }
             }

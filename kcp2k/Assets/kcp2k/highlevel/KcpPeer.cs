@@ -172,7 +172,7 @@ namespace kcp2k
             // create message buffers AFTER window size is set
             // see comments on buffer definition for the "+1" part
             kcpMessageBuffer = new byte[1 + ReliableMaxMessageSize(receiveWindowSize)];
-            kcpSendBuffer = new byte[1 + ReliableMaxMessageSize(receiveWindowSize)];
+            kcpSendBuffer    = new byte[1 + ReliableMaxMessageSize(receiveWindowSize)];
 
             this.timeout = timeout;
             state = KcpState.Connected;

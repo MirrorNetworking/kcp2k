@@ -66,8 +66,7 @@ namespace kcp2k
 
             // create fresh peer for each new session
             // TODO SetupKcp needs to be ctor
-            peer = new KcpPeer();
-            peer.SetupKcp(RawSend, noDelay, interval, fastResend, congestionWindow, sendWindowSize, receiveWindowSize, timeout, maxRetransmits);
+            peer = new KcpPeer(RawSend, noDelay, interval, fastResend, congestionWindow, sendWindowSize, receiveWindowSize, timeout, maxRetransmits);
 
             // setup events
             peer.OnAuthenticated = () =>

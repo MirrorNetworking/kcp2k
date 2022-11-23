@@ -16,10 +16,11 @@ namespace kcp2k
         internal Kcp kcp;
 
         // IO agnostic
-        Action<ArraySegment<byte>> RawSend;
+        readonly Action<ArraySegment<byte>> RawSend;
 
-        // kcp can have several different states, let's use a state machine
-        KcpState state = KcpState.Disconnected;
+        // state: connected as soon as we create the peer.
+        // leftover from KcpConnection. remove it after refactoring later.
+        KcpState state = KcpState.Connected;
 
         public Action OnAuthenticated;
         public Action<ArraySegment<byte>, KcpChannel> OnData;
@@ -32,7 +33,7 @@ namespace kcp2k
         // If we don't receive anything these many milliseconds
         // then consider us disconnected
         public const int DEFAULT_TIMEOUT = 10000;
-        public int timeout = DEFAULT_TIMEOUT;
+        public int timeout;
         uint lastReceiveTime;
 
         // internal time.
@@ -84,13 +85,13 @@ namespace kcp2k
         // buffer to receive kcp's processed messages (avoids allocations).
         // IMPORTANT: this is for KCP messages. so it needs to be of size:
         //            1 byte header + MaxMessageSize content
-        byte[] kcpMessageBuffer;// = new byte[1 + ReliableMaxMessageSize];
+        readonly byte[] kcpMessageBuffer;// = new byte[1 + ReliableMaxMessageSize];
 
         // send buffer for handing user messages to kcp for processing.
         // (avoids allocations).
         // IMPORTANT: needs to be of size:
         //            1 byte header + MaxMessageSize content
-        byte[] kcpSendBuffer;// = new byte[1 + ReliableMaxMessageSize];
+        readonly byte[] kcpSendBuffer;// = new byte[1 + ReliableMaxMessageSize];
 
         // raw send buffer is exactly MTU.
         readonly byte[] rawSendBuffer = new byte[Kcp.MTU_DEF];
@@ -138,9 +139,7 @@ namespace kcp2k
         // => useful to start from a fresh state every time the client connects
         // => NoDelay, interval, wnd size are the most important configurations.
         //    let's force require the parameters so we don't forget it anywhere.
-        // TODO change to constructor soon. can't call SetupKcp immediatel yet.
-        //      need to pass KcpServerConnection RawSend as parameter first.
-        public void SetupKcp(
+        public KcpPeer(
             Action<ArraySegment<byte>> output,
             bool noDelay,
             uint interval = Kcp.INTERVAL,

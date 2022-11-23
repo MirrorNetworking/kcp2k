@@ -8,7 +8,7 @@ namespace kcp2k
     public class KcpServerConnection
     {
         // kcp
-        internal KcpPeer peer = new KcpPeer();
+        internal readonly KcpPeer peer;
 
         // IO
         protected EndPoint remoteEndPoint;
@@ -22,7 +22,7 @@ namespace kcp2k
         public KcpServerConnection(Action<ArraySegment<byte>> RawSend, EndPoint remoteEndPoint, bool noDelay, uint interval = Kcp.INTERVAL, int fastResend = 0, bool congestionWindow = true, uint sendWindowSize = Kcp.WND_SND, uint receiveWindowSize = Kcp.WND_RCV, int timeout = KcpPeer.DEFAULT_TIMEOUT, uint maxRetransmits = Kcp.DEADLINK)
         {
             this.remoteEndPoint = remoteEndPoint;
-            peer.SetupKcp(RawSend, noDelay, interval, fastResend, congestionWindow, sendWindowSize, receiveWindowSize, timeout, maxRetransmits);
+            peer = new KcpPeer(RawSend, noDelay, interval, fastResend, congestionWindow, sendWindowSize, receiveWindowSize, timeout, maxRetransmits);
         }
     }
 }

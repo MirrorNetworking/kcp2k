@@ -1,15 +1,13 @@
 using NUnit.Framework;
-using System;
 
 namespace kcp2k.Tests
 {
     class MockPeer : KcpPeer
     {
         public MockPeer(bool noDelay, uint interval = Kcp.INTERVAL, int fastResend = 0, bool congestionWindow = true, uint sendWindowSize = Kcp.WND_SND, uint receiveWindowSize = Kcp.WND_RCV, int timeout = DEFAULT_TIMEOUT, uint maxRetransmits = Kcp.DEADLINK)
+            : base(_ => {}, noDelay, interval, fastResend, congestionWindow, sendWindowSize, receiveWindowSize, timeout, maxRetransmits)
         {
-            SetupKcp(RawSend, noDelay, interval, fastResend, congestionWindow, sendWindowSize, receiveWindowSize, timeout, maxRetransmits);
         }
-        protected void RawSend(ArraySegment<byte> data) {}
     }
 
     public class KcpPeerTests

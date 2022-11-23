@@ -195,13 +195,12 @@ namespace kcp2k
             // only if connected
             // otherwise we end up in a deadlock because of an open Mirror bug:
             // https://github.com/vis2k/Mirror/issues/2353
-            if (connected)
-            {
-                // call Disconnect and let the connection handle it.
-                // DO NOT set it to null yet. it needs to be updated a few more
-                // times first. let the connection handle it!
-                peer?.Disconnect();
-            }
+            if (!connected) return;
+
+            // call Disconnect and let the connection handle it.
+            // DO NOT set it to null yet. it needs to be updated a few more
+            // times first. let the connection handle it!
+            peer?.Disconnect();
         }
 
         // process incoming messages. should be called before updating the world.

@@ -80,10 +80,8 @@ namespace kcp2k
             Action<ArraySegment<byte>> RawSendWrap =
                 data => RawSend(data, reusableSendEP);
 
-            // create a new KcpConnection NonAlloc version
-            // -> where-allocation IPEndPointNonAlloc is reused.
-            //    need to create a new one from the temp address.
-            return new KcpServerConnection(RawSendWrap, newClientEP, NoDelay, Interval, FastResend, CongestionWindow, SendWindowSize, ReceiveWindowSize, Timeout, MaxRetransmits);
+            KcpPeer peer = new KcpPeer(RawSendWrap, NoDelay, Interval, FastResend, CongestionWindow, SendWindowSize, ReceiveWindowSize, Timeout, MaxRetransmits);
+            return new KcpServerConnection(peer, newClientEP);
         }
     }
 }

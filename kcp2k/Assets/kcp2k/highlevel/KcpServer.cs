@@ -203,7 +203,8 @@ namespace kcp2k
             Action<ArraySegment<byte>> RawSendWrap =
                 data => RawSend(data, newClientEP);
 
-            return new KcpServerConnection(RawSendWrap, newClientEP, NoDelay, Interval, FastResend, CongestionWindow, SendWindowSize, ReceiveWindowSize, Timeout, MaxRetransmits);
+            KcpPeer peer = new KcpPeer(RawSendWrap, NoDelay, Interval, FastResend, CongestionWindow, SendWindowSize, ReceiveWindowSize, Timeout, MaxRetransmits);
+            return new KcpServerConnection(peer, newClientEP);
         }
 
         // process incoming messages. should be called before updating the world.

@@ -57,11 +57,10 @@ namespace kcp2k
         protected Socket socket;
         EndPoint newClientEP;
 
-        // IMPORTANT: raw receive buffer always needs to be of 'MTU' size, even
-        //            if MaxMessageSize is larger. kcp always sends in MTU
-        //            segments and having a buffer smaller than MTU would
-        //            silently drop excess data.
-        //            => we need the mtu to fit channel + message!
+        // raw receive buffer always needs to be of 'MTU' size, even if
+        // MaxMessageSize is larger. kcp always sends in MTU segments and having
+        // a buffer smaller than MTU would silently drop excess data.
+        // => we need the mtu to fit channel + message!
         readonly byte[] rawReceiveBuffer = new byte[Kcp.MTU_DEF];
 
         // connections <connectionId, connection> where connectionId is EndPoint.GetHashCode

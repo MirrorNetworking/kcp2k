@@ -301,7 +301,7 @@ namespace kcp2k
                     // connected event was set up.
                     // tick will process the first message and adds the
                     // connection if it was the handshake.
-                    connection.peer.RawInput(rawReceiveBuffer, msgLength);
+                    connection.peer.RawInput(rawReceiveBuffer, 0, msgLength);
                     connection.peer.TickIncoming();
 
                     // again, do not add to connections.
@@ -311,7 +311,7 @@ namespace kcp2k
                 // existing connection: simply input the message into kcp
                 else
                 {
-                    connection.peer.RawInput(rawReceiveBuffer, msgLength);
+                    connection.peer.RawInput(rawReceiveBuffer, 0, msgLength);
                 }
             }
             // this is fine, the socket might have been closed in the other end

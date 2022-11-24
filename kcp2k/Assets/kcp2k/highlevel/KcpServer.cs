@@ -166,6 +166,13 @@ namespace kcp2k
             return null;
         }
 
+        // io - poll.
+        // return true if there is data to read.
+        // after which RawReceive will be called.
+        // virtual because for relays,
+        protected virtual bool RawPoll() =>
+            socket.Poll(0, SelectMode.SelectRead);
+
         // io - input.
         // virtual so it may be modified for relays, nonalloc workaround, etc.
         // https://github.com/vis2k/where-allocation
@@ -329,7 +336,7 @@ namespace kcp2k
         HashSet<int> connectionsToRemove = new HashSet<int>();
         public void TickIncoming()
         {
-            while (socket != null && socket.Poll(0, SelectMode.SelectRead))
+            while (socket != null && RawPoll())
             {
                 ProcessNext();
             }

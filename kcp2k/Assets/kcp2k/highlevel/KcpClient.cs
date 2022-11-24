@@ -9,7 +9,8 @@ namespace kcp2k
     public class KcpClient
     {
         // kcp
-        internal KcpPeer peer;
+        // public so that bandwidth statistics can be accessed from the outside
+        public KcpPeer peer;
 
         // IO
         protected Socket socket;

@@ -169,7 +169,7 @@ namespace kcp2k
         // io - input.
         // virtual so it may be modified for relays, nonalloc workaround, etc.
         // https://github.com/vis2k/where-allocation
-        protected virtual int RawReceive(byte[] buffer, out int connectionHash)
+        protected virtual int RawReceive(byte[] buffer, out int connectionId)
         {
             // NOTE: ReceiveFrom allocates.
             //   we pass our IPEndPoint to ReceiveFrom.
@@ -178,7 +178,7 @@ namespace kcp2k
             //   https://github.com/mono/mono/blob/f74eed4b09790a0929889ad7fc2cf96c9b6e3757/mcs/class/System/System.Net.Sockets/Socket.cs#L1761
             int read = socket.ReceiveFrom(buffer, 0, buffer.Length, SocketFlags.None, ref newClientEP);
 
-            // calculate connectionHash from endpoint
+            // set connectionId to hash from endpoint
             // NOTE: IPEndPoint.GetHashCode() allocates.
             //  it calls m_Address.GetHashCode().
             //  m_Address is an IPAddress.
@@ -187,7 +187,7 @@ namespace kcp2k
             //
             // => using only newClientEP.Port wouldn't work, because
             //    different connections can have the same port.
-            connectionHash = newClientEP.GetHashCode();
+            connectionId = newClientEP.GetHashCode();
             return read;
         }
 

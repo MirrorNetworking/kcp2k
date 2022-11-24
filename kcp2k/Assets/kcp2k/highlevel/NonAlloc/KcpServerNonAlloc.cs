@@ -46,14 +46,14 @@ namespace kcp2k
                 : new IPEndPointNonAlloc(IPAddress.Any, 0);
         }
 
-        protected override int RawReceive(byte[] buffer, out int connectionHash)
+        protected override int RawReceive(byte[] buffer, out int connectionId)
         {
             // where-allocation nonalloc ReceiveFrom.
             int read = socket.ReceiveFrom_NonAlloc(buffer, 0, buffer.Length, SocketFlags.None, reusableClientEP);
             SocketAddress remoteAddress = reusableClientEP.temp;
 
             // where-allocation nonalloc GetHashCode
-            connectionHash = remoteAddress.GetHashCode();
+            connectionId = remoteAddress.GetHashCode();
             return read;
         }
 

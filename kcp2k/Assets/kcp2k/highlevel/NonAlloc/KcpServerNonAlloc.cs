@@ -58,13 +58,13 @@ namespace kcp2k
         }
 
         // make sure to pass IPEndPointNonAlloc as remoteEndPoint
-        protected override void RawSend(ArraySegment<byte> data, EndPoint remoteEndPoint)
+        protected override void RawSend(int connectionId, ArraySegment<byte> data, EndPoint remoteEndPoint)
         {
             // where-allocation nonalloc send
             socket.SendTo_NonAlloc(data.Array, data.Offset, data.Count, SocketFlags.None, remoteEndPoint as IPEndPointNonAlloc);
         }
 
-        protected override KcpServerConnection CreateConnection()
+        protected override KcpServerConnection CreateConnection(int connectionId)
         {
             // IPEndPointNonAlloc is reused all the time.
             // we can't store that as the connection's endpoint.
@@ -78,7 +78,7 @@ namespace kcp2k
             // attach reusable EP to RawSend.
             // kcp needs a simple RawSend(byte[]) function.
             Action<ArraySegment<byte>> RawSendWrap =
-                data => RawSend(data, reusableSendEP);
+                data => RawSend(connectionId, data, reusableSendEP);
 
             KcpPeer peer = new KcpPeer(RawSendWrap, NoDelay, Interval, FastResend, CongestionWindow, SendWindowSize, ReceiveWindowSize, Timeout, MaxRetransmits);
             return new KcpServerConnection(peer, newClientEP);

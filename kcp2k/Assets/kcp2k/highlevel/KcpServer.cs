@@ -193,17 +193,18 @@ namespace kcp2k
 
         // io - out.
         // virtual so it may be modified for relays, nonalloc workaround, etc.
-        protected virtual void RawSend(ArraySegment<byte> data, EndPoint remoteEndPoint)
+        // relays may need to prefix connId (and remoteEndPoint would be same for all)
+        protected virtual void RawSend(int connectionId, ArraySegment<byte> data, EndPoint remoteEndPoint)
         {
             socket.SendTo(data.Array, data.Offset, data.Count, SocketFlags.None, remoteEndPoint);
         }
 
-        protected virtual KcpServerConnection CreateConnection()
+        protected virtual KcpServerConnection CreateConnection(int connectionId)
         {
             // attach EndPoint EP to RawSend.
             // kcp needs a simple RawSend(byte[]) function.
             Action<ArraySegment<byte>> RawSendWrap =
-                data => RawSend(data, newClientEP);
+                data => RawSend(connectionId, data, newClientEP);
 
             KcpPeer peer = new KcpPeer(RawSendWrap, NoDelay, Interval, FastResend, CongestionWindow, SendWindowSize, ReceiveWindowSize, Timeout, MaxRetransmits);
             return new KcpServerConnection(peer, newClientEP);
@@ -227,7 +228,7 @@ namespace kcp2k
                 {
                     // create a new KcpConnection based on last received
                     // EndPoint. can be overwritten for where-allocation.
-                    connection = CreateConnection();
+                    connection = CreateConnection(connectionId);
 
                     // DO NOT add to connections yet. only if the first message
                     // is actually the kcp handshake. otherwise it's either:

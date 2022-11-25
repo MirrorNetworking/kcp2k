@@ -337,8 +337,9 @@ namespace kcp2k
         }
 
         // process incoming messages. should be called before updating the world.
+        // virtual because relay may need to inject their own ping or similar.
         HashSet<int> connectionsToRemove = new HashSet<int>();
-        public void TickIncoming()
+        public virtual void TickIncoming()
         {
             while (socket != null && RawPoll())
             {
@@ -363,7 +364,8 @@ namespace kcp2k
         }
 
         // process outgoing messages. should be called after updating the world.
-        public void TickOutgoing()
+        // virtual because relay may need to inject their own ping or similar.
+        public virtual void TickOutgoing()
         {
             // flush all server connections
             foreach (KcpServerConnection connection in connections.Values)
@@ -375,7 +377,7 @@ namespace kcp2k
         // process incoming and outgoing for convenience.
         // => ideally call ProcessIncoming() before updating the world and
         //    ProcessOutgoing() after updating the world for minimum latency
-        public void Tick()
+        public virtual void Tick()
         {
             TickIncoming();
             TickOutgoing();

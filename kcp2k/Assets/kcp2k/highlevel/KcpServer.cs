@@ -176,14 +176,16 @@ namespace kcp2k
         // io - input.
         // virtual so it may be modified for relays, nonalloc workaround, etc.
         // https://github.com/vis2k/where-allocation
-        protected virtual int RawReceive(byte[] buffer, out int connectionId)
+        // bool return because not all receives may be valid.
+        // for example, relay may expect a certain header.
+        protected virtual bool RawReceive(byte[] buffer, out int size, out int connectionId)
         {
             // NOTE: ReceiveFrom allocates.
             //   we pass our IPEndPoint to ReceiveFrom.
             //   receive from calls newClientEP.Create(socketAddr).
             //   IPEndPoint.Create always returns a new IPEndPoint.
             //   https://github.com/mono/mono/blob/f74eed4b09790a0929889ad7fc2cf96c9b6e3757/mcs/class/System/System.Net.Sockets/Socket.cs#L1761
-            int read = socket.ReceiveFrom(buffer, 0, buffer.Length, SocketFlags.None, ref newClientEP);
+            size = socket.ReceiveFrom(buffer, 0, buffer.Length, SocketFlags.None, ref newClientEP);
 
             // set connectionId to hash from endpoint
             // NOTE: IPEndPoint.GetHashCode() allocates.
@@ -195,7 +197,7 @@ namespace kcp2k
             // => using only newClientEP.Port wouldn't work, because
             //    different connections can have the same port.
             connectionId = newClientEP.GetHashCode();
-            return read;
+            return true;
         }
 
         // io - out.
@@ -227,7 +229,9 @@ namespace kcp2k
                 // returns amount of bytes written into buffer.
                 // throws SocketException if datagram was larger than buffer.
                 // https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.receive?view=net-6.0
-                int msgLength = RawReceive(rawReceiveBuffer, out int connectionId);
+                if (!RawReceive(rawReceiveBuffer, out int size, out int connectionId))
+                    return;
+
                 //Log.Info($"KCP: server raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
 
                 // is this a new connection?
@@ -309,7 +313,7 @@ namespace kcp2k
                     // connected event was set up.
                     // tick will process the first message and adds the
                     // connection if it was the handshake.
-                    connection.peer.RawInput(rawReceiveBuffer, 0, msgLength);
+                    connection.peer.RawInput(rawReceiveBuffer, 0, size);
                     connection.peer.TickIncoming();
 
                     // again, do not add to connections.
@@ -319,7 +323,7 @@ namespace kcp2k
                 // existing connection: simply input the message into kcp
                 else
                 {
-                    connection.peer.RawInput(rawReceiveBuffer, 0, msgLength);
+                    connection.peer.RawInput(rawReceiveBuffer, 0, size);
                 }
             }
             // this is fine, the socket might have been closed in the other end

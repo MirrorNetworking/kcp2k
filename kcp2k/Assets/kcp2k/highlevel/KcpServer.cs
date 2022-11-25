@@ -103,9 +103,9 @@ namespace kcp2k
                           : new IPEndPoint(IPAddress.Any, 0);
         }
 
-        public bool IsActive() => socket != null;
+        public virtual bool IsActive() => socket != null;
 
-        public void Start(ushort port)
+        public virtual void Start(ushort port)
         {
             // only start once
             if (socket != null)
@@ -383,7 +383,7 @@ namespace kcp2k
             TickOutgoing();
         }
 
-        public void Stop()
+        public virtual void Stop()
         {
             socket?.Close();
             socket = null;

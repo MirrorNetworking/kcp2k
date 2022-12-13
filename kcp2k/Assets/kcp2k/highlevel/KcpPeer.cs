@@ -248,45 +248,41 @@ namespace kcp2k
         // -> to avoid buffering, unreliable messages call OnData directly.
         bool ReceiveNextReliable(out KcpHeader header, out ArraySegment<byte> message)
         {
-            int msgSize = kcp.PeekSize();
-            if (msgSize > 0)
-            {
-                // only allow receiving up to buffer sized messages.
-                // otherwise we would get BlockCopy ArgumentException anyway.
-                if (msgSize <= kcpMessageBuffer.Length)
-                {
-                    // receive from kcp
-                    int received = kcp.Receive(kcpMessageBuffer, msgSize);
-                    if (received >= 0)
-                    {
-                        // extract header & content without header
-                        header = (KcpHeader)kcpMessageBuffer[0];
-                        message = new ArraySegment<byte>(kcpMessageBuffer, 1, msgSize - 1);
-                        lastReceiveTime = (uint)watch.ElapsedMilliseconds;
-                        return true;
-                    }
-                    else
-                    {
-                        // if receive failed, close everything
-                        // pass error to user callback. no need to log it manually.
-                        // GetType() shows Server/ClientConn instead of just Connection.
-                        OnError(ErrorCode.InvalidReceive, $"{GetType()}: Receive failed with error={received}. closing connection.");
-                        Disconnect();
-                    }
-                }
-                // we don't allow sending messages > Max, so this must be an
-                // attacker. let's disconnect to avoid allocation attacks etc.
-                else
-                {
-                    // pass error to user callback. no need to log it manually.
-                    OnError(ErrorCode.InvalidReceive, $"{GetType()}: possible allocation attack for msgSize {msgSize} > buffer {kcpMessageBuffer.Length}. Disconnecting the connection.");
-                    Disconnect();
-                }
-            }
-
             message = default;
             header = KcpHeader.Disconnect;
-            return false;
+
+            int msgSize = kcp.PeekSize();
+            if (msgSize <= 0) return false;
+
+            // only allow receiving up to buffer sized messages.
+            // otherwise we would get BlockCopy ArgumentException anyway.
+            if (msgSize > kcpMessageBuffer.Length)
+            {
+                // we don't allow sending messages > Max, so this must be an
+                // attacker. let's disconnect to avoid allocation attacks etc.
+                // pass error to user callback. no need to log it manually.
+                OnError(ErrorCode.InvalidReceive, $"{GetType()}: possible allocation attack for msgSize {msgSize} > buffer {kcpMessageBuffer.Length}. Disconnecting the connection.");
+                Disconnect();
+                return false;
+            }
+
+            // receive from kcp
+            int received = kcp.Receive(kcpMessageBuffer, msgSize);
+            if (received < 0)
+            {
+                // if receive failed, close everything
+                // pass error to user callback. no need to log it manually.
+                // GetType() shows Server/ClientConn instead of just Connection.
+                OnError(ErrorCode.InvalidReceive, $"{GetType()}: Receive failed with error={received}. closing connection.");
+                Disconnect();
+                return false;
+            }
+
+            // extract header & content without header
+            header = (KcpHeader)kcpMessageBuffer[0];
+            message = new ArraySegment<byte>(kcpMessageBuffer, 1, msgSize - 1);
+            lastReceiveTime = (uint)watch.ElapsedMilliseconds;
+            return true;
         }
 
         void TickIncoming_Connected(uint time)

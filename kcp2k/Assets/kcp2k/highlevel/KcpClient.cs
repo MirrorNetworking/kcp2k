@@ -119,13 +119,16 @@ namespace kcp2k
 
         // io - input.
         // virtual so it may be modified for relays, etc.
-        protected virtual void RawReceive()
+        // call this while it returns true, to process all messages this tick.
+        // protected virtual bool RawReceive(out ArraySegment<byte> segment)
+        protected virtual bool RawReceive(out ArraySegment<byte> segment)
         {
-            if (socket == null) return;
+            segment = default;
+            if (socket == null) return false;
 
             try
             {
-                while (socket.Poll(0, SelectMode.SelectRead))
+                if (socket.Poll(0, SelectMode.SelectRead))
                 {
                     // ReceiveFrom allocates. we used bound Receive.
                     // returns amount of bytes written into buffer.
@@ -134,8 +137,8 @@ namespace kcp2k
                     int msgLength = socket.Receive(rawReceiveBuffer);
 
                     //Log.Debug($"KCP: client raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
-                    ArraySegment<byte> segment = new ArraySegment<byte>(rawReceiveBuffer, 0, msgLength);
-                    peer.RawInput(segment);
+                    segment = new ArraySegment<byte>(rawReceiveBuffer, 0, msgLength);
+                    return true;
                 }
             }
             // this is fine, the socket might have been closed in the other end
@@ -147,6 +150,8 @@ namespace kcp2k
                 Log.Info($"KCP ClientConnection: looks like the other end has closed the connection. This is fine: {ex}");
                 peer.Disconnect();
             }
+
+            return false;
         }
 
         // io - output.
@@ -186,7 +191,12 @@ namespace kcp2k
             // recv on socket first, then process incoming
             // (even if we didn't receive anything. need to tick ping etc.)
             // (connection is null if not active)
-            if (peer != null) RawReceive();
+            if (peer != null) 
+            {
+
+                while (RawReceive(out ArraySegment<byte> segment))
+                    peer.RawInput(segment);
+            }
 
             // RawReceive may have disconnected peer. null check again.
             peer?.TickIncoming();

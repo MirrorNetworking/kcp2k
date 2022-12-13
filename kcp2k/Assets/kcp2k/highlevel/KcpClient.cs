@@ -24,13 +24,13 @@ namespace kcp2k
         //    to reuse the buffer.
         protected readonly byte[] rawReceiveBuffer = new byte[Kcp.MTU_DEF];
 
-        // events
+        // callbacks
+        // even for errors, to allow liraries to show popups etc.
+        // instead of logging directly.
+        // (string instead of Exception for ease of use and to avoid user panic)
         public Action OnConnected;
         public Action<ArraySegment<byte>, KcpChannel> OnData;
         public Action OnDisconnected;
-        // error callback instead of logging.
-        // allows libraries to show popups etc.
-        // (string instead of Exception for ease of use and to avoid user panic)
         public Action<ErrorCode, string> OnError;
 
         // state

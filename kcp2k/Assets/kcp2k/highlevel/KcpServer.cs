@@ -10,13 +10,13 @@ namespace kcp2k
 {
     public class KcpServer
     {
-        // events
+        // callbacks
+        // even for errors, to allow liraries to show popups etc.
+        // instead of logging directly.
+        // (string instead of Exception for ease of use and to avoid user panic)
         public Action<int> OnConnected;
         public Action<int, ArraySegment<byte>, KcpChannel> OnData;
         public Action<int> OnDisconnected;
-        // error callback instead of logging.
-        // allows libraries to show popups etc.
-        // (string instead of Exception for ease of use and to avoid user panic)
         public Action<int, ErrorCode, string> OnError;
 
         // socket configuration

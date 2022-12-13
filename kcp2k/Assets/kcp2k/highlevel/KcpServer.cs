@@ -56,6 +56,25 @@ namespace kcp2k
 
         public virtual bool IsActive() => socket != null;
 
+        static Socket CreateServerSocket(bool DualMode, ushort port)
+        {
+            if (DualMode)
+            {
+                // IPv6 socket with DualMode @ "::" : port
+                Socket socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
+                socket.DualMode = true;
+                socket.Bind(new IPEndPoint(IPAddress.IPv6Any, port));
+                return socket;
+            }
+            else
+            {
+                // IPv4 socket @ "0.0.0.0" : port
+                Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                socket.Bind(new IPEndPoint(IPAddress.Any, port));
+                return socket;
+            }
+        }
+
         public virtual void Start(ushort port)
         {
             // only start once
@@ -66,19 +85,7 @@ namespace kcp2k
             }
 
             // listen
-            if (config.DualMode)
-            {
-                // IPv6 socket with DualMode @ "::" : port
-                socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
-                socket.DualMode = true;
-                socket.Bind(new IPEndPoint(IPAddress.IPv6Any, port));
-            }
-            else
-            {
-                // IPv4 socket @ "0.0.0.0" : port
-                socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                socket.Bind(new IPEndPoint(IPAddress.Any, port));
-            }
+            socket = CreateServerSocket(config.DualMode, port);
 
             // configure buffer sizes:
             // if connections drop under heavy load, increase to OS limit.

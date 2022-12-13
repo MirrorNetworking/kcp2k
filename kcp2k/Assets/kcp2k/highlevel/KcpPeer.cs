@@ -116,9 +116,9 @@ namespace kcp2k
         internal const int QueueDisconnectThreshold = 10000;
 
         // getters for queue and buffer counts, used for debug info
-        public int SendQueueCount => kcp.snd_queue.Count;
-        public int ReceiveQueueCount => kcp.rcv_queue.Count;
-        public int SendBufferCount => kcp.snd_buf.Count;
+        public int SendQueueCount     => kcp.snd_queue.Count;
+        public int ReceiveQueueCount  => kcp.rcv_queue.Count;
+        public int SendBufferCount    => kcp.snd_buf.Count;
         public int ReceiveBufferCount => kcp.rcv_buf.Count;
 
         // maximum send rate per second can be calculated from kcp parameters

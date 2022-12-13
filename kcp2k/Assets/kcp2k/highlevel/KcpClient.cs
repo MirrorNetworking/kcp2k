@@ -146,7 +146,7 @@ namespace kcp2k
                 // the other end closing the connection is not an 'error'.
                 // but connections should never just end silently.
                 // at least log a message for easier debugging.
-                Log.Info($"KCP ClientConnection: looks like the other end has closed the connection. This is fine: {ex}");
+                Log.Info($"KcpClient: looks like the other end has closed the connection. This is fine: {ex}");
                 peer.Disconnect();
             }
 

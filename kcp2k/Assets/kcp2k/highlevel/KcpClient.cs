@@ -37,8 +37,7 @@ namespace kcp2k
         public bool connected;
 
         public KcpClient(Action OnConnected,
-                         Action<ArraySegment<byte>,
-                         KcpChannel> OnData,
+                         Action<ArraySegment<byte>, KcpChannel> OnData,
                          Action OnDisconnected,
                          Action<ErrorCode, string> OnError)
         {

@@ -170,7 +170,7 @@ namespace kcp2k
         // io - poll.
         // return true if there is data to read.
         // after which RawReceive will be called.
-        // virtual because for relays,
+        // virtual for relays.
         protected virtual bool RawPoll() =>
             socket != null && socket.Poll(0, SelectMode.SelectRead);
 

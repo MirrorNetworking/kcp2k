@@ -349,7 +349,7 @@ namespace kcp2k
 
         // process incoming messages. should be called before updating the world.
         // virtual because relay may need to inject their own ping or similar.
-        HashSet<int> connectionsToRemove = new HashSet<int>();
+        readonly HashSet<int> connectionsToRemove = new HashSet<int>();
         public virtual void TickIncoming()
         {
             while (RawPoll())

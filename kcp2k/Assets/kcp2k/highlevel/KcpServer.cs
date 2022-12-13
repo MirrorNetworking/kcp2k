@@ -118,14 +118,14 @@ namespace kcp2k
             // listen
             if (DualMode)
             {
-                // IPv6 socket with DualMode
+                // IPv6 socket with DualMode @ "::" : port
                 socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
                 socket.DualMode = true;
                 socket.Bind(new IPEndPoint(IPAddress.IPv6Any, port));
             }
             else
             {
-                // IPv4 socket
+                // IPv4 socket @ "0.0.0.0" : port
                 socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                 socket.Bind(new IPEndPoint(IPAddress.Any, port));
             }

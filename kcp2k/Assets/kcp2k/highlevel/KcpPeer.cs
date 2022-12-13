@@ -582,24 +582,26 @@ namespace kcp2k
         void SendReliable(KcpHeader header, ArraySegment<byte> content)
         {
             // 1 byte header + content needs to fit into send buffer
-            if (1 + content.Count <= kcpSendBuffer.Length) // TODO
+            if (1 + content.Count > kcpSendBuffer.Length) // TODO
             {
-                // copy header, content (if any) into send buffer
-                kcpSendBuffer[0] = (byte)header;
-                if (content.Count > 0)
-                    Buffer.BlockCopy(content.Array, content.Offset, kcpSendBuffer, 1, content.Count);
-
-                // send to kcp for processing
-                int sent = kcp.Send(kcpSendBuffer, 0, 1 + content.Count);
-                if (sent < 0)
-                {
-                    // GetType() shows Server/ClientConn instead of just Connection.
-                    OnError(ErrorCode.InvalidSend, $"{GetType()}: Send failed with error={sent} for content with length={content.Count}");
-                }
+                // otherwise content is larger than MaxMessageSize. let user know!
+                // GetType() shows Server/ClientConn instead of just Connection.
+                OnError(ErrorCode.InvalidSend, $"{GetType()}: Failed to send reliable message of size {content.Count} because it's larger than ReliableMaxMessageSize={ReliableMaxMessageSize(kcp.rcv_wnd)}");
+                return;
             }
-            // otherwise content is larger than MaxMessageSize. let user know!
-            // GetType() shows Server/ClientConn instead of just Connection.
-            else OnError(ErrorCode.InvalidSend, $"{GetType()}: Failed to send reliable message of size {content.Count} because it's larger than ReliableMaxMessageSize={ReliableMaxMessageSize(kcp.rcv_wnd)}");
+
+            // copy header, content (if any) into send buffer
+            kcpSendBuffer[0] = (byte)header;
+            if (content.Count > 0)
+                Buffer.BlockCopy(content.Array, content.Offset, kcpSendBuffer, 1, content.Count);
+
+            // send to kcp for processing
+            int sent = kcp.Send(kcpSendBuffer, 0, 1 + content.Count);
+            if (sent < 0)
+            {
+                // GetType() shows Server/ClientConn instead of just Connection.
+                OnError(ErrorCode.InvalidSend, $"{GetType()}: Send failed with error={sent} for content with length={content.Count}");
+            }
         }
 
         void SendUnreliable(ArraySegment<byte> message)

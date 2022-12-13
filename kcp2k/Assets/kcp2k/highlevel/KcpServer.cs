@@ -101,7 +101,7 @@ namespace kcp2k
             // create newClientEP either IPv4 or IPv6
             newClientEP = DualMode
                           ? new IPEndPoint(IPAddress.IPv6Any, 0)
-                          : new IPEndPoint(IPAddress.Any, 0);
+                          : new IPEndPoint(IPAddress.Any,     0);
         }
 
         public virtual bool IsActive() => socket != null;

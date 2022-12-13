@@ -124,11 +124,10 @@ namespace kcp2k
         protected virtual bool RawReceive(out ArraySegment<byte> segment)
         {
             segment = default;
-            if (socket == null) return false;
 
             try
             {
-                if (socket.Poll(0, SelectMode.SelectRead))
+                if (socket != null && socket.Poll(0, SelectMode.SelectRead))
                 {
                     // ReceiveFrom allocates. we used bound Receive.
                     // returns amount of bytes written into buffer.

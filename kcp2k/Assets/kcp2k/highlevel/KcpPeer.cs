@@ -607,19 +607,21 @@ namespace kcp2k
         void SendUnreliable(ArraySegment<byte> message)
         {
             // message size needs to be <= unreliable max size
-            if (message.Count <= UnreliableMaxMessageSize)
+            if (message.Count > UnreliableMaxMessageSize)
             {
-                // copy channel header, data into raw send buffer, then send
-                rawSendBuffer[0] = (byte)KcpChannel.Unreliable;
-                Buffer.BlockCopy(message.Array, message.Offset, rawSendBuffer, 1, message.Count);
-
-                // IO send
-                ArraySegment<byte> segment = new ArraySegment<byte>(rawSendBuffer, 0, message.Count + 1);
-                RawSend(segment);
+                // otherwise content is larger than MaxMessageSize. let user know!
+                // GetType() shows Server/ClientConn instead of just Connection.
+                Log.Error($"{GetType()}: Failed to send unreliable message of size {message.Count} because it's larger than UnreliableMaxMessageSize={UnreliableMaxMessageSize}");
+                return;
             }
-            // otherwise content is larger than MaxMessageSize. let user know!
-            // GetType() shows Server/ClientConn instead of just Connection.
-            else Log.Error($"{GetType()}: Failed to send unreliable message of size {message.Count} because it's larger than UnreliableMaxMessageSize={UnreliableMaxMessageSize}");
+
+            // copy channel header, data into raw send buffer, then send
+            rawSendBuffer[0] = (byte)KcpChannel.Unreliable;
+            Buffer.BlockCopy(message.Array, message.Offset, rawSendBuffer, 1, message.Count);
+
+            // IO send
+            ArraySegment<byte> segment = new ArraySegment<byte>(rawSendBuffer, 0, message.Count + 1);
+            RawSend(segment);
         }
 
         // server & client need to send handshake at different times, so we need

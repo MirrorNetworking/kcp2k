@@ -190,7 +190,7 @@ namespace kcp2k
             // recv on socket first, then process incoming
             // (even if we didn't receive anything. need to tick ping etc.)
             // (connection is null if not active)
-            if (peer != null) 
+            if (peer != null)
             {
 
                 while (RawReceive(out ArraySegment<byte> segment))

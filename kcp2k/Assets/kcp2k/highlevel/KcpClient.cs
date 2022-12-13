@@ -120,7 +120,7 @@ namespace kcp2k
         // io - input.
         // virtual so it may be modified for relays, etc.
         // call this while it returns true, to process all messages this tick.
-        // protected virtual bool RawReceive(out ArraySegment<byte> segment)
+        // returned ArraySegment is valid until next call to RawReceive.
         protected virtual bool RawReceive(out ArraySegment<byte> segment)
         {
             segment = default;

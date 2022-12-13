@@ -487,12 +487,16 @@ namespace kcp2k
 
             // parse channel
             byte channel = buffer[offset + 0];
+
+            // parse message
+            ArraySegment<byte> message = new ArraySegment<byte>(buffer, offset + 1, size - 1);
+
             switch (channel)
             {
                 case (byte)KcpChannel.Reliable:
                 {
                     // input into kcp, but skip channel byte
-                    int input = kcp.Input(buffer, offset + 1, size - 1);
+                    int input = kcp.Input(message.Array, message.Offset, message.Count);
                     if (input != 0)
                     {
                         // GetType() shows Server/ClientConn instead of just Connection.
@@ -523,7 +527,6 @@ namespace kcp2k
                     //    the current state allows it.
                     if (state == KcpState.Authenticated)
                     {
-                        ArraySegment<byte> message = new ArraySegment<byte>(buffer, offset + 1, size - 1);
                         OnData?.Invoke(message, KcpChannel.Unreliable);
 
                         // set last receive time to avoid timeout.

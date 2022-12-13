@@ -214,6 +214,13 @@ namespace kcp2k.Tests
             }
         }
 
+        // test to prevent https://github.com/MirrorNetworking/Mirror/issues/3307
+        [Test]
+        public void ConnectWithoutServer()
+        {
+            ConnectClientBlocking();
+        }
+
         [Test]
         public void ConnectAndDisconnectClient()
         {

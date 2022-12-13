@@ -39,7 +39,7 @@ namespace kcp2k
         // internal time.
         // StopWatch offers ElapsedMilliSeconds and should be more precise than
         // Unity's time.deltaTime over long periods.
-        readonly Stopwatch refTime = new Stopwatch();
+        readonly Stopwatch watch = new Stopwatch();
 
         // we need to subtract the channel byte from every MaxMessageSize
         // calculation.
@@ -176,7 +176,7 @@ namespace kcp2k
 
             this.timeout = timeout;
 
-            refTime.Start();
+            watch.Start();
         }
 
         void HandleTimeout(uint time)
@@ -262,7 +262,7 @@ namespace kcp2k
                         // extract header & content without header
                         header = (KcpHeader)kcpMessageBuffer[0];
                         message = new ArraySegment<byte>(kcpMessageBuffer, 1, msgSize - 1);
-                        lastReceiveTime = (uint)refTime.ElapsedMilliseconds;
+                        lastReceiveTime = (uint)watch.ElapsedMilliseconds;
                         return true;
                     }
                     else
@@ -391,7 +391,7 @@ namespace kcp2k
 
         public void TickIncoming()
         {
-            uint time = (uint)refTime.ElapsedMilliseconds;
+            uint time = (uint)watch.ElapsedMilliseconds;
 
             try
             {
@@ -443,7 +443,7 @@ namespace kcp2k
 
         public void TickOutgoing()
         {
-            uint time = (uint)refTime.ElapsedMilliseconds;
+            uint time = (uint)watch.ElapsedMilliseconds;
 
             try
             {
@@ -546,7 +546,7 @@ namespace kcp2k
                             //    otherwise a connection might time out even
                             //    though unreliable were received, but no
                             //    reliable was received.
-                            lastReceiveTime = (uint)refTime.ElapsedMilliseconds;
+                            lastReceiveTime = (uint)watch.ElapsedMilliseconds;
                         }
                         else
                         {

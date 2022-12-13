@@ -115,8 +115,6 @@ namespace kcp2k
 
             // client should send handshake to server as very first message
             peer.SendHandshake();
-
-            RawReceive();
         }
 
         // io - input.

@@ -491,7 +491,7 @@ namespace kcp2k
         // feed the rest to kcp.
         public void RawInput(byte[] buffer, int offset, int size)
         {
-            // ensure valid size
+            // ensure valid size: at least 1 byte for channel
             if (size <= 0) return;
 
             // parse channel

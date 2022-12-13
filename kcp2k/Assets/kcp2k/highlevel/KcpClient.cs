@@ -136,7 +136,8 @@ namespace kcp2k
                     int msgLength = socket.Receive(rawReceiveBuffer);
 
                     //Log.Debug($"KCP: client raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
-                    peer.RawInput(rawReceiveBuffer, 0, msgLength);
+                    ArraySegment<byte> segment = new ArraySegment<byte>(rawReceiveBuffer, 0, msgLength);
+                    peer.RawInput(segment);
                 }
             }
             // this is fine, the socket might have been closed in the other end

@@ -480,16 +480,16 @@ namespace kcp2k
         // insert raw IO. usually from socket.Receive.
         // offset is useful for relays, where we may parse a header and then
         // feed the rest to kcp.
-        public void RawInput(byte[] buffer, int offset, int size)
+        public void RawInput(ArraySegment<byte> segment)
         {
             // ensure valid size: at least 1 byte for channel
-            if (size <= 0) return;
+            if (segment.Count <= 0) return;
 
             // parse channel
-            byte channel = buffer[offset + 0];
+            byte channel = segment[0];
 
             // parse message
-            ArraySegment<byte> message = new ArraySegment<byte>(buffer, offset + 1, size - 1);
+            ArraySegment<byte> message = new ArraySegment<byte>(segment.Array, segment.Offset + 1, segment.Count - 1);
 
             switch (channel)
             {
@@ -500,7 +500,7 @@ namespace kcp2k
                     if (input != 0)
                     {
                         // GetType() shows Server/ClientConn instead of just Connection.
-                        Log.Warning($"{GetType()}: Input failed with error={input} for buffer with length={size - 1}");
+                        Log.Warning($"{GetType()}: Input failed with error={input} for buffer with length={message.Count - 1}");
                     }
                     break;
                 }

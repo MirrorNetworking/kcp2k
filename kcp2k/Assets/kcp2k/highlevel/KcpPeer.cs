@@ -632,7 +632,7 @@ namespace kcp2k
         // => handshake info needs to be delivered, so it goes over reliable.
         public void SendHandshake()
         {
-                // GetType() shows Server/ClientConn instead of just Connection.
+            // GetType() shows Server/ClientConn instead of just Connection.
             Log.Info($"{GetType()}: sending Handshake to other end!");
             SendReliable(KcpHeader.Handshake, default);
         }

@@ -22,27 +22,32 @@ namespace kcp2k.Tests
 
     public class ClientServerTests
     {
-        // force NoDelay and minimum interval.
-        // this way UpdateSeveralTimes() doesn't need to wait very long and
-        // tests run a lot faster.
         protected const ushort Port = 7777;
-        // not all platforms support DualMode.
-        // run tests without it so they work on all platforms.
-        protected const bool DualMode = false;
-        protected const bool NoDelay = true;
-        protected const uint Interval = 1; // 1ms so at interval code at least runs.
-        protected const int Timeout = 2000;
-        // windows can be configured separately to test differently sized windows
-        // use 2x defaults so we can test larger max message than defaults too.
-        // IMPORTANT: default max message needs 127 fragments.
-        //            default x2 needs 255 fragments.
-        //            kcp sends 'frg' as 1 byte, so 255 still fits.
-        //            need to try x3 to find possible bugs.
-        protected const int SendWindowSize = Kcp.WND_SND * 3;
-        protected const int ReceiveWindowSize = Kcp.WND_RCV * 3;
-        // maximum retransmit attempts until dead_link detected
-        // default * 2 to check if configuration works
-        protected uint MaxRetransmits = Kcp.DEADLINK * 2;
+
+        protected KcpConfig config = new KcpConfig(
+            // force NoDelay and minimum interval.
+            // this way UpdateSeveralTimes() doesn't need to wait very long and
+            // tests run a lot faster.
+            NoDelay: true,
+            // not all platforms support DualMode.
+            // run tests without it so they work on all platforms.
+            DualMode: false,
+            Interval: 1, // 1ms so at interval code at least runs.
+            Timeout: 2000,
+
+            // windows can be configured separately to test differently sized windows
+            // use 2x defaults so we can test larger max message than defaults too.
+            // IMPORTANT: default max message needs 127 fragments.
+            //            default x2 needs 255 fragments.
+            //            kcp sends 'frg' as 1 byte, so 255 still fits.
+            //            need to try x3 to find possible bugs.
+            SendWindowSize: Kcp.WND_SND * 3,
+            ReceiveWindowSize: Kcp.WND_RCV * 3,
+
+            // maximum retransmit attempts until dead_link detected
+            // default * 2 to check if configuration works
+            MaxRetransmits: Kcp.DEADLINK * 2
+        );
 
         protected KcpServer server;
         protected List<Message> serverReceived;
@@ -87,18 +92,8 @@ namespace kcp2k.Tests
                 ServerOnData,
                 (connectionId) => {},
                 (connectionId, error, reason) => Log.Warning($"connId={connectionId}: {error}, {reason}"),
-                DualMode,
-                NoDelay,
-                Interval,
-                0,
-                true,
-                SendWindowSize,
-                ReceiveWindowSize,
-                Timeout,
-                MaxRetransmits
+                config
             );
-            server.NoDelay = NoDelay;
-            server.Interval = Interval;
         }
 
         // virtual so that we can overwrite for where-allocation nonalloc tests
@@ -151,14 +146,14 @@ namespace kcp2k.Tests
                 server.Tick();
                 // update 'interval' milliseconds.
                 // the lower the interval, the faster the tests will run.
-                Thread.Sleep((int)Interval);
+                Thread.Sleep((int)config.Interval);
             }
         }
 
         // connect and give it enough time to handle
         void ConnectClientBlocking(string hostname = "127.0.0.1")
         {
-            client.Connect(hostname, Port, NoDelay, Interval, 0, true, SendWindowSize, ReceiveWindowSize, Timeout, MaxRetransmits);
+            client.Connect(hostname, Port, config);
             UpdateSeveralTimes();
         }
 
@@ -317,7 +312,7 @@ namespace kcp2k.Tests
             server.Start(Port);
             ConnectClientBlocking();
 
-            byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(ReceiveWindowSize)];
+            byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(config.ReceiveWindowSize)];
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
             Log.Info($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
@@ -374,10 +369,10 @@ namespace kcp2k.Tests
             server.Start(Port);
             ConnectClientBlocking();
 
-            byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(ReceiveWindowSize) + 1];
+            byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(config.ReceiveWindowSize) + 1];
 
 #if UNITY_2018_3_OR_NEWER
-            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new Regex($".*Failed to send reliable message of size {message.Length} because it's larger than ReliableMaxMessageSize={KcpPeer.ReliableMaxMessageSize(ReceiveWindowSize)}"));
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new Regex($".*Failed to send reliable message of size {message.Length} because it's larger than ReliableMaxMessageSize={KcpPeer.ReliableMaxMessageSize(config.ReceiveWindowSize)}"));
 #endif
             SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
             Assert.That(serverReceived.Count, Is.EqualTo(0));
@@ -455,7 +450,7 @@ namespace kcp2k.Tests
             for (int i = 0; i < 10; ++i)
             {
                 // create message, fill with unique data (j+i & 0xff)
-                byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(ReceiveWindowSize)];
+                byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(config.ReceiveWindowSize)];
                 for (int j = 0; j < message.Length; ++j)
                     message[j] = (byte)((j + i) & 0xFF);
                 messages.Add(message);
@@ -605,7 +600,7 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
-            byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(ReceiveWindowSize)];
+            byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(config.ReceiveWindowSize)];
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
 
@@ -665,9 +660,9 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
-            byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(ReceiveWindowSize) + 1];
+            byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(config.ReceiveWindowSize) + 1];
 #if UNITY_2018_3_OR_NEWER
-            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new Regex($".*Failed to send reliable message of size {message.Length} because it's larger than ReliableMaxMessageSize={KcpPeer.ReliableMaxMessageSize(ReceiveWindowSize)}"));
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new Regex($".*Failed to send reliable message of size {message.Length} because it's larger than ReliableMaxMessageSize={KcpPeer.ReliableMaxMessageSize(config.ReceiveWindowSize)}"));
 #endif
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Reliable);
             Assert.That(clientReceived.Count, Is.EqualTo(0));
@@ -800,7 +795,7 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
-            if (server.DualMode)
+            if (config.DualMode)
                 Assert.That(server.GetClientEndPoint(connectionId).Address.ToString(), Is.EqualTo("::ffff:127.0.0.1"));
             else
                 Assert.That(server.GetClientEndPoint(connectionId).Address.ToString(), Is.EqualTo("127.0.0.1"));
@@ -813,11 +808,11 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
 
             // do nothing for 'Timeout + 1' seconds
-            Thread.Sleep(Timeout + 1);
+            Thread.Sleep(config.Timeout + 1);
 
             // now update
 #if UNITY_2018_3_OR_NEWER
-            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new Regex($".*Connection timed out after not receiving any message for {Timeout}ms. Disconnecting."));
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new Regex($".*Connection timed out after not receiving any message for {config.Timeout}ms. Disconnecting."));
 #endif
             UpdateSeveralTimes();
 
@@ -835,7 +830,7 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
 
             // do nothing for 'Timeout / 2' seconds
-            int firstSleep = Timeout / 2;
+            int firstSleep = config.Timeout / 2;
             Thread.Sleep(firstSleep);
 
             // send one reliable message
@@ -845,7 +840,7 @@ namespace kcp2k.Tests
             UpdateSeveralTimes();
 
             // do nothing for exactly the remaining timeout time + 1 to be sure
-            Thread.Sleep(Timeout - firstSleep + 1);
+            Thread.Sleep(config.Timeout - firstSleep + 1);
 
             // now update
             UpdateSeveralTimes();
@@ -865,7 +860,7 @@ namespace kcp2k.Tests
             // ping should be sent internally every second, preventing timeout.
             System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch();
             watch.Start();
-            while (watch.ElapsedMilliseconds < Timeout + 1)
+            while (watch.ElapsedMilliseconds < config.Timeout + 1)
             {
                 UpdateSeveralTimes();
             }
@@ -889,7 +884,7 @@ namespace kcp2k.Tests
 
             // now update
 #if UNITY_2018_3_OR_NEWER
-            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new Regex($".*dead_link detected: a message was retransmitted {MaxRetransmits} times without ack. Disconnecting."));
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new Regex($".*dead_link detected: a message was retransmitted {config.MaxRetransmits} times without ack. Disconnecting."));
 #endif
             UpdateSeveralTimes();
 

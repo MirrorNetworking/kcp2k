@@ -139,16 +139,7 @@ namespace kcp2k
         // => useful to start from a fresh state every time the client connects
         // => NoDelay, interval, wnd size are the most important configurations.
         //    let's force require the parameters so we don't forget it anywhere.
-        public KcpPeer(
-            Action<ArraySegment<byte>> output,
-            bool noDelay,
-            uint interval = Kcp.INTERVAL,
-            int fastResend = 0,
-            bool congestionWindow = true,
-            uint sendWindowSize = Kcp.WND_SND,
-            uint receiveWindowSize = Kcp.WND_RCV,
-            int timeout = DEFAULT_TIMEOUT,
-            uint maxRetransmits = Kcp.DEADLINK)
+        public KcpPeer(Action<ArraySegment<byte>> output, KcpConfig config)
         {
             this.RawSend = output;
 
@@ -157,8 +148,8 @@ namespace kcp2k
 
             // set nodelay.
             // note that kcp uses 'nocwnd' internally so we negate the parameter
-            kcp.SetNoDelay(noDelay ? 1u : 0u, interval, fastResend, !congestionWindow);
-            kcp.SetWindowSize(sendWindowSize, receiveWindowSize);
+            kcp.SetNoDelay(config.NoDelay ? 1u : 0u, config.Interval, config.FastResend, !config.CongestionWindow);
+            kcp.SetWindowSize(config.SendWindowSize, config.ReceiveWindowSize);
 
             // IMPORTANT: high level needs to add 1 channel byte to each raw
             // message. so while Kcp.MTU_DEF is perfect, we actually need to
@@ -167,14 +158,14 @@ namespace kcp2k
             kcp.SetMtu(Kcp.MTU_DEF - CHANNEL_HEADER_SIZE);
 
             // set maximum retransmits (aka dead_link)
-            kcp.dead_link = maxRetransmits;
+            kcp.dead_link = config.MaxRetransmits;
 
             // create message buffers AFTER window size is set
             // see comments on buffer definition for the "+1" part
-            kcpMessageBuffer = new byte[1 + ReliableMaxMessageSize(receiveWindowSize)];
-            kcpSendBuffer    = new byte[1 + ReliableMaxMessageSize(receiveWindowSize)];
+            kcpMessageBuffer = new byte[1 + ReliableMaxMessageSize(config.ReceiveWindowSize)];
+            kcpSendBuffer    = new byte[1 + ReliableMaxMessageSize(config.ReceiveWindowSize)];
 
-            this.timeout = timeout;
+            timeout = config.Timeout;
 
             watch.Start();
         }

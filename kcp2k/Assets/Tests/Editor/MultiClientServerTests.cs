@@ -12,27 +12,32 @@ namespace kcp2k.Tests
 {
     public class MultipleClientServerTests
     {
-        // force NoDelay and minimum interval.
-        // this way UpdateSeveralTimes() doesn't need to wait very long and
-        // tests run a lot faster.
         protected const ushort Port = 7777;
-        // not all platforms support DualMode.
-        // run tests without it so they work on all platforms.
-        protected const bool DualMode = false;
-        protected const bool NoDelay = true;
-        protected const uint Interval = 1; // 1ms so at interval code at least runs.
-        protected const int Timeout = 2000;
-        // windows can be configured separately to test differently sized windows
-        // use 2x defaults so we can test larger max message than defaults too.
-        // IMPORTANT: default max message needs 127 fragments.
-        //            default x2 needs 255 fragments.
-        //            kcp sends 'frg' as 1 byte, so 255 still fits.
-        //            need to try x3 to find possible bugs.
-        protected const int SendWindowSize = Kcp.WND_SND * 3;
-        protected const int ReceiveWindowSize = Kcp.WND_RCV * 3;
-        // maximum retransmit attempts until dead_link detected
-        // default * 2 to check if configuration works
-        protected uint MaxRetransmits = Kcp.DEADLINK * 2;
+
+        protected KcpConfig config = new KcpConfig(
+            // force NoDelay and minimum interval.
+            // this way UpdateSeveralTimes() doesn't need to wait very long and
+            // tests run a lot faster.
+            NoDelay: true,
+            // not all platforms support DualMode.
+            // run tests without it so they work on all platforms.
+            DualMode: false,
+            Interval: 1, // 1ms so at interval code at least runs.
+            Timeout: 2000,
+
+            // windows can be configured separately to test differently sized windows
+            // use 2x defaults so we can test larger max message than defaults too.
+            // IMPORTANT: default max message needs 127 fragments.
+            //            default x2 needs 255 fragments.
+            //            kcp sends 'frg' as 1 byte, so 255 still fits.
+            //            need to try x3 to find possible bugs.
+            SendWindowSize: Kcp.WND_SND * 3,
+            ReceiveWindowSize: Kcp.WND_RCV * 3,
+
+            // maximum retransmit attempts until dead_link detected
+            // default * 2 to check if configuration works
+            MaxRetransmits: Kcp.DEADLINK * 2
+        );
 
         protected KcpServer server;
         protected List<Message> serverReceived;
@@ -87,18 +92,8 @@ namespace kcp2k.Tests
                 ServerOnData,
                 (connectionId) => {},
                 (connectionId, error, reason) => Log.Warning($"connId={connectionId}: {error}, {reason}"),
-                DualMode,
-                NoDelay,
-                Interval,
-                0,
-                true,
-                SendWindowSize,
-                ReceiveWindowSize,
-                Timeout,
-                MaxRetransmits
+                config
             );
-            server.NoDelay = NoDelay;
-            server.Interval = Interval;
         }
 
         // virtual so that we can overwrite for where-allocation nonalloc tests
@@ -165,17 +160,17 @@ namespace kcp2k.Tests
                 server.Tick();
                 // update 'interval' milliseconds.
                 // the lower the interval, the faster the tests will run.
-                Thread.Sleep((int)Interval);
+                Thread.Sleep((int)config.Interval);
             }
         }
 
         // connect and give it enough time to handle
         void ConnectClientsBlocking(string hostname = "127.0.0.1")
         {
-            clientA.Connect(hostname, Port, NoDelay, Interval, 0, true, SendWindowSize, ReceiveWindowSize, Timeout, MaxRetransmits);
+            clientA.Connect(hostname, Port, config);
             UpdateSeveralTimes();
 
-            clientB.Connect(hostname, Port, NoDelay, Interval, 0, true, SendWindowSize, ReceiveWindowSize, Timeout, MaxRetransmits);
+            clientB.Connect(hostname, Port, config);
             UpdateSeveralTimes();
         }
 

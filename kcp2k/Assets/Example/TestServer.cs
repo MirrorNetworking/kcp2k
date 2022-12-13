@@ -8,17 +8,10 @@ namespace kcp2k.Examples
     {
         // configuration
         public ushort Port = 7777;
+        public KcpConfig config = new KcpConfig();
 
         // server
-        public KcpServer server = new KcpServer(
-            (connectionId) => {},
-            (connectionId, message, channel) => Debug.Log($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)} @ {channel})"),
-            (connectionId) => {},
-            (connectionId, error, reason) => Debug.LogWarning($"KCP: OnServerError({connectionId}, {error}, {reason}"),
-            false,
-            true,
-            10
-        );
+        public KcpServer server;
 
         // MonoBehaviour ///////////////////////////////////////////////////////
         void Awake()
@@ -27,6 +20,14 @@ namespace kcp2k.Examples
             Log.Info = Debug.Log;
             Log.Warning = Debug.LogWarning;
             Log.Error = Debug.LogError;
+
+            server = new KcpServer(
+                (connectionId) => {},
+                (connectionId, message, channel) => Debug.Log($"KCP: OnServerDataReceived({connectionId}, {BitConverter.ToString(message.Array, message.Offset, message.Count)} @ {channel})"),
+                (connectionId) => {},
+                (connectionId, error, reason) => Debug.LogWarning($"KCP: OnServerError({connectionId}, {error}, {reason}"),
+                config
+            );
         }
 
         public void LateUpdate() => server.Tick();

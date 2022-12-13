@@ -19,40 +19,8 @@ namespace kcp2k
         public Action<int> OnDisconnected;
         public Action<int, ErrorCode, string> OnError;
 
-        // socket configuration
-        // DualMode uses both IPv6 and IPv4. not all platforms support it.
-        // (Nintendo Switch, etc.)
-        public bool DualMode;
-        // too small send/receive buffers might cause connection drops under
-        // heavy load. using the OS max size can make a difference already.
-        public bool MaximizeSendReceiveBuffersToOSLimit;
-
-        // kcp configuration
-        // NoDelay is recommended to reduce latency. This also scales better
-        // without buffers getting full.
-        public bool NoDelay;
-        // KCP internal update interval. 100ms is KCP default, but a lower
-        // interval is recommended to minimize latency and to scale to more
-        // networked entities.
-        public uint Interval;
-        // KCP fastresend parameter. Faster resend for the cost of higher
-        // bandwidth.
-        public int FastResend;
-        // KCP 'NoCongestionWindow' is false by default. here we negate it for
-        // ease of use. This can be disabled for high scale games if connections
-        // choke regularly.
-        public bool CongestionWindow;
-        // KCP window size can be modified to support higher loads.
-        // for example, Mirror Benchmark requires:
-        //   128, 128 for 4k monsters
-        //   512, 512 for 10k monsters
-        //  8192, 8192 for 20k monsters
-        public uint SendWindowSize;
-        public uint ReceiveWindowSize;
-        // timeout in milliseconds
-        public int Timeout;
-        // maximum retransmission attempts until dead_link
-        public uint MaxRetransmits;
+        // configuration
+        readonly KcpConfig config;
 
         // state
         protected Socket socket;
@@ -72,34 +40,16 @@ namespace kcp2k
                          Action<int, ArraySegment<byte>, KcpChannel> OnData,
                          Action<int> OnDisconnected,
                          Action<int, ErrorCode, string> OnError,
-                         bool DualMode,
-                         bool NoDelay,
-                         uint Interval,
-                         int FastResend = 0,
-                         bool CongestionWindow = true,
-                         uint SendWindowSize = Kcp.WND_SND,
-                         uint ReceiveWindowSize = Kcp.WND_RCV,
-                         int Timeout = KcpPeer.DEFAULT_TIMEOUT,
-                         uint MaxRetransmits = Kcp.DEADLINK,
-                         bool MaximizeSendReceiveBuffersToOSLimit = false)
+                         KcpConfig config)
         {
             this.OnConnected = OnConnected;
             this.OnData = OnData;
             this.OnDisconnected = OnDisconnected;
             this.OnError = OnError;
-            this.DualMode = DualMode;
-            this.NoDelay = NoDelay;
-            this.Interval = Interval;
-            this.FastResend = FastResend;
-            this.CongestionWindow = CongestionWindow;
-            this.SendWindowSize = SendWindowSize;
-            this.ReceiveWindowSize = ReceiveWindowSize;
-            this.Timeout = Timeout;
-            this.MaxRetransmits = MaxRetransmits;
-            this.MaximizeSendReceiveBuffersToOSLimit = MaximizeSendReceiveBuffersToOSLimit;
+            this.config = config;
 
             // create newClientEP either IPv4 or IPv6
-            newClientEP = DualMode
+            newClientEP = config.DualMode
                           ? new IPEndPoint(IPAddress.IPv6Any, 0)
                           : new IPEndPoint(IPAddress.Any,     0);
         }
@@ -116,7 +66,7 @@ namespace kcp2k
             }
 
             // listen
-            if (DualMode)
+            if (config.DualMode)
             {
                 // IPv6 socket with DualMode @ "::" : port
                 socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
@@ -133,12 +83,12 @@ namespace kcp2k
             // configure buffer sizes:
             // if connections drop under heavy load, increase to OS limit.
             // if still not enough, increase the OS limit.
-            if (MaximizeSendReceiveBuffersToOSLimit)
+            if (config.MaximizeSocketBuffers)
             {
                 Common.MaximizeSocketBuffers(socket);
             }
             // otherwise still log the defaults for info.
-            else Log.Info($"KcpServer: RecvBuf = {socket.ReceiveBufferSize} SendBuf = {socket.SendBufferSize}. If connections drop under heavy load, enable {nameof(MaximizeSendReceiveBuffersToOSLimit)} to increase it to OS limit. If they still drop, increase the OS limit.");
+            else Log.Info($"KcpServer: RecvBuf = {socket.ReceiveBufferSize} SendBuf = {socket.SendBufferSize}. If connections drop under heavy load, enable {nameof(KcpConfig.MaximizeSocketBuffers)} to increase it to OS limit. If they still drop, increase the OS limit.");
         }
 
         public void Send(int connectionId, ArraySegment<byte> segment, KcpChannel channel)
@@ -226,7 +176,7 @@ namespace kcp2k
             Action<ArraySegment<byte>> RawSendWrap =
                 data => RawSend(connectionId, data);
 
-            KcpPeer peer = new KcpPeer(RawSendWrap, NoDelay, Interval, FastResend, CongestionWindow, SendWindowSize, ReceiveWindowSize, Timeout, MaxRetransmits);
+            KcpPeer peer = new KcpPeer(RawSendWrap, config);
             return new KcpServerConnection(peer, newClientEP);
         }
 

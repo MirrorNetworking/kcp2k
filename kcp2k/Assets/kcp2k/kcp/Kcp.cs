@@ -668,25 +668,25 @@ namespace kcp2k
         // flush never sends more than _one_ MTU sized packet.
         public void Flush()
         {
-            int offset = 0;    // buffer ptr in original C
+            int size  = 0;     // amount of bytes to flush. 'buffer ptr' in C.
             bool lost = false; // lost segments
 
             // helper functions
             void MakeSpace(int space)
             {
-                if (offset + space > mtu)
+                if (size + space > mtu)
                 {
-                    output(buffer, offset);
-                    offset = 0;
+                    output(buffer, size);
+                    size = 0;
                 }
             }
 
             void FlushBuffer()
             {
                 // flush buffer up to 'offset' (<= MTU)
-                if (offset > 0)
+                if (size > 0)
                 {
-                    output(buffer, offset);
+                    output(buffer, size);
                 }
             }
 
@@ -711,7 +711,7 @@ namespace kcp2k
                 // ikcp_ack_get assigns ack[i] to seg.sn, seg.ts
                 seg.sn = ack.serialNumber;
                 seg.ts = ack.timestamp;
-                offset += seg.Encode(buffer, offset);
+                size += seg.Encode(buffer, size);
             }
 
             acklist.Clear();
@@ -749,7 +749,7 @@ namespace kcp2k
             {
                 seg.cmd = CMD_WASK;
                 MakeSpace(OVERHEAD);
-                offset += seg.Encode(buffer, offset);
+                size += seg.Encode(buffer, size);
             }
 
             // flush window probing commands
@@ -757,7 +757,7 @@ namespace kcp2k
             {
                 seg.cmd = CMD_WINS;
                 MakeSpace(OVERHEAD);
-                offset += seg.Encode(buffer, offset);
+                size += seg.Encode(buffer, size);
             }
 
             probe = 0;
@@ -849,12 +849,12 @@ namespace kcp2k
                     int need = OVERHEAD + (int)segment.data.Position;
                     MakeSpace(need);
 
-                    offset += segment.Encode(buffer, offset);
+                    size += segment.Encode(buffer, size);
 
                     if (segment.data.Position > 0)
                     {
-                        Buffer.BlockCopy(segment.data.GetBuffer(), 0, buffer, offset, (int)segment.data.Position);
-                        offset += (int)segment.data.Position;
+                        Buffer.BlockCopy(segment.data.GetBuffer(), 0, buffer, size, (int)segment.data.Position);
+                        size += (int)segment.data.Position;
                     }
 
                     // dead link happens if a message was resent N times, but an

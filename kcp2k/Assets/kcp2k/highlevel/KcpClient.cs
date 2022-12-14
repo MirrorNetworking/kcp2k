@@ -198,11 +198,10 @@ namespace kcp2k
             // recv on socket first, then process incoming
             // (even if we didn't receive anything. need to tick ping etc.)
             // (connection is null if not active)
-            if (peer != null)
-            {
-                RawReceive();
-                peer.TickIncoming();
-            }
+            if (peer != null) RawReceive();
+
+            // RawReceive may have disconnected peer. null check again.
+            peer?.TickIncoming();
         }
 
         // process outgoing messages. should be called after updating the world.

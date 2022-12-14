@@ -830,24 +830,29 @@ namespace kcp2k.Tests
         {
             server.Start(Port);
             ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
 
-            // do nothing for 'Timeout / 2' milliseconds
+            // sleep for half a timeout
             int firstSleep = config.Timeout / 2;
+            Log.Info($"sleeping for {firstSleep} ms...");
             Thread.Sleep(firstSleep);
 
-            // send one reliable message
+            // send one reliable message to both ends
+            SendClientToServerBlocking(new ArraySegment<byte>(new byte[1]), channel);
+            SendServerToClientBlocking(connectionId, new ArraySegment<byte>(new byte[1]), channel);
+
+            // send one reliable message: should reset timeout
             client.Send(new ArraySegment<byte>(new byte[1]), channel);
+            UpdateSeveralTimes(4);
 
-            // update
-            UpdateSeveralTimes(5);
-
-            // do nothing for exactly the remaining timeout time + 1 to be sure
-            Thread.Sleep(config.Timeout - firstSleep + 1);
-
-            // now update
-            UpdateSeveralTimes(5);
+            // sleep for half a timeout again.
+            // use exactly the remainder instead of '/2' so nothing gets lost
+            int lastSleep = config.Timeout - firstSleep + 1;
+            Log.Info($"sleeping for {lastSleep} ms...");
+            Thread.Sleep(lastSleep);
 
             // should still be connected
+            UpdateSeveralTimes(4);
             Assert.That(client.connected, Is.True);
             Assert.That(server.connections.Count, Is.EqualTo(1));
         }

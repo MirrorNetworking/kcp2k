@@ -818,7 +818,7 @@ namespace kcp2k.Tests
 #endif
             UpdateSeveralTimes(5);
 
-            // should be disconnected
+            // should be disconnected on server and client
             Assert.That(client.connected, Is.False);
             Assert.That(server.connections.Count, Is.EqualTo(0));
         }

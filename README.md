@@ -24,3 +24,6 @@ Previously, [where-allocation](https://github.com/vis2k/where-allocation) for a 
 - It didn't work in regular C# projects.
 - Overall, the extra complexity is not worth it. Use IL2CPP instead.
 - Microsoft is considering to [remove the allocation](https://github.com/dotnet/runtime/issues/30797#issuecomment-1308599410).
+
+# Remarks
+- **Congestion Control** should be left disabled. It seems broken in KCP.

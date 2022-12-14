@@ -809,7 +809,7 @@ namespace kcp2k.Tests
             server.Start(Port);
             ConnectClientBlocking();
 
-            // do nothing for 'Timeout + 1' seconds
+            // do nothing for 'Timeout + 1' milliseconds
             Thread.Sleep(config.Timeout + 1);
 
             // now update
@@ -831,7 +831,7 @@ namespace kcp2k.Tests
             server.Start(Port);
             ConnectClientBlocking();
 
-            // do nothing for 'Timeout / 2' seconds
+            // do nothing for 'Timeout / 2' milliseconds
             int firstSleep = config.Timeout / 2;
             Thread.Sleep(firstSleep);
 
@@ -858,7 +858,7 @@ namespace kcp2k.Tests
             server.Start(Port);
             ConnectClientBlocking();
 
-            // only update but don't send anything for 'Timeout + 1' seconds.
+            // only update but don't send anything for 'Timeout + 1' milliseconds.
             // ping should be sent internally every second, preventing timeout.
             System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch();
             watch.Start();

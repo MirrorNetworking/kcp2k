@@ -71,7 +71,7 @@ namespace kcp2k
 
         internal int fastresend;
         internal int fastlimit;
-        internal bool nocwnd;        // no congestion window
+        internal bool nocwnd;        // congestion control, negated. heavily restricts send/recv window sizes.
         internal readonly Queue<Segment> snd_queue = new Queue<Segment>(16); // send queue
         internal readonly Queue<Segment> rcv_queue = new Queue<Segment>(16); // receive queue
         // snd_buffer needs index removals.

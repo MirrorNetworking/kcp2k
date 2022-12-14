@@ -32,9 +32,12 @@ namespace kcp2k
         // bandwidth.
         public int FastResend;
 
-        // KCP 'NoCongestionWindow' is false by default. here we negate it for
-        // ease of use. This can be disabled for high scale games if connections
-        // choke regularly.
+        // KCP congestion window heavily limits messages flushed per update.
+        // congestion window may actually be broken in kcp:
+        // - sending max sized message @ M1 mac flushes 2-3 messages per update
+        // - even with super large send/recv window, it requires thousands of
+        //   update calls
+        // best to leave this disabled, as it may significantly increase latency.
         public bool CongestionWindow;
 
         // KCP window size can be modified to support higher loads.
@@ -60,7 +63,7 @@ namespace kcp2k
             bool NoDelay               = true,
             uint Interval              = 10,
             int FastResend             = 0,
-            bool CongestionWindow      = true,
+            bool CongestionWindow      = false,
             uint SendWindowSize        = Kcp.WND_SND,
             uint ReceiveWindowSize     = Kcp.WND_RCV,
             int Timeout                = KcpPeer.DEFAULT_TIMEOUT,

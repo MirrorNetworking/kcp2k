@@ -663,7 +663,9 @@ namespace kcp2k
         }
 
         // ikcp_flush
-        // flush remain ack segments
+        // flush remain ack segments.
+        // flush merges acks & send queue into _one_ MTU sized packet.
+        // flush never sends more than _one_ MTU sized packet.
         public void Flush()
         {
             int offset = 0;    // buffer ptr in original C
@@ -681,6 +683,7 @@ namespace kcp2k
 
             void FlushBuffer()
             {
+                // flush buffer up to 'offset' (<= MTU)
                 if (offset > 0)
                 {
                     output(buffer, offset);

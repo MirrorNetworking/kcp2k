@@ -664,8 +664,7 @@ namespace kcp2k
 
         // ikcp_flush
         // flush remain ack segments.
-        // flush merges acks & send queue into _one_ MTU sized packet.
-        // flush never sends more than _one_ MTU sized packet.
+        // flush may output multiple <= MTU messages from MakeSpace / FlushBuffer.
         public void Flush()
         {
             int size  = 0;     // amount of bytes to flush. 'buffer ptr' in C.

@@ -248,7 +248,7 @@ namespace kcp2k
         }
 
         // ikcp_send
-        // sends byte[] to the other end.
+        // splits message into MTU sized fragments, adds them to snd_queue.
         public int Send(byte[] buffer, int offset, int len)
         {
             // fragment count

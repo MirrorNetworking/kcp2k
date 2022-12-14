@@ -940,8 +940,9 @@ namespace kcp2k
                 // increase last flush time by one interval
                 ts_flush += interval;
 
-                // if now - last flush >= 0 then set last flush to now + next interval
-                if (Utils.TimeDiff(current, ts_flush) >= 0)
+                // if last flush is still behind, increase it to current + interval
+                // if (Utils.TimeDiff(current, ts_flush) >= 0) // original kcp.c
+                if (current >= ts_flush)                       // less confusing
                 {
                     ts_flush = current + interval;
                 }

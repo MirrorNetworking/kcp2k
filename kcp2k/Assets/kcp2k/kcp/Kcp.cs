@@ -665,6 +665,9 @@ namespace kcp2k
         // ikcp_flush
         // flush remain ack segments.
         // flush may output multiple <= MTU messages from MakeSpace / FlushBuffer.
+        // the amount of messages depends on the sliding window.
+        // configured by send/receive window sizes + congestion control.
+        // with congestion control, the window will be extremely small(!).
         public void Flush()
         {
             int size  = 0;     // amount of bytes to flush. 'buffer ptr' in C.

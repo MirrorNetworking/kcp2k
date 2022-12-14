@@ -761,9 +761,17 @@ namespace kcp2k
 
             probe = 0;
 
-            // calculate window size
+            // calculate the window size which is currently safe to send.
+            // it's send window, or remote window, whatever is smaller.
+            // for our max
             uint cwnd_ = Math.Min(snd_wnd, rmt_wnd);
-            // if congestion window:
+
+            // double negative: if congestion window is enabled:
+            // limit window size to cwnd.
+            //
+            // note this may heavily limit window sizes.
+            // for our max message size test with super large windows of 32k,
+            // 'congestion window' limits it down from 32.000 to 2.
             if (!nocwnd) cwnd_ = Math.Min(cwnd, cwnd_);
 
             // move cwnd_ 'window size' messages from snd_queue to snd_buf

@@ -25,14 +25,14 @@ namespace kcp2k.Tests
             Interval: 1, // 1ms so at interval code at least runs.
             Timeout: 2000,
 
-            // windows can be configured separately to test differently sized windows
-            // use 2x defaults so we can test larger max message than defaults too.
-            // IMPORTANT: default max message needs 127 fragments.
-            //            default x2 needs 255 fragments.
-            //            kcp sends 'frg' as 1 byte, so 255 still fits.
-            //            need to try x3 to find possible bugs.
-            SendWindowSize: Kcp.WND_SND * 3,
-            ReceiveWindowSize: Kcp.WND_RCV * 3,
+            // large window sizes so large messages are flushed with very few
+            // update calls. otherwise tests take too long.
+            SendWindowSize: Kcp.WND_SND * 1000,
+            ReceiveWindowSize: Kcp.WND_RCV * 1000,
+
+            // congestion window _heavily_ restricts send/recv window sizes
+            // sending a max sized message would require thousands of updates.
+            CongestionWindow: false,
 
             // maximum retransmit attempts until dead_link detected
             // default * 2 to check if configuration works
@@ -147,13 +147,13 @@ namespace kcp2k.Tests
             return server.connections.Last().Key;
         }
 
-        void UpdateSeveralTimes()
+        void UpdateSeveralTimes(int amount)
         {
             // update serveral times to avoid flaky tests.
             // => need to update at 120 times for default maxed sized messages
             //    where it requires 120+ fragments.
             // => need to update even more often for 2x default max sized
-            for (int i = 0; i < 500; ++i)
+            for (int i = 0; i < amount; ++i)
             {
                 clientA.Tick();
                 clientB.Tick();
@@ -168,10 +168,10 @@ namespace kcp2k.Tests
         void ConnectClientsBlocking(string hostname = "127.0.0.1")
         {
             clientA.Connect(hostname, Port, config);
-            UpdateSeveralTimes();
+            UpdateSeveralTimes(5);
 
             clientB.Connect(hostname, Port, config);
-            UpdateSeveralTimes();
+            UpdateSeveralTimes(5);
         }
 
         // disconnect and give it enough time to handle
@@ -179,26 +179,26 @@ namespace kcp2k.Tests
         {
             clientA.Disconnect();
             clientB.Disconnect();
-            UpdateSeveralTimes();
+            UpdateSeveralTimes(5);
         }
 
         // kick and give it enough time to handle
         void KickClientBlocking(int connectionId)
         {
             server.Disconnect(connectionId);
-            UpdateSeveralTimes();
+            UpdateSeveralTimes(5);
         }
 
         void SendClientToServerBlocking(KcpClient client, ArraySegment<byte> message, KcpChannel channel)
         {
             client.Send(message, channel);
-            UpdateSeveralTimes();
+            UpdateSeveralTimes(10);
         }
 
         void SendServerToClientBlocking(int connectionId, ArraySegment<byte> message, KcpChannel channel)
         {
             server.Send(connectionId, message, channel);
-            UpdateSeveralTimes();
+            UpdateSeveralTimes(10);
         }
 
         // tests ///////////////////////////////////////////////////////////////

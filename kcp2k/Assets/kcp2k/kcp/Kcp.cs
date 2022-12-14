@@ -59,11 +59,11 @@ namespace kcp2k
         internal uint cwnd;          // congestion window
         internal uint probe;
         internal uint interval;
-        internal uint ts_flush;
+        internal uint ts_flush;      // last flush timestamp in milliseconds
         internal uint xmit;
         internal uint nodelay;       // not a bool. original Kcp has '<2 else' check.
         internal bool updated;
-        internal uint ts_probe;      // timestamp probe
+        internal uint ts_probe;      // probe timestamp
         internal uint probe_wait;
         internal uint dead_link;     // maximum amount of 'xmit' retransmissions until a segment is considered lost
         internal uint incr;
@@ -923,17 +923,24 @@ namespace kcp2k
                 ts_flush = current;
             }
 
+            // slap is time since last flush in milliseconds
             int slap = Utils.TimeDiff(current, ts_flush);
 
+            // hard limit: if 10s elapsed, always flush no matter what
             if (slap >= 10000 || slap < -10000)
             {
                 ts_flush = current;
                 slap = 0;
             }
 
+            // last flush is increased by 'interval' each time.
+            // so slap >= is a strange way to check if interval has elapsed yet.
             if (slap >= 0)
             {
+                // increase last flush time by one interval
                 ts_flush += interval;
+
+                // if now - last flush >= 0 then set last flush to now + next interval
                 if (Utils.TimeDiff(current, ts_flush) >= 0)
                 {
                     ts_flush = current + interval;

@@ -35,14 +35,14 @@ namespace kcp2k.Tests
             Interval: 1, // 1ms so at interval code at least runs.
             Timeout: 2000,
 
-            // windows can be configured separately to test differently sized windows
-            // use 2x defaults so we can test larger max message than defaults too.
-            // IMPORTANT: default max message needs 127 fragments.
-            //            default x2 needs 255 fragments.
-            //            kcp sends 'frg' as 1 byte, so 255 still fits.
-            //            need to try x3 to find possible bugs.
-            SendWindowSize: Kcp.WND_SND * 3,
-            ReceiveWindowSize: Kcp.WND_RCV * 3,
+            // large window sizes so large messages are flushed with very few
+            // update calls. otherwise tests take too long.
+            SendWindowSize: Kcp.WND_SND * 1000,
+            ReceiveWindowSize: Kcp.WND_RCV * 1000,
+
+            // congestion window _heavily_ restricts send/recv window sizes
+            // sending a max sized message would require thousands of updates.
+            CongestionWindow: false,
 
             // maximum retransmit attempts until dead_link detected
             // default * 2 to check if configuration works
@@ -156,33 +156,33 @@ namespace kcp2k.Tests
         void ConnectClientBlocking(string hostname = "127.0.0.1")
         {
             client.Connect(hostname, Port, config);
-            UpdateSeveralTimes(50);
+            UpdateSeveralTimes(5);
         }
 
         // disconnect and give it enough time to handle
         void DisconnectClientBlocking()
         {
             client.Disconnect();
-            UpdateSeveralTimes(50);
+            UpdateSeveralTimes(5);
         }
 
         // kick and give it enough time to handle
         void KickClientBlocking(int connectionId)
         {
             server.Disconnect(connectionId);
-            UpdateSeveralTimes(50);
+            UpdateSeveralTimes(5);
         }
 
         void SendClientToServerBlocking(ArraySegment<byte> message, KcpChannel channel)
         {
             client.Send(message, channel);
-            UpdateSeveralTimes(50);
+            UpdateSeveralTimes(10);
         }
 
         void SendServerToClientBlocking(int connectionId, ArraySegment<byte> message, KcpChannel channel)
         {
             server.Send(connectionId, message, channel);
-            UpdateSeveralTimes(50);
+            UpdateSeveralTimes(10);
         }
 
         // tests ///////////////////////////////////////////////////////////////
@@ -319,7 +319,7 @@ namespace kcp2k.Tests
                 message[i] = (byte)(i & 0xFF);
             Log.Info($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
             SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
-            UpdateSeveralTimes(1000);
+            UpdateSeveralTimes(5);
             Assert.That(serverReceived.Count, Is.EqualTo(1));
             Assert.That(serverReceived[0].data.SequenceEqual(message), Is.True);
             Assert.That(serverReceived[0].channel, Is.EqualTo(KcpChannel.Reliable));
@@ -465,7 +465,7 @@ namespace kcp2k.Tests
 
             // each max sized message needs a lot of updates for all the fragments.
             // for multiple we need to update a lot more than usual.
-            UpdateSeveralTimes(5000);
+            UpdateSeveralTimes(200);
 
             // all received?
             Assert.That(serverReceived.Count, Is.EqualTo(messages.Count));
@@ -502,7 +502,7 @@ namespace kcp2k.Tests
 
             // each max sized message needs a lot of updates for all the fragments.
             // for multiple we need to update a lot more than usual.
-            UpdateSeveralTimes(5000);
+            UpdateSeveralTimes(5);
 
             // all received?
             Assert.That(serverReceived.Count, Is.EqualTo(messages.Count));
@@ -606,7 +606,7 @@ namespace kcp2k.Tests
                 message[i] = (byte)(i & 0xFF);
 
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Reliable);
-            UpdateSeveralTimes(1000);
+            UpdateSeveralTimes(5);
             Assert.That(clientReceived.Count, Is.EqualTo(1));
             Assert.That(clientReceived[0].data.SequenceEqual(message), Is.True);
             Assert.That(clientReceived[0].channel, Is.EqualTo(KcpChannel.Reliable));
@@ -816,7 +816,7 @@ namespace kcp2k.Tests
 #if UNITY_2018_3_OR_NEWER
             UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new Regex($".*Connection timed out after not receiving any message for {config.Timeout}ms. Disconnecting."));
 #endif
-            UpdateSeveralTimes(50);
+            UpdateSeveralTimes(5);
 
             // should be disconnected
             Assert.That(client.connected, Is.False);
@@ -839,13 +839,13 @@ namespace kcp2k.Tests
             client.Send(new ArraySegment<byte>(new byte[1]), channel);
 
             // update
-            UpdateSeveralTimes(50);
+            UpdateSeveralTimes(5);
 
             // do nothing for exactly the remaining timeout time + 1 to be sure
             Thread.Sleep(config.Timeout - firstSleep + 1);
 
             // now update
-            UpdateSeveralTimes(50);
+            UpdateSeveralTimes(5);
 
             // should still be connected
             Assert.That(client.connected, Is.True);
@@ -864,7 +864,7 @@ namespace kcp2k.Tests
             watch.Start();
             while (watch.ElapsedMilliseconds < config.Timeout + 1)
             {
-                UpdateSeveralTimes(50);
+                UpdateSeveralTimes(5);
             }
 
             // if ping worked then we shouldn't have timed out
@@ -888,7 +888,7 @@ namespace kcp2k.Tests
 #if UNITY_2018_3_OR_NEWER
             UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new Regex($".*dead_link detected: a message was retransmitted {config.MaxRetransmits} times without ack. Disconnecting."));
 #endif
-            UpdateSeveralTimes(50);
+            UpdateSeveralTimes(5);
 
             // should be disconnected
             Assert.That(client.connected, Is.False);
@@ -916,7 +916,7 @@ namespace kcp2k.Tests
 #if UNITY_2018_3_OR_NEWER
             UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new Regex(".*disconnecting connection because it can't process data fast enough.*"));
 #endif
-            UpdateSeveralTimes(50);
+            UpdateSeveralTimes(5);
 
             // client should've disconnected, server should've dropped it
             Assert.That(client.connected, Is.False);

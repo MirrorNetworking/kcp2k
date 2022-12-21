@@ -486,7 +486,8 @@ namespace kcp2k
             if (segment.Count <= 0) return;
 
             // parse channel
-            byte channel = segment[0];
+            // byte channel = segment[0]; ArraySegment[i] isn't supported in some older Unity Mono versions
+            byte channel = segment.Array[segment.Offset + 0];
 
             // parse message
             ArraySegment<byte> message = new ArraySegment<byte>(segment.Array, segment.Offset + 1, segment.Count - 1);

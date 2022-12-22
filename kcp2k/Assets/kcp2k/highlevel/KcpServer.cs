@@ -234,6 +234,13 @@ namespace kcp2k
                 //
                 // for now, this is fine.
 
+                // setup error event first.
+                // initialization may already log errors.
+                connection.peer.OnError = (error, reason) =>
+                {
+                    OnError(connectionId, error, reason);
+                };
+
                 // setup authenticated event that also adds to connections
                 connection.peer.OnAuthenticated = () =>
                 {
@@ -271,12 +278,6 @@ namespace kcp2k
                         // call mirror event
                         Log.Info($"KcpServer: OnDisconnected({connectionId})");
                         OnDisconnected(connectionId);
-                    };
-
-                    // setup error event
-                    connection.peer.OnError = (error, reason) =>
-                    {
-                        OnError(connectionId, error, reason);
                     };
 
                     // finally, call mirror OnConnected event

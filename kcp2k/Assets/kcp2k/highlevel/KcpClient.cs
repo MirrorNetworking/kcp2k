@@ -91,8 +91,8 @@ namespace kcp2k
             if (!Common.ResolveHostname(address, out IPAddress[] addresses))
             {
                 // pass error to user callback. no need to log it manually.
-                peer.OnError(ErrorCode.DnsResolve, $"Failed to resolve host: {address}");
-                peer.OnDisconnected();
+                OnError(ErrorCode.DnsResolve, $"Failed to resolve host: {address}");
+                OnDisconnected();
                 return;
             }
 

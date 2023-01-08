@@ -4,7 +4,13 @@ namespace kcp2k.Tests
 {
     class MockPeer : KcpPeer
     {
-        public MockPeer(KcpConfig config) : base(_ => {}, config) {}
+        public MockPeer(KcpConfig config) : base(
+            (_) => {},
+            () => {},
+            (_, _) => {},
+            () => {},
+            (_, _) => {},
+            config) {}
     }
 
     public class KcpPeerTests

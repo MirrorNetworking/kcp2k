@@ -55,6 +55,9 @@ namespace kcp2k.Tests
         protected KcpClient client;
         protected List<Message> clientReceived;
 
+        int onClientDisconnectCalled;
+
+
         // setup ///////////////////////////////////////////////////////////////
         protected void ClientOnData(ArraySegment<byte> message, KcpChannel channel)
         {
@@ -102,7 +105,7 @@ namespace kcp2k.Tests
             client = new KcpClient(
                 () => {},
                 ClientOnData,
-                () => {},
+                () => { ++onClientDisconnectCalled; },
                 (error, reason) => Log.Warning($"{error}, {reason}")
             );
         }
@@ -111,6 +114,7 @@ namespace kcp2k.Tests
         public void SetUp()
         {
             SetupLogging();
+            onClientDisconnectCalled = 0;
 
             // create new server & client received list for each test
             serverReceived = new List<Message>();
@@ -261,15 +265,13 @@ namespace kcp2k.Tests
         {
             // make sure OnDisconnected is called.
             // otherwise Mirror etc. would be left hanging in 'Connecting' state
-            bool called = false;
-            client.OnDisconnected = () => called = true;
 
             // connect to an invalid name
             ConnectClientBlocking("asdasdasd");
 
             // OnDisconnected should've been called
             Assert.That(client.connected, Is.False);
-            Assert.That(called, Is.True);
+            Assert.That(onClientDisconnectCalled, Is.EqualTo(1));
         }
 
         [Test]
@@ -915,7 +917,7 @@ namespace kcp2k.Tests
             }
 
             // no need to log thousands of messages. that would take forever.
-            client.OnData = (_, _) => {};
+            // client.OnClientData = (_, _) => {};
 
             // update should detect the choked connection and disconnect it.
 #if UNITY_2018_3_OR_NEWER

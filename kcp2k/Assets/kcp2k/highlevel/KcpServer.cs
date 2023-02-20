@@ -103,6 +103,11 @@ namespace kcp2k
             // listen
             socket = CreateServerSocket(config.DualMode, port);
 
+            // recv & send are called from main thread.
+            // need to ensure this never blocks.
+            // even a 1ms block per connection would stop us from scaling.
+            socket.Blocking = false;
+
             // configure buffer sizes
             Common.ConfigureSocketBuffers(socket, config.RecvBufferSize, config.SendBufferSize);
         }
@@ -198,7 +203,19 @@ namespace kcp2k
             // send to the the endpoint.
             // do not send to 'newClientEP', as that's always reused.
             // fixes https://github.com/MirrorNetworking/Mirror/issues/3296
-            socket.SendTo(data.Array, data.Offset, data.Count, SocketFlags.None, connection.remoteEndPoint);
+            try
+            {
+                socket.SendTo(data.Array, data.Offset, data.Count, SocketFlags.None, connection.remoteEndPoint);
+            }
+            // for non-blocking sockets, SendTo may throw WouldBlock.
+            // in that case, simply drop the message. it's UDP, it's fine.
+            catch (SocketException e)
+            {
+                if (e.SocketErrorCode != SocketError.WouldBlock)
+                {
+                    Log.Error($"KcpServer: SendTo failed: {e}");
+                }
+            }
         }
 
         protected virtual KcpServerConnection CreateConnection(int connectionId)

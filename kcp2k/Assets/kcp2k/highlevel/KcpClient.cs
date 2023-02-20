@@ -97,6 +97,11 @@ namespace kcp2k
             remoteEndPoint = new IPEndPoint(addresses[0], port);
             socket = new Socket(remoteEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
 
+            // recv & send are called from main thread.
+            // need to ensure this never blocks.
+            // even a 1ms block per connection would stop us from scaling.
+            socket.Blocking = false;
+
             // configure buffer sizes
             Common.ConfigureSocketBuffers(socket, config.RecvBufferSize, config.SendBufferSize);
 
@@ -149,7 +154,19 @@ namespace kcp2k
         // virtual so it may be modified for relays, etc.
         protected virtual void RawSend(ArraySegment<byte> data)
         {
-            socket.Send(data.Array, data.Offset, data.Count, SocketFlags.None);
+            try
+            {
+                socket.Send(data.Array, data.Offset, data.Count, SocketFlags.None);
+            }
+            // for non-blocking sockets, SendTo may throw WouldBlock.
+            // in that case, simply drop the message. it's UDP, it's fine.
+            catch (SocketException e)
+            {
+                if (e.SocketErrorCode != SocketError.WouldBlock)
+                {
+                    Log.Error($"KcpClient: Send failed: {e}");
+                }
+            }
         }
 
         public void Send(ArraySegment<byte> segment, KcpChannel channel)

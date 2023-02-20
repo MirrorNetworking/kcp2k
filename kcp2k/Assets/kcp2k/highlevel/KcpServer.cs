@@ -103,15 +103,8 @@ namespace kcp2k
             // listen
             socket = CreateServerSocket(config.DualMode, port);
 
-            // configure buffer sizes:
-            // if connections drop under heavy load, increase to OS limit.
-            // if still not enough, increase the OS limit.
-            if (config.MaximizeSocketBuffers)
-            {
-                Common.MaximizeSocketBuffers(socket);
-            }
-            // otherwise still log the defaults for info.
-            else Log.Info($"KcpServer: RecvBuf = {socket.ReceiveBufferSize} SendBuf = {socket.SendBufferSize}. If connections drop under heavy load, enable {nameof(KcpConfig.MaximizeSocketBuffers)} to increase it to OS limit. If they still drop, increase the OS limit.");
+            // configure buffer sizes
+            Common.ConfigureSocketBuffers(socket, config.RecvBufferSize, config.SendBufferSize);
         }
 
         public void Send(int connectionId, ArraySegment<byte> segment, KcpChannel channel)

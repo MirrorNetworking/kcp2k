@@ -97,15 +97,8 @@ namespace kcp2k
             remoteEndPoint = new IPEndPoint(addresses[0], port);
             socket = new Socket(remoteEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
 
-            // configure buffer sizes:
-            // if connections drop under heavy load, increase to OS limit.
-            // if still not enough, increase the OS limit.
-            if (config.MaximizeSocketBuffers)
-            {
-                Common.MaximizeSocketBuffers(socket);
-            }
-            // otherwise still log the defaults for info.
-            else Log.Info($"KcpClient: RecvBuf = {socket.ReceiveBufferSize} SendBuf = {socket.SendBufferSize}. If connections drop under heavy load, enable {nameof(KcpConfig.MaximizeSocketBuffers)} to increase it to OS limit. If they still drop, increase the OS limit.");
+            // configure buffer sizes
+            Common.ConfigureSocketBuffers(socket, config.RecvBufferSize, config.SendBufferSize);
 
             // bind to endpoint so we can use send/recv instead of sendto/recvfrom.
             socket.Connect(remoteEndPoint);

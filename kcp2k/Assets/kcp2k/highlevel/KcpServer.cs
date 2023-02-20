@@ -147,45 +147,48 @@ namespace kcp2k
         {
             segment = default;
             connectionId = 0;
+            if (socket == null) return false;
 
             try
             {
-                if (socket != null && socket.Poll(0, SelectMode.SelectRead))
-                {
-                    // NOTE: ReceiveFrom allocates.
-                    //   we pass our IPEndPoint to ReceiveFrom.
-                    //   receive from calls newClientEP.Create(socketAddr).
-                    //   IPEndPoint.Create always returns a new IPEndPoint.
-                    //   https://github.com/mono/mono/blob/f74eed4b09790a0929889ad7fc2cf96c9b6e3757/mcs/class/System/System.Net.Sockets/Socket.cs#L1761
-                    //
-                    // throws SocketException if datagram was larger than buffer.
-                    // https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.receive?view=net-6.0
-                    int size = socket.ReceiveFrom(rawReceiveBuffer, 0, rawReceiveBuffer.Length, SocketFlags.None, ref newClientEP);
-                    segment = new ArraySegment<byte>(rawReceiveBuffer, 0, size);
+                // NOTE: ReceiveFrom allocates.
+                //   we pass our IPEndPoint to ReceiveFrom.
+                //   receive from calls newClientEP.Create(socketAddr).
+                //   IPEndPoint.Create always returns a new IPEndPoint.
+                //   https://github.com/mono/mono/blob/f74eed4b09790a0929889ad7fc2cf96c9b6e3757/mcs/class/System/System.Net.Sockets/Socket.cs#L1761
+                //
+                // throws SocketException if datagram was larger than buffer.
+                // https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.receive?view=net-6.0
+                int size = socket.ReceiveFrom(rawReceiveBuffer, 0, rawReceiveBuffer.Length, SocketFlags.None, ref newClientEP);
+                segment = new ArraySegment<byte>(rawReceiveBuffer, 0, size);
 
-                    // set connectionId to hash from endpoint
-                    // NOTE: IPEndPoint.GetHashCode() allocates.
-                    //  it calls m_Address.GetHashCode().
-                    //  m_Address is an IPAddress.
-                    //  GetHashCode() allocates for IPv6:
-                    //  https://github.com/mono/mono/blob/bdd772531d379b4e78593587d15113c37edd4a64/mcs/class/referencesource/System/net/System/Net/IPAddress.cs#L699
-                    //
-                    // => using only newClientEP.Port wouldn't work, because
-                    //    different connections can have the same port.
-                    connectionId = newClientEP.GetHashCode();
-                    return true;
-                }
+                // set connectionId to hash from endpoint
+                // NOTE: IPEndPoint.GetHashCode() allocates.
+                //  it calls m_Address.GetHashCode().
+                //  m_Address is an IPAddress.
+                //  GetHashCode() allocates for IPv6:
+                //  https://github.com/mono/mono/blob/bdd772531d379b4e78593587d15113c37edd4a64/mcs/class/referencesource/System/net/System/Net/IPAddress.cs#L699
+                //
+                // => using only newClientEP.Port wouldn't work, because
+                //    different connections can have the same port.
+                connectionId = newClientEP.GetHashCode();
+                return true;
             }
-            // this is fine, the socket might have been closed in the other end
-            catch (SocketException ex)
+            // for non-blocking sockets, Receive throws WouldBlock if there is
+            // no message to read. that's okay. only log for other errors.
+            catch (SocketException e)
             {
-                // the other end closing the connection is not an 'error'.
-                // but connections should never just end silently.
-                // at least log a message for easier debugging.
-                Log.Info($"KcpServer: poll & read failed: {ex}");
+                if (e.SocketErrorCode != SocketError.WouldBlock)
+                {
+                    // NOTE: SocketException is not a subclass of IOException.
+                    // the other end closing the connection is not an 'error'.
+                    // but connections should never just end silently.
+                    // at least log a message for easier debugging.
+                    Log.Info($"KcpServer: ReceiveFrom failed: {e}");
+                }
+                // WouldBlock indicates there's no data yet, so return false.
+                return false;
             }
-
-            return false;
         }
 
         // io - out.

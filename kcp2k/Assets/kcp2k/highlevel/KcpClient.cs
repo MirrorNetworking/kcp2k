@@ -119,35 +119,37 @@ namespace kcp2k
         protected virtual bool RawReceive(out ArraySegment<byte> segment)
         {
             segment = default;
+            if (socket == null) return false;
 
             try
             {
-                if (socket != null && socket.Poll(0, SelectMode.SelectRead))
-                {
-                    // ReceiveFrom allocates. we used bound Receive.
-                    // returns amount of bytes written into buffer.
-                    // throws SocketException if datagram was larger than buffer.
-                    // https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.receive?view=net-6.0
-                    int msgLength = socket.Receive(rawReceiveBuffer);
+                // ReceiveFrom allocates. we used bound Receive.
+                // returns amount of bytes written into buffer.
+                // throws SocketException if datagram was larger than buffer.
+                // https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.receive?view=net-6.0
+                int msgLength = socket.Receive(rawReceiveBuffer);
 
-                    //Log.Debug($"KCP: client raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
-                    segment = new ArraySegment<byte>(rawReceiveBuffer, 0, msgLength);
-                    return true;
-                }
+                //Log.Debug($"KCP: client raw recv {msgLength} bytes = {BitConverter.ToString(buffer, 0, msgLength)}");
+                segment = new ArraySegment<byte>(rawReceiveBuffer, 0, msgLength);
+                return true;
             }
-            // this is fine, the socket might have been closed in the other end
-            catch (SocketException ex)
+            // for non-blocking sockets, Receive throws WouldBlock if there is
+            // no message to read. that's okay. only log for other errors.
+            catch (SocketException e)
             {
-                // the other end closing the connection is not an 'error'.
-                // but connections should never just end silently.
-                // at least log a message for easier debugging.
-                // for example, his can happen when connecting without a server.
-                // see test: ConnectWithoutServer().
-                Log.Info($"KcpClient: looks like the other end has closed the connection. This is fine: {ex}");
-                peer.Disconnect();
+                if (e.SocketErrorCode != SocketError.WouldBlock)
+                {
+                    // the other end closing the connection is not an 'error'.
+                    // but connections should never just end silently.
+                    // at least log a message for easier debugging.
+                    // for example, his can happen when connecting without a server.
+                    // see test: ConnectWithoutServer().
+                    Log.Info($"KcpClient: looks like the other end has closed the connection. This is fine: {e}");
+                    peer.Disconnect();
+                }
+                // WouldBlock indicates there's no data yet, so return false.
+                return false;
             }
-
-            return false;
         }
 
         // io - output.

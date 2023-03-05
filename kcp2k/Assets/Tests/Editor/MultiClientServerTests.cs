@@ -103,13 +103,15 @@ namespace kcp2k.Tests
                 () => {},
                 ClientOnDataA,
                 () => {},
-                (error, reason) => Log.Warning($"A: {error}, {reason}")
+                (error, reason) => Log.Warning($"A: {error}, {reason}"),
+                config
             );
             clientB = new KcpClient(
                 () => {},
                 ClientOnDataB,
                 () => {},
-                (error, reason) => Log.Warning($"B: {error}, {reason}")
+                (error, reason) => Log.Warning($"B: {error}, {reason}"),
+                config
             );
         }
 
@@ -167,10 +169,10 @@ namespace kcp2k.Tests
         // connect and give it enough time to handle
         void ConnectClientsBlocking(string hostname = "127.0.0.1")
         {
-            clientA.Connect(hostname, Port, config);
+            clientA.Connect(hostname, Port);
             UpdateSeveralTimes(5);
 
-            clientB.Connect(hostname, Port, config);
+            clientB.Connect(hostname, Port);
             UpdateSeveralTimes(5);
         }
 

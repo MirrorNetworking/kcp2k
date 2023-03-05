@@ -10,12 +10,7 @@ namespace kcp2k.Examples
         public KcpConfig config = new KcpConfig();
 
         // client
-        public KcpClient client = new KcpClient(
-            () => {},
-            (message, channel) => Debug.Log($"KCP: OnClientDataReceived({BitConverter.ToString(message.Array, message.Offset, message.Count)} @ {channel})"),
-            () => {},
-            (error, reason) => Debug.LogWarning($"KCP: OnClientError({error}, {reason}")
-        );
+        public KcpClient client;
 
         // MonoBehaviour ///////////////////////////////////////////////////////
         void Awake()
@@ -24,6 +19,14 @@ namespace kcp2k.Examples
             Log.Info = Debug.Log;
             Log.Warning = Debug.LogWarning;
             Log.Error = Debug.LogError;
+
+            client = new KcpClient(
+                () => {},
+                (message, channel) => Debug.Log($"KCP: OnClientDataReceived({BitConverter.ToString(message.Array, message.Offset, message.Count)} @ {channel})"),
+                () => {},
+                (error, reason) => Debug.LogWarning($"KCP: OnClientError({error}, {reason}"),
+                config
+            );
         }
 
         public void LateUpdate() => client.Tick();
@@ -34,7 +37,7 @@ namespace kcp2k.Examples
             GUILayout.Label("Client:");
             if (GUILayout.Button("Connect 127.0.0.1"))
             {
-                client.Connect("127.0.0.1", Port, config);
+                client.Connect("127.0.0.1", Port);
             }
             if (GUILayout.Button("Send 0x01, 0x02 reliable"))
             {

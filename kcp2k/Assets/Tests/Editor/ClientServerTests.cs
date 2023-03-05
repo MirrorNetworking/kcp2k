@@ -106,7 +106,8 @@ namespace kcp2k.Tests
                 () => {},
                 ClientOnData,
                 () => { ++onClientDisconnectCalled; },
-                (error, reason) => Log.Warning($"{error}, {reason}")
+                (error, reason) => Log.Warning($"{error}, {reason}"),
+                config
             );
         }
 
@@ -159,7 +160,7 @@ namespace kcp2k.Tests
         // connect and give it enough time to handle
         void ConnectClientBlocking(string hostname = "127.0.0.1")
         {
-            client.Connect(hostname, Port, config);
+            client.Connect(hostname, Port);
             UpdateSeveralTimes(5);
         }
 

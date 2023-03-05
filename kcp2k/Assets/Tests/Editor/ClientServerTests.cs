@@ -317,7 +317,7 @@ namespace kcp2k.Tests
             server.Start(Port);
             ConnectClientBlocking();
 
-            byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(config.ReceiveWindowSize)];
+            byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(config.Mtu, config.ReceiveWindowSize)];
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
             Log.Info($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
@@ -335,7 +335,7 @@ namespace kcp2k.Tests
             server.Start(Port);
             ConnectClientBlocking();
 
-            byte[] message = new byte[KcpPeer.UnreliableMaxMessageSize];
+            byte[] message = new byte[KcpPeer.UnreliableMaxMessageSize(config.Mtu)];
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
             Log.Info($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
@@ -375,10 +375,10 @@ namespace kcp2k.Tests
             server.Start(Port);
             ConnectClientBlocking();
 
-            byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(config.ReceiveWindowSize) + 1];
+            byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(config.Mtu, config.ReceiveWindowSize) + 1];
 
 #if UNITY_2018_3_OR_NEWER
-            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new Regex($".*Failed to send reliable message of size {message.Length} because it's larger than ReliableMaxMessageSize={KcpPeer.ReliableMaxMessageSize(config.ReceiveWindowSize)}"));
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new Regex($".*Failed to send reliable message of size {message.Length} because it's larger than ReliableMaxMessageSize={KcpPeer.ReliableMaxMessageSize(config.Mtu, config.ReceiveWindowSize)}"));
 #endif
             SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
             Assert.That(serverReceived.Count, Is.EqualTo(0));
@@ -390,9 +390,9 @@ namespace kcp2k.Tests
             server.Start(Port);
             ConnectClientBlocking();
 
-            byte[] message = new byte[KcpPeer.UnreliableMaxMessageSize + 1];
+            byte[] message = new byte[KcpPeer.UnreliableMaxMessageSize(config.Mtu) + 1];
 #if UNITY_2018_3_OR_NEWER
-            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Error, new Regex($".*Failed to send unreliable message of size {message.Length} because it's larger than UnreliableMaxMessageSize={KcpPeer.UnreliableMaxMessageSize}"));
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Error, new Regex($".*Failed to send unreliable message of size {message.Length} because it's larger than UnreliableMaxMessageSize={KcpPeer.UnreliableMaxMessageSize(config.Mtu)}"));
 #endif
             SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Unreliable);
             Assert.That(serverReceived.Count, Is.EqualTo(0));
@@ -456,7 +456,7 @@ namespace kcp2k.Tests
             for (int i = 0; i < 10; ++i)
             {
                 // create message, fill with unique data (j+i & 0xff)
-                byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(config.ReceiveWindowSize)];
+                byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(config.Mtu, config.ReceiveWindowSize)];
                 for (int j = 0; j < message.Length; ++j)
                     message[j] = (byte)((j + i) & 0xFF);
                 messages.Add(message);
@@ -493,7 +493,7 @@ namespace kcp2k.Tests
             for (int i = 0; i < 10; ++i)
             {
                 // create message, fill with unique data (j+i & 0xff)
-                byte[] message = new byte[KcpPeer.UnreliableMaxMessageSize];
+                byte[] message = new byte[KcpPeer.UnreliableMaxMessageSize(config.Mtu)];
                 for (int j = 0; j < message.Length; ++j)
                     message[j] = (byte)((j + i) & 0xFF);
                 messages.Add(message);
@@ -604,7 +604,7 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
-            byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(config.ReceiveWindowSize)];
+            byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(config.Mtu, config.ReceiveWindowSize)];
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
 
@@ -623,7 +623,7 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
-            byte[] message = new byte[KcpPeer.UnreliableMaxMessageSize];
+            byte[] message = new byte[KcpPeer.UnreliableMaxMessageSize(config.Mtu)];
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
 
@@ -665,9 +665,9 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
-            byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(config.ReceiveWindowSize) + 1];
+            byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(config.Mtu, config.ReceiveWindowSize) + 1];
 #if UNITY_2018_3_OR_NEWER
-            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new Regex($".*Failed to send reliable message of size {message.Length} because it's larger than ReliableMaxMessageSize={KcpPeer.ReliableMaxMessageSize(config.ReceiveWindowSize)}"));
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new Regex($".*Failed to send reliable message of size {message.Length} because it's larger than ReliableMaxMessageSize={KcpPeer.ReliableMaxMessageSize(config.Mtu, config.ReceiveWindowSize)}"));
 #endif
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Reliable);
             Assert.That(clientReceived.Count, Is.EqualTo(0));
@@ -681,10 +681,10 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
-            byte[] message = new byte[KcpPeer.UnreliableMaxMessageSize + 1];
+            byte[] message = new byte[KcpPeer.UnreliableMaxMessageSize(config.Mtu) + 1];
 
 #if UNITY_2018_3_OR_NEWER
-            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Error, new Regex($".*Failed to send unreliable message of size {message.Length} because it's larger than UnreliableMaxMessageSize={KcpPeer.UnreliableMaxMessageSize}"));
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Error, new Regex($".*Failed to send unreliable message of size {message.Length} because it's larger than UnreliableMaxMessageSize={KcpPeer.UnreliableMaxMessageSize(config.Mtu)}"));
 #endif
             SendServerToClientBlocking(connectionId, new ArraySegment<byte>(message), KcpChannel.Unreliable);
             Assert.That(clientReceived.Count, Is.EqualTo(0));

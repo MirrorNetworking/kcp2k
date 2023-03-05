@@ -25,7 +25,7 @@ namespace kcp2k
         // => we need the MTU to fit channel + message!
         // => protected because someone may overwrite RawReceive but still wants
         //    to reuse the buffer.
-        protected readonly byte[] rawReceiveBuffer = new byte[Kcp.MTU_DEF];
+        protected readonly byte[] rawReceiveBuffer;
 
         // callbacks
         // even for errors, to allow liraries to show popups etc.
@@ -55,6 +55,9 @@ namespace kcp2k
             this.OnDisconnected = OnDisconnected;
             this.OnError = OnError;
             this.config = config;
+
+            // create mtu sized receive buffer
+            rawReceiveBuffer = new byte[config.Mtu];
         }
 
         public void Connect(string address, ushort port)

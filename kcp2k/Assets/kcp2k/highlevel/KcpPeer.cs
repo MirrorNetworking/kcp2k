@@ -551,11 +551,10 @@ namespace kcp2k
             }
             else
             {
-                // should never happen
-                // pass error to user callback. no need to log it manually.
-                // GetType() shows Server/ClientConn instead of just Connection.
-                OnError(ErrorCode.InvalidReceive, $"KcpPeer: received unreliable message in state {state}. Disconnecting the connection.");
-                Disconnect();
+                // invalid unreliable messages may be random internet noise.
+                // show a warning, but don't disconnect.
+                // otherwise attackers could disconnect someone with random noise.
+                Log.Warning($"KcpPeer: received unreliable message while not authenticated. Disconnecting the connection.");
             }
         }
 

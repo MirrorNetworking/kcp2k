@@ -588,11 +588,10 @@ namespace kcp2k
                 }
                 default:
                 {
-                    // not a valid channel. random data or attacks.
-                    // pass error to user callback. no need to log it manually.
-                    // GetType() shows Server/ClientConn instead of just Connection.
-                    OnError(ErrorCode.InvalidReceive, $"KcpPeer: Disconnecting connection because of invalid channel header: {channel}");
-                    Disconnect();
+                    // invalid channel indicates random internet noise.
+                    // servers may receive random UDP data.
+                    // just ignore it, but log for easier debugging.
+                    Log.Warning($"KcpPeer: invalid channel header: {channel}, likely internet noise");
                     break;
                 }
             }

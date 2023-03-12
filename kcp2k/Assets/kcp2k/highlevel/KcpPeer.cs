@@ -580,7 +580,7 @@ namespace kcp2k
                 {
                     // not a valid channel. random data or attacks.
                     // pass error to user callback. no need to log it manually.
-                        // GetType() shows Server/ClientConn instead of just Connection.
+                    // GetType() shows Server/ClientConn instead of just Connection.
                     OnError(ErrorCode.InvalidReceive, $"KcpPeer: Disconnecting connection because of invalid channel header: {channel}");
                     Disconnect();
                     break;

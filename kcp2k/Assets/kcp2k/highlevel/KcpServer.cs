@@ -215,11 +215,11 @@ namespace kcp2k
                 return;
             }
 
-            // send to the the endpoint.
-            // do not send to 'newClientEP', as that's always reused.
-            // fixes https://github.com/MirrorNetworking/Mirror/issues/3296
             try
             {
+                // send to the the endpoint.
+                // do not send to 'newClientEP', as that's always reused.
+                // fixes https://github.com/MirrorNetworking/Mirror/issues/3296
                 socket.SendTo(data.Array, data.Offset, data.Count, SocketFlags.None, connection.remoteEndPoint);
             }
             // for non-blocking sockets, SendTo may throw WouldBlock.

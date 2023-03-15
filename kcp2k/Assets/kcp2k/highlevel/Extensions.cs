@@ -73,5 +73,47 @@ namespace kcp2k
                 throw;
             }
         }
+
+        // non-blocking UDP receive.
+        // => wrapped with Poll to avoid WouldBlock allocating new SocketException.
+        // => wrapped with try-catch to ignore WouldBlock exception.
+        // make sure to set socket.Blocking = false before using this!
+        public static bool ReceiveFromNonBlocking(this Socket socket, byte[] recvBuffer, out ArraySegment<byte> data, ref EndPoint remoteEP)
+        {
+            data = default;
+
+            try
+            {
+                // when using non-blocking sockets, ReceiveFrom may return WouldBlock.
+                // in C#, WouldBlock throws a SocketException, which is expected.
+                // unfortunately, creating the SocketException allocates in C#.
+                // let's poll first to avoid the WouldBlock allocation.
+                // note that this entirely to avoid allocations.
+                // non-blocking UDP doesn't need Poll in other languages.
+                // and the code still works without the Poll call.
+                if (!socket.Poll(0, SelectMode.SelectRead)) return false;
+
+                // NOTE: ReceiveFrom allocates.
+                //   we pass our IPEndPoint to ReceiveFrom.
+                //   receive from calls newClientEP.Create(socketAddr).
+                //   IPEndPoint.Create always returns a new IPEndPoint.
+                //   https://github.com/mono/mono/blob/f74eed4b09790a0929889ad7fc2cf96c9b6e3757/mcs/class/System/System.Net.Sockets/Socket.cs#L1761
+                //
+                // throws SocketException if datagram was larger than buffer.
+                // https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.receive?view=net-6.0
+                int size = socket.ReceiveFrom(recvBuffer, 0, recvBuffer.Length, SocketFlags.None, ref remoteEP);
+                data = new ArraySegment<byte>(recvBuffer, 0, size);
+                return true;
+            }
+            catch (SocketException e)
+            {
+                // for non-blocking sockets, Receive throws WouldBlock if there is
+                // no message to read. that's okay. only log for other errors.
+                if (e.SocketErrorCode == SocketError.WouldBlock) return false;
+
+                // otherwise it's a real socket error. throw it.
+                throw;
+            }
+        }
     }
 }

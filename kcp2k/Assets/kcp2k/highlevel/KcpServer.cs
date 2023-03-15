@@ -217,28 +217,11 @@ namespace kcp2k
 
             try
             {
-                // when using non-blocking sockets, SendTo may return WouldBlock.
-                // in C#, WouldBlock throws a SocketException, which is expected.
-                // unfortunately, creating the SocketException allocates in C#.
-                // let's poll first to avoid the WouldBlock allocation.
-                // note that this entirely to avoid allocations.
-                // non-blocking UDP doesn't need Poll in other languages.
-                // and the code still works without the Poll call.
-                if (!socket.Poll(0, SelectMode.SelectWrite)) return;
-
-                // send to the the endpoint.
-                // do not send to 'newClientEP', as that's always reused.
-                // fixes https://github.com/MirrorNetworking/Mirror/issues/3296
-                socket.SendTo(data.Array, data.Offset, data.Count, SocketFlags.None, connection.remoteEndPoint);
+                socket.SendToNonBlocking(data, connection.remoteEndPoint);
             }
-            // for non-blocking sockets, SendTo may throw WouldBlock.
-            // in that case, simply drop the message. it's UDP, it's fine.
             catch (SocketException e)
             {
-                if (e.SocketErrorCode != SocketError.WouldBlock)
-                {
-                    Log.Error($"KcpServer: SendTo failed: {e}");
-                }
+                Log.Error($"KcpServer: SendTo failed: {e}");
             }
         }
 

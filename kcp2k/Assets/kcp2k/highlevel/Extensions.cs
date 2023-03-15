@@ -57,9 +57,7 @@ namespace kcp2k
                 // and the code still works without the Poll call.
                 if (!socket.Poll(0, SelectMode.SelectWrite)) return false;
 
-                // send to the the endpoint.
-                // do not send to 'newClientEP', as that's always reused.
-                // fixes https://github.com/MirrorNetworking/Mirror/issues/3296
+                // SendTo allocates. we used bound Send.
                 socket.Send(data.Array, data.Offset, data.Count, SocketFlags.None);
                 return true;
             }

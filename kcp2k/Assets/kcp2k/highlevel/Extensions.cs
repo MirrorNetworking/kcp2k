@@ -7,6 +7,7 @@ namespace kcp2k
     public static class Extensions
     {
         // non-blocking UDP send.
+        // allows for reuse when overwriting KcpServer/Client (i.e. for relays).
         // => wrapped with Poll to avoid WouldBlock allocating new SocketException.
         // => wrapped with try-catch to ignore WouldBlock exception.
         // make sure to set socket.Blocking = false before using this!
@@ -41,6 +42,7 @@ namespace kcp2k
         }
 
         // non-blocking UDP send.
+        // allows for reuse when overwriting KcpServer/Client (i.e. for relays).
         // => wrapped with Poll to avoid WouldBlock allocating new SocketException.
         // => wrapped with try-catch to ignore WouldBlock exception.
         // make sure to set socket.Blocking = false before using this!
@@ -73,6 +75,7 @@ namespace kcp2k
         }
 
         // non-blocking UDP receive.
+        // allows for reuse when overwriting KcpServer/Client (i.e. for relays).
         // => wrapped with Poll to avoid WouldBlock allocating new SocketException.
         // => wrapped with try-catch to ignore WouldBlock exception.
         // make sure to set socket.Blocking = false before using this!
@@ -115,6 +118,7 @@ namespace kcp2k
         }
 
         // non-blocking UDP receive.
+        // allows for reuse when overwriting KcpServer/Client (i.e. for relays).
         // => wrapped with Poll to avoid WouldBlock allocating new SocketException.
         // => wrapped with try-catch to ignore WouldBlock exception.
         // make sure to set socket.Blocking = false before using this!

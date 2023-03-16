@@ -63,6 +63,11 @@ namespace kcp2k
         // maximum retransmission attempts until dead_link
         public uint MaxRetransmits;
 
+        // Whether to enable broadcasting. If true, the client will be able
+        // to broadcast messages and the server will be able to receive them
+        // and reply.
+        public bool EnableBroadcast;
+
         // constructor /////////////////////////////////////////////////////////
         // constructor with defaults for convenience.
         // makes it easy to define "new KcpConfig(DualMode=false)" etc.
@@ -78,7 +83,8 @@ namespace kcp2k
             uint SendWindowSize    = Kcp.WND_SND,
             uint ReceiveWindowSize = Kcp.WND_RCV,
             int Timeout            = KcpPeer.DEFAULT_TIMEOUT,
-            uint MaxRetransmits    = Kcp.DEADLINK)
+            uint MaxRetransmits    = Kcp.DEADLINK,
+            bool EnableBroadcast   = false)
         {
             this.DualMode = DualMode;
             this.RecvBufferSize = RecvBufferSize;
@@ -92,6 +98,7 @@ namespace kcp2k
             this.ReceiveWindowSize = ReceiveWindowSize;
             this.Timeout = Timeout;
             this.MaxRetransmits = MaxRetransmits;
+            this.EnableBroadcast = EnableBroadcast;
         }
     }
 }

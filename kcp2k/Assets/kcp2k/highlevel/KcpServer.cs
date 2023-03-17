@@ -372,6 +372,7 @@ namespace kcp2k
 
         public virtual void Stop()
         {
+            connections.Clear();
             socket?.Close();
             socket = null;
         }

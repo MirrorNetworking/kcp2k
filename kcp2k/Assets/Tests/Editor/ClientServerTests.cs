@@ -517,6 +517,46 @@ namespace kcp2k.Tests
         }
 
         [Test]
+        public void ClientToServerReliableInvalidCookie()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+
+            // change client to a wrong cookie
+            client.peer.receivedCookie[0] += 1;
+
+            // try to send a message with wrong cookie
+            client.Send(new ArraySegment<byte>(new byte[]{0x01, 0x02}), KcpChannel.Reliable);
+
+            // each max sized message needs a lot of updates for all the fragments.
+            // for multiple we need to update a lot more than usual.
+            UpdateSeveralTimes(5);
+
+            // server should drop the message
+            Assert.That(serverReceived.Count, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void ClientToServerUnreliableInvalidCookie()
+        {
+            server.Start(Port);
+            ConnectClientBlocking();
+
+            // change client to a wrong cookie
+            client.peer.receivedCookie[0] += 1;
+
+            // try to send a message with wrong cookie
+            client.Send(new ArraySegment<byte>(new byte[]{0x01, 0x02}), KcpChannel.Unreliable);
+
+            // each max sized message needs a lot of updates for all the fragments.
+            // for multiple we need to update a lot more than usual.
+            UpdateSeveralTimes(5);
+
+            // server should drop the message
+            Assert.That(serverReceived.Count, Is.EqualTo(0));
+        }
+
+        [Test]
         public void ServerToClientReliableMessage()
         {
             server.Start(Port);
@@ -713,6 +753,7 @@ namespace kcp2k.Tests
             client.Disconnect();
             server.Stop();
         }
+
         // test to see if successive messages still work fine.
         [Test]
         [TestCase(KcpChannel.Reliable)]

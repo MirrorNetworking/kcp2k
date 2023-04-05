@@ -1,5 +1,7 @@
+using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 
 namespace kcp2k
 {
@@ -58,5 +60,16 @@ namespace kcp2k
         //    different connections can have the same port.
         public static int ConnectionHash(EndPoint endPoint) =>
             endPoint.GetHashCode();
+
+        // cookies need to be generated with a secure random generator.
+        // we don't want them to be deterministic / predictable.
+        // RNG is cached to avoid runtime allocations.
+        static readonly RNGCryptoServiceProvider cryptoRandom = new RNGCryptoServiceProvider();
+        static readonly byte[] cryptoRandomBuffer = new byte[4];
+        public static uint GenerateCookie()
+        {
+            cryptoRandom.GetBytes(cryptoRandomBuffer);
+            return BitConverter.ToUInt32(cryptoRandomBuffer, 0);
+        }
     }
 }

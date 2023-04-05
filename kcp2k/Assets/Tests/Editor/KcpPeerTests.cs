@@ -10,7 +10,8 @@ namespace kcp2k.Tests
             (_, _) => {},
             () => {},
             (_, _) => {},
-            config) {}
+            config,
+            0) {}
     }
 
     public class KcpPeerTests
@@ -26,7 +27,7 @@ namespace kcp2k.Tests
             );
 
             KcpPeer peer = new MockPeer(config);
-            Assert.That(peer.MaxSendRate, Is.EqualTo(3_836_800));
+            Assert.That(peer.MaxSendRate, Is.EqualTo(3_824_000));
         }
 
         [Test]
@@ -41,7 +42,7 @@ namespace kcp2k.Tests
             );
 
             KcpPeer peer = new MockPeer(config);
-            Assert.That(peer.MaxReceiveRate, Is.EqualTo(15_347_200));
+            Assert.That(peer.MaxReceiveRate, Is.EqualTo(15_296_000));
         }
     }
 }

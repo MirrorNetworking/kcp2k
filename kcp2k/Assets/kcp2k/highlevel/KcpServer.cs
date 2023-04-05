@@ -206,8 +206,12 @@ namespace kcp2k
             // afterwards we assign the peer.
             KcpServerConnection connection = new KcpServerConnection(newClientEP);
 
+            // generate a random cookie for this connection to avoid UDP spoofing.
+            // needs to be random, but without allocations to avoid GC.
+            uint cookie = Common.GenerateCookie();
+
             // set up peer with callbacks
-            KcpPeer peer = new KcpPeer(RawSendWrap, OnAuthenticatedWrap, OnDataWrap, OnDisconnectedWrap, OnErrorWrap, config);
+            KcpPeer peer = new KcpPeer(RawSendWrap, OnAuthenticatedWrap, OnDataWrap, OnDisconnectedWrap, OnErrorWrap, config, cookie);
 
             // assign peer to connection
             connection.peer = peer;

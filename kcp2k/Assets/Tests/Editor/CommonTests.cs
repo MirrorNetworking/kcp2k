@@ -27,5 +27,12 @@ namespace kcp2k.Tests
             // different ip:port
             Assert.That(Common.ConnectionHash(endPointE), Is.EqualTo(1049776320));
         }
+
+        [Test]
+        public void GenerateCookie()
+        {
+            Assert.That(Common.GenerateCookie(), !Is.EqualTo(0));
+            Assert.That(Common.GenerateCookie(), !Is.EqualTo(Common.GenerateCookie()));
+        }
     }
 }

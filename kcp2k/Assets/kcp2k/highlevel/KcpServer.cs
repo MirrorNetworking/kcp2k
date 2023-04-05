@@ -157,15 +157,7 @@ namespace kcp2k
                 if (socket.ReceiveFromNonBlocking(rawReceiveBuffer, out segment, ref newClientEP))
                 {
                     // set connectionId to hash from endpoint
-                    // NOTE: IPEndPoint.GetHashCode() allocates.
-                    //  it calls m_Address.GetHashCode().
-                    //  m_Address is an IPAddress.
-                    //  GetHashCode() allocates for IPv6:
-                    //  https://github.com/mono/mono/blob/bdd772531d379b4e78593587d15113c37edd4a64/mcs/class/referencesource/System/net/System/Net/IPAddress.cs#L699
-                    //
-                    // => using only newClientEP.Port wouldn't work, because
-                    //    different connections can have the same port.
-                    connectionId = newClientEP.GetHashCode();
+                    connectionId = Common.ConnectionHash(newClientEP);
                     return true;
                 }
             }

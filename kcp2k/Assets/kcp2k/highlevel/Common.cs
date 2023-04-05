@@ -45,5 +45,18 @@ namespace kcp2k
 
             Log.Info($"Kcp: RecvBuf = {initialReceive}=>{socket.ReceiveBufferSize} ({socket.ReceiveBufferSize/initialReceive}x) SendBuf = {initialSend}=>{socket.SendBufferSize} ({socket.SendBufferSize/initialSend}x)");
         }
+
+        // generate a connection hash from IP+Port.
+        //
+        // NOTE: IPEndPoint.GetHashCode() allocates.
+        //  it calls m_Address.GetHashCode().
+        //  m_Address is an IPAddress.
+        //  GetHashCode() allocates for IPv6:
+        //  https://github.com/mono/mono/blob/bdd772531d379b4e78593587d15113c37edd4a64/mcs/class/referencesource/System/net/System/Net/IPAddress.cs#L699
+        //
+        // => using only newClientEP.Port wouldn't work, because
+        //    different connections can have the same port.
+        public static int ConnectionHash(EndPoint endPoint) =>
+            endPoint.GetHashCode();
     }
 }

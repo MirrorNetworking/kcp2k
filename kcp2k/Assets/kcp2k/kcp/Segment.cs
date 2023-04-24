@@ -35,7 +35,8 @@ namespace kcp2k
         // in other words, Encode only ever writes up to the above amount of bytes.
         internal int Encode(byte[] ptr, int offset)
         {
-            int offset_ = offset;
+            int previousPosition = offset;
+
             offset += Utils.Encode32U(ptr, offset, conv);
             offset += Utils.Encode8u(ptr, offset, (byte)cmd);
             // IMPORTANT kcp encodes 'frg' as 1 byte.
@@ -48,7 +49,8 @@ namespace kcp2k
             offset += Utils.Encode32U(ptr, offset, una);
             offset += Utils.Encode32U(ptr, offset, (uint)data.Position);
 
-            return offset - offset_;
+            int written = offset - previousPosition;
+            return written;
         }
 
         // reset to return a fresh segment to the pool

@@ -181,6 +181,7 @@ namespace kcp2k
                 // entry. this is fine because we remove it in ANY case.
                 Segment seg = rcv_queue.Dequeue();
 
+                // copy segment data into our buffer
                 Buffer.BlockCopy(seg.data.GetBuffer(), 0, buffer, offset, (int)seg.data.Position);
                 offset += (int)seg.data.Position;
 

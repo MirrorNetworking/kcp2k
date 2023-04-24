@@ -386,7 +386,7 @@ namespace kcp2k
         }
 
         // ikcp_parse_fastack
-        void ParseFastack(uint sn, uint ts)
+        void ParseFastack(uint sn, uint ts) // serial number, timestamp
         {
             if (Utils.TimeDiff(sn, snd_una) < 0 || Utils.TimeDiff(sn, snd_nxt) >= 0)
                 return;
@@ -411,7 +411,7 @@ namespace kcp2k
 
         // ikcp_ack_push
         // appends an ack.
-        void AckPush(uint sn, uint ts)
+        void AckPush(uint sn, uint ts) // serial number, timestamp
         {
             acklist.Add(new AckItem{ serialNumber = sn, timestamp = ts });
         }

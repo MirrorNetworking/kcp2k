@@ -933,6 +933,7 @@ namespace kcp2k
         {
             current = currentTimeMilliSeconds;
 
+            // not updated yet? then set updated and last flush time.
             if (!updated)
             {
                 updated = true;

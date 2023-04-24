@@ -1031,6 +1031,7 @@ namespace kcp2k
         // ikcp_interval
         public void SetInterval(uint interval)
         {
+            // clamp interval between 10 and 5000
             if      (interval > 5000) interval = 5000;
             else if (interval < 10)   interval = 10;
             this.interval = interval;
@@ -1058,6 +1059,7 @@ namespace kcp2k
 
             if (interval >= 0)
             {
+                // clamp interval between 10 and 5000
                 if (interval > 5000) interval = 5000;
                 else if (interval < 10) interval = 10;
                 this.interval = interval;

@@ -68,6 +68,7 @@ namespace kcp2k.Tests
             seg.ts = 0x0C0B0A09;
             seg.sn = 0x100F0E0D;
             seg.una = 0x14131211;
+            seg.data.WriteByte(0xFF);
 
             // reset
             seg.Reset();

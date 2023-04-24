@@ -21,10 +21,18 @@ namespace kcp2k
         // MemoryStream does that perfectly, no need to reinvent the wheel.
         // note: no need to pool it, because Segment is already pooled.
         // -> default MTU as initial capacity to avoid most runtime resizing/allocations
+        //
+        // .data is only used for Encode(), which always fits it into a buffer.
+        // the buffer is always Kcp.buffer. Kcp ctor creates the buffer of size:
+        // (mtu + OVERHEAD) * 3 bytes.
+        // in other words, Encode only ever writes up to the above amount of bytes.
         internal MemoryStream data = new MemoryStream(Kcp.MTU_DEF);
 
         // ikcp_encode_seg
-        // encode a segment into buffer
+        // encode a segment into buffer.
+        // buffer is always Kcp.buffer. Kcp ctor creates the buffer of size:
+        // (mtu + OVERHEAD) * 3 bytes.
+        // in other words, Encode only ever writes up to the above amount of bytes.
         internal int Encode(byte[] ptr, int offset)
         {
             int offset_ = offset;

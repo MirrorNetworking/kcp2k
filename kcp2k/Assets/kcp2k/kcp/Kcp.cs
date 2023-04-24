@@ -82,8 +82,13 @@ namespace kcp2k
         internal readonly List<Segment> rcv_buf = new List<Segment>(16);   // receive buffer
         internal readonly List<AckItem> acklist = new List<AckItem>(16);
 
+        // memory buffer
+        // size depends on MTU.
+        // MTU can be changed at runtime, which resizes the buffer.
         internal byte[] buffer;
-        readonly Action<byte[], int> output; // buffer, size
+
+        // output function of type <buffer, size>
+        readonly Action<byte[], int> output;
 
         // get how many packet is waiting to be sent
         public int WaitSnd => snd_buf.Count + snd_queue.Count;

@@ -350,9 +350,11 @@ namespace kcp2k
             // for-int so we can erase while iterating
             for (int i = 0; i < snd_buf.Count; ++i)
             {
+                // is this the segment?
                 Segment seg = snd_buf[i];
                 if (sn == seg.sn)
                 {
+                    // remove and return
                     snd_buf.RemoveAt(i);
                     SegmentDelete(seg);
                     break;

@@ -791,7 +791,8 @@ namespace kcp2k
                 newseg.cmd = CMD_PUSH;
                 newseg.wnd = seg.wnd;
                 newseg.ts = current;
-                newseg.sn = snd_nxt++;
+                newseg.sn = snd_nxt;
+                snd_nxt += 1;
                 newseg.una = rcv_nxt;
                 newseg.resendts = current;
                 newseg.rto = rx_rto;

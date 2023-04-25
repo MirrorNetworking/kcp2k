@@ -296,7 +296,7 @@ namespace kcp2k
                     seg.data.Write(buffer, offset, size);
                 }
                 // seg.len = size: WriteBytes sets segment.Position!
-                seg.frg = (byte)(count - i - 1);
+                seg.frg = (uint)(count - i - 1);
                 snd_queue.Enqueue(seg);
                 offset += size;
                 len -= size;

@@ -693,7 +693,7 @@ namespace kcp2k
             int size  = 0;     // amount of bytes to flush. 'buffer ptr' in C.
             bool lost = false; // lost segments
 
-            // 'ikcp_update' haven't been called.
+            // update needs to be called before flushing
             if (!updated) return;
 
             // kcp only stack allocates a segment here for performance, leaving

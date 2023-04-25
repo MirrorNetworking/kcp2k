@@ -698,9 +698,9 @@ namespace kcp2k
 
             // kcp only stack allocates a segment here for performance, leaving
             // its data buffer null because this segment's data buffer is never
-            // used. that's fine in C, but in C# our segment is class so we need
-            // to allocate and most importantly, not forget to deallocate it
-            // before returning.
+            // used. that's fine in C, but in C# our segment is a class so we
+            // need to allocate and most importantly, not forget to deallocate
+            // it before returning.
             Segment seg = SegmentNew();
             seg.conv = conv;
             seg.cmd = CMD_ACK;

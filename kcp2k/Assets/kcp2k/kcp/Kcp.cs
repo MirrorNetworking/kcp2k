@@ -662,6 +662,26 @@ namespace kcp2k
             return 0;
         }
 
+        // flush helper function
+        void MakeSpace(ref int size, int space)
+        {
+            if (size + space > mtu)
+            {
+                output(buffer, size);
+                size = 0;
+            }
+        }
+
+        // flush helper function
+        void FlushBuffer(int size)
+        {
+            // flush buffer up to 'offset' (<= MTU)
+            if (size > 0)
+            {
+                output(buffer, size);
+            }
+        }
+
         // ikcp_flush
         // flush remain ack segments.
         // flush may output multiple <= MTU messages from MakeSpace / FlushBuffer.
@@ -672,25 +692,6 @@ namespace kcp2k
         {
             int size  = 0;     // amount of bytes to flush. 'buffer ptr' in C.
             bool lost = false; // lost segments
-
-            // helper functions
-            void MakeSpace(int space)
-            {
-                if (size + space > mtu)
-                {
-                    output(buffer, size);
-                    size = 0;
-                }
-            }
-
-            void FlushBuffer()
-            {
-                // flush buffer up to 'offset' (<= MTU)
-                if (size > 0)
-                {
-                    output(buffer, size);
-                }
-            }
 
             // 'ikcp_update' haven't been called.
             if (!updated) return;
@@ -709,7 +710,7 @@ namespace kcp2k
             // flush acknowledges
             foreach (AckItem ack in acklist)
             {
-                MakeSpace(OVERHEAD);
+                MakeSpace(ref size, OVERHEAD);
                 // ikcp_ack_get assigns ack[i] to seg.sn, seg.ts
                 seg.sn = ack.serialNumber;
                 seg.ts = ack.timestamp;
@@ -750,7 +751,7 @@ namespace kcp2k
             if ((probe & ASK_SEND) != 0)
             {
                 seg.cmd = CMD_WASK;
-                MakeSpace(OVERHEAD);
+                MakeSpace(ref size, OVERHEAD);
                 size += seg.Encode(buffer, size);
             }
 
@@ -758,7 +759,7 @@ namespace kcp2k
             if ((probe & ASK_TELL) != 0)
             {
                 seg.cmd = CMD_WINS;
-                MakeSpace(OVERHEAD);
+                MakeSpace(ref size, OVERHEAD);
                 size += seg.Encode(buffer, size);
             }
 
@@ -855,7 +856,7 @@ namespace kcp2k
                     segment.una = rcv_nxt;
 
                     int need = OVERHEAD + (int)segment.data.Position;
-                    MakeSpace(need);
+                    MakeSpace(ref size, need);
 
                     size += segment.Encode(buffer, size);
 
@@ -880,7 +881,7 @@ namespace kcp2k
             SegmentDelete(seg);
 
             // flash remain segments
-            FlushBuffer();
+            FlushBuffer(size);
 
             // update ssthresh
             // rate halving, https://tools.ietf.org/html/rfc6937

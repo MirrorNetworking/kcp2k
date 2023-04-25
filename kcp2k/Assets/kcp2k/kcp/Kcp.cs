@@ -537,6 +537,7 @@ namespace kcp2k
                 // note: original kcp casts uint len to int for <0 check.
                 if (size < len || (int)len < 0) return -2;
 
+                // validate command type
                 if (cmd != CMD_PUSH && cmd != CMD_ACK &&
                     cmd != CMD_WASK && cmd != CMD_WINS)
                     return -3;

@@ -810,6 +810,7 @@ namespace kcp2k
             foreach (Segment segment in snd_buf)
             {
                 bool needsend = false;
+
                 // initial transmit
                 if (segment.xmit == 0)
                 {
@@ -880,7 +881,7 @@ namespace kcp2k
             // done with it.
             SegmentDelete(seg);
 
-            // flash remain segments
+            // flush remaining segments
             FlushBuffer(size);
 
             // update ssthresh

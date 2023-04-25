@@ -716,7 +716,6 @@ namespace kcp2k
                 seg.ts = ack.timestamp;
                 size += seg.Encode(buffer, size);
             }
-
             acklist.Clear();
 
             // probe window size (if remote window size equals zero)

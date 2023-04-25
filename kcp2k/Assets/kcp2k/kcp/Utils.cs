@@ -20,7 +20,7 @@ namespace kcp2k
         }
 
         // decode 8 bits unsigned int
-        public static int Decode8u(byte[] p, int offset, ref byte value)
+        public static int Decode8u(byte[] p, int offset, out byte value)
         {
             value = p[0 + offset];
             return 1;
@@ -35,7 +35,7 @@ namespace kcp2k
         }
 
         // decode 16 bits unsigned int (lsb)
-        public static int Decode16U(byte[] p, int offset, ref ushort value)
+        public static int Decode16U(byte[] p, int offset, out ushort value)
         {
             ushort result = 0;
             result |= p[0 + offset];
@@ -55,7 +55,7 @@ namespace kcp2k
         }
 
         // decode 32 bits unsigned int (lsb)
-        public static int Decode32U(byte[] p, int offset, ref uint value)
+        public static int Decode32U(byte[] p, int offset, out uint value)
         {
             uint result = 0;
             result |= p[0 + offset];

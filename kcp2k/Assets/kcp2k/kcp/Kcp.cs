@@ -525,19 +525,19 @@ namespace kcp2k
                 if (size < OVERHEAD) break;
 
                 // decode segment
-                offset += Utils.Decode32U(data, offset, ref conv_);
+                offset += Utils.Decode32U(data, offset, out conv_);
                 if (conv_ != conv) return -1;
 
-                offset += Utils.Decode8u(data, offset, ref cmd);
+                offset += Utils.Decode8u(data, offset, out cmd);
                 // IMPORTANT kcp encodes 'frg' as 1 byte.
                 // so we can only support up to 255 fragments.
                 // (which limits max message size to around 288 KB)
-                offset += Utils.Decode8u(data, offset, ref frg);
-                offset += Utils.Decode16U(data, offset, ref wnd);
-                offset += Utils.Decode32U(data, offset, ref ts);
-                offset += Utils.Decode32U(data, offset, ref sn);
-                offset += Utils.Decode32U(data, offset, ref una);
-                offset += Utils.Decode32U(data, offset, ref len);
+                offset += Utils.Decode8u(data, offset, out frg);
+                offset += Utils.Decode16U(data, offset, out wnd);
+                offset += Utils.Decode32U(data, offset, out ts);
+                offset += Utils.Decode32U(data, offset, out sn);
+                offset += Utils.Decode32U(data, offset, out una);
+                offset += Utils.Decode32U(data, offset, out len);
 
                 // subtract the segment bytes from size
                 size -= OVERHEAD;

@@ -530,7 +530,7 @@ namespace kcp2k
                 offset += Utils.Decode32U(data, offset, out uint una);
                 offset += Utils.Decode32U(data, offset, out uint len);
 
-                // subtract the segment bytes from size
+                // reduce remaining size by what was read
                 size -= OVERHEAD;
 
                 // enough remaining to read 'len' bytes of the actual payload?

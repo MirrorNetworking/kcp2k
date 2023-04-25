@@ -512,32 +512,23 @@ namespace kcp2k
 
             while (true)
             {
-                uint ts = 0;
-                uint sn = 0;
-                uint len = 0;
-                uint una = 0;
-                uint conv_ = 0;
-                ushort wnd = 0;
-                byte cmd = 0;
-                byte frg = 0;
-
                 // enough data left to decode segment (aka OVERHEAD bytes)?
                 if (size < OVERHEAD) break;
 
                 // decode segment
-                offset += Utils.Decode32U(data, offset, out conv_);
+                offset += Utils.Decode32U(data, offset, out uint conv_);
                 if (conv_ != conv) return -1;
 
-                offset += Utils.Decode8u(data, offset, out cmd);
+                offset += Utils.Decode8u(data, offset, out byte cmd);
                 // IMPORTANT kcp encodes 'frg' as 1 byte.
                 // so we can only support up to 255 fragments.
                 // (which limits max message size to around 288 KB)
-                offset += Utils.Decode8u(data, offset, out frg);
-                offset += Utils.Decode16U(data, offset, out wnd);
-                offset += Utils.Decode32U(data, offset, out ts);
-                offset += Utils.Decode32U(data, offset, out sn);
-                offset += Utils.Decode32U(data, offset, out una);
-                offset += Utils.Decode32U(data, offset, out len);
+                offset += Utils.Decode8u(data, offset, out byte frg);
+                offset += Utils.Decode16U(data, offset, out ushort wnd);
+                offset += Utils.Decode32U(data, offset, out uint ts);
+                offset += Utils.Decode32U(data, offset, out uint sn);
+                offset += Utils.Decode32U(data, offset, out uint una);
+                offset += Utils.Decode32U(data, offset, out uint len);
 
                 // subtract the segment bytes from size
                 size -= OVERHEAD;

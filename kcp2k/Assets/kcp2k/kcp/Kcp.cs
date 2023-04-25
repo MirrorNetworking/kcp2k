@@ -17,7 +17,7 @@ namespace kcp2k
         public const int CMD_PUSH = 81;            // cmd: push data
         public const int CMD_ACK  = 82;            // cmd: ack
         public const int CMD_WASK = 83;            // cmd: window probe (ask)
-        public const int CMD_WINS = 84;            // cmd: window size (tell)
+        public const int CMD_WINS = 84;            // cmd: window size (tell/insert)
         public const int ASK_SEND = 1;             // need to send CMD_WASK
         public const int ASK_TELL = 2;             // need to send CMD_WINS
         public const int WND_SND = 32;             // default send window

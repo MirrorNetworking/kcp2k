@@ -10,7 +10,7 @@ namespace kcp2k
         internal uint frg;      // fragment (sent as 1 byte)
         internal uint wnd;      // window size that the receive can currently receive
         internal uint ts;       // timestamp
-        internal uint sn;       // serial number
+        internal uint sn;       // sequence number
         internal uint una;
         internal uint resendts; // resend timestamp
         internal int  rto;

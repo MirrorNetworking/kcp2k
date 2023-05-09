@@ -167,7 +167,7 @@ namespace kcp2k.Tests
             // setup KCP
             Kcp kcp = new Kcp(0, Output);
 
-            // add some to send buffer and send queue
+            // add some to send buffer and send buffer and queue
             kcp.snd_buf.Add(new Segment());
             kcp.snd_buf.Add(new Segment());
             kcp.snd_queue.Enqueue(new Segment());

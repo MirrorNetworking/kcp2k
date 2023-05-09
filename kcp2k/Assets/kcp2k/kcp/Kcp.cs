@@ -446,6 +446,7 @@ namespace kcp2k
             bool repeat = false; // 'duplicate'
 
             // original C iterates backwards, so we need to do that as well.
+            // note if rcv_buf.Count == 0, i becomes -1 and no looping happens.
             int i;
             for (i = rcv_buf.Count - 1; i >= 0; i--)
             {

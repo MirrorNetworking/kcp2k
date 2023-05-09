@@ -477,12 +477,17 @@ namespace kcp2k
             }
         }
 
-        // move available data from rcv_buf -> rcv_queue
+        // move ready segments from rcv_buf -> rcv_queue.
+        // moves only the ready segments which are in rcv_nxt sequence order.
+        // some may still be missing an inserted later.
         void MoveReceiveBufferDataToReceiveQueue()
         {
             int removed = 0;
             foreach (Segment seg in rcv_buf)
             {
+                // move segments while they are in 'rcv_nxt' sequence order.
+                // some may still be missing and inserted later, in this case it stops immediately
+                // because segments always need to be received in the exact sequence order.
                 if (seg.sn == rcv_nxt && rcv_queue.Count < rcv_wnd)
                 {
                     // can't remove while iterating. remember how many to remove

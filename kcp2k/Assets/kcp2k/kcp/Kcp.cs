@@ -46,8 +46,8 @@ namespace kcp2k
         internal uint mtu;
         internal uint mss;           // maximum segment size := MTU - OVERHEAD
         internal uint snd_una;       // unacknowledged. e.g. snd_una is 9 it means 8 has been confirmed, 9 and 10 have been sent
-        internal uint snd_nxt;
-        internal uint rcv_nxt;
+        internal uint snd_nxt;       // forever growing send counter for sequence numbers
+        internal uint rcv_nxt;       // forever growing receive counter for sequence numbers
         internal uint ssthresh;      // slow start threshold
         internal int rx_rttval;      // average deviation of rtt, used to measure the jitter of rtt
         internal int rx_srtt;        // smoothed round trip time (a weighted average of rtt)
@@ -211,6 +211,7 @@ namespace kcp2k
                     ++removed;
                     // add
                     rcv_queue.Enqueue(seg);
+                    // increase sequence number for next segment
                     rcv_nxt++;
                 }
                 else
@@ -488,6 +489,7 @@ namespace kcp2k
                     // and do it after the loop.
                     ++removed;
                     rcv_queue.Enqueue(seg);
+                    // increase sequence number for next segment
                     rcv_nxt++;
                 }
                 else
@@ -794,7 +796,7 @@ namespace kcp2k
                 newseg.wnd = seg.wnd;
                 newseg.ts = current;
                 newseg.sn = snd_nxt;
-                snd_nxt += 1;
+                snd_nxt += 1; // increase sequence number for next segment
                 newseg.una = rcv_nxt;
                 newseg.resendts = current;
                 newseg.rto = rx_rto;

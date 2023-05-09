@@ -77,7 +77,28 @@ namespace kcp2k
                 OnDisconnected();
                 return;
             }
+            IPAddress resolvedAddress = null;
 
+            // resolved address might return v6, even when we're configured to not use v6
+            // so we need to do some filtering
+            foreach (IPAddress ipAddress in addresses)
+            {
+                if (ipAddress.AddressFamily == AddressFamily.InterNetwork ||
+                    config.DualMode && ipAddress.AddressFamily == AddressFamily.InterNetworkV6)
+                {
+                    resolvedAddress = ipAddress;
+                    break;
+                }
+            }
+
+            if (resolvedAddress == null)
+            {
+                // pass error to user callback. no need to log it manually.
+                OnError(ErrorCode.DnsResolve, $"Failed to resolve host '{address}' to a IPv4{(config.DualMode ? "/IPv6" : "")} address");
+                OnDisconnected();
+                return;
+            }
+            
             // create fresh peer for each new session
             // client doesn't need secure cookie.
             peer = new KcpPeer(RawSend, OnAuthenticatedWrap, OnData, OnDisconnectedWrap, OnError, config, 0);
@@ -103,7 +124,7 @@ namespace kcp2k
             Log.Info($"KcpClient: connect to {address}:{port}");
 
             // create socket
-            remoteEndPoint = new IPEndPoint(addresses[0], port);
+            remoteEndPoint = new IPEndPoint(resolvedAddress, port);
             socket = new Socket(remoteEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
 
             // recv & send are called from main thread.

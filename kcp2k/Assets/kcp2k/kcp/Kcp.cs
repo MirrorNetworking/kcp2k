@@ -432,7 +432,7 @@ namespace kcp2k
             }
 
             InsertSegmentInReceiveBuffer(newseg);
-            MoveReceiveBufferDataToReceiveQueue();
+            MoveReceiveBufferReadySegmentsToQueue();
         }
 
         // inserts the segment into rcv_buf, ordered by seg.sn.
@@ -480,7 +480,7 @@ namespace kcp2k
         // move ready segments from rcv_buf -> rcv_queue.
         // moves only the ready segments which are in rcv_nxt sequence order.
         // some may still be missing an inserted later.
-        void MoveReceiveBufferDataToReceiveQueue()
+        void MoveReceiveBufferReadySegmentsToQueue()
         {
             int removed = 0;
             foreach (Segment seg in rcv_buf)

@@ -151,7 +151,7 @@ namespace kcp2k.Tests
             // it should do nothing if snd_nxt is <= sn
             kcp.snd_nxt = 1;
 
-            // parse ack with sn == 3, should remove the last segment
+            // parse ack should not remove anything
             kcp.ParseAck(1);
             Assert.That(kcp.snd_buf.Count, Is.EqualTo(3));
             Assert.That(kcp.snd_buf[0], Is.EqualTo(one));

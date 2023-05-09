@@ -63,10 +63,10 @@ namespace kcp2k.Tests
 
             // insert three segments into send buffer
             Segment one = new Segment{sn=1};
-            kcp.snd_buf.Add(one);
             Segment two = new Segment{sn=2};
-            kcp.snd_buf.Add(two);
             Segment three = new Segment{sn=3};
+            kcp.snd_buf.Add(one);
+            kcp.snd_buf.Add(two);
             kcp.snd_buf.Add(three);
 
             // parse ack only removes if sn < snd_nxt

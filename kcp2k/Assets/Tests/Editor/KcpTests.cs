@@ -177,6 +177,23 @@ namespace kcp2k.Tests
         }
 
         [Test]
+        public void WndUnused()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // add a few entries into receive queue
+            kcp.rcv_queue.Enqueue(new Segment());
+            kcp.rcv_queue.Enqueue(new Segment());
+            kcp.rcv_queue.Enqueue(new Segment());
+
+            // unused should be window size - queue size
+            Assert.That(kcp.WndUnused(), Is.EqualTo(kcp.rcv_wnd - 3));
+        }
+
+        [Test]
         public void ShrinkBufFilledSendBuffer()
         {
             void Output(byte[] data, int len) {}

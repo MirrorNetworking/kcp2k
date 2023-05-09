@@ -656,7 +656,7 @@ namespace kcp2k
         }
 
         // ikcp_wnd_unused
-    // returns unused receive window := receive_window - receive_queue
+        // returns the remaining space in receive window (rcv_wnd - rcv_queue)
         uint WndUnused()
         {
             if (rcv_queue.Count < rcv_wnd)

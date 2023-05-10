@@ -7,7 +7,10 @@ namespace kcp2k
     {
         internal uint conv;     // conversation
         internal uint cmd;      // command, e.g. Kcp.CMD_ACK etc.
-        internal uint frg;      // fragment (sent as 1 byte)
+        // fragment (sent as 1 byte).
+        // 0 if unfragmented, otherwise fragment numbers in reverse: N,..,32,1,0
+        // this way the first received segment tells us how many fragments there are.
+        internal uint frg;
         internal uint wnd;      // window size that the receive can currently receive
         internal uint ts;       // timestamp
         internal uint sn;       // sequence number

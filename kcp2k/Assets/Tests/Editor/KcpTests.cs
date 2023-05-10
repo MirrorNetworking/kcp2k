@@ -159,6 +159,81 @@ namespace kcp2k.Tests
             Assert.That(kcp.snd_buf[2], Is.EqualTo(three));
         }
 
+        // peek without any messages in the receive queue
+        [Test]
+        public void PeekSize_Empty()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // peek should indicate empty size
+            Assert.That(kcp.PeekSize(), Is.EqualTo(-1));
+        }
+
+        // peek with a complete unfragmented message in the receive queue
+        [Test]
+        public void PeekSize_Unfragmented()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // insert a small unfragmented message
+            Segment seg = new Segment();
+            seg.frg = 0; // frg == 0 indicates unfragmented message
+            seg.data.Position = 42;
+            kcp.rcv_queue.Enqueue(seg);
+
+            // peek should get the unfragmented message's size
+            Assert.That(kcp.PeekSize(), Is.EqualTo(42));
+        }
+
+        // peek with an incomplete fragmented message in the receive queue
+        [Test]
+        public void PeekSize_Fragmented_Incomplete()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // insert only one fragment of a two fragment message
+            Segment part1 = new Segment();
+            part1.frg = 1; // first segment's .frg indicates the last .frg number. total: 1,0
+            part1.data.Position = 42; // set some data
+            kcp.rcv_queue.Enqueue(part1);
+
+            // peek should indicate incomplete fragments
+            Assert.That(kcp.PeekSize(), Is.EqualTo(-1));
+        }
+
+        // peek with a complete fragmented message in the receive queue
+        [Test]
+        public void PeekSize_Fragmented_Complete()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // insert only one fragment of a two fragment message
+            Segment part1 = new Segment();
+            part1.frg = 1; // first segment's .frg indicates the last .frg number. total: 1,0
+            part1.data.Position = 42; // set some data
+            kcp.rcv_queue.Enqueue(part1);
+
+            Segment part2 = new Segment();
+            part2.frg = 0; // fragment count in reverse
+            part2.data.Position = 11; // set some data
+            kcp.rcv_queue.Enqueue(part2);
+
+            // peek should peek through all fragments to calculate the whole message's size
+            Assert.That(kcp.PeekSize(), Is.EqualTo(42 + 11));
+        }
+
         [Test]
         public void WaitSnd()
         {

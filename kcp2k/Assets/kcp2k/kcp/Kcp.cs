@@ -233,18 +233,33 @@ namespace kcp2k
         }
 
         // ikcp_peeksize
-        // check the size of next message in the recv queue
+        // check the size of next message in the recv queue.
+        // returns -1 if there is no message, or if the message is still incomplete.
         public int PeekSize()
         {
             int length = 0;
 
+            // empty queue?
             if (rcv_queue.Count == 0) return -1;
 
+            // peek the first segment
             Segment seq = rcv_queue.Peek();
+
+            // seg.frg is 0 if the message requires no fragmentation.
+            // in that case, the segment's size is the final message size.
             if (seq.frg == 0) return (int)seq.data.Position;
 
+            // check if all fragment parts were received yet.
+            // seg.frg is the n-th fragment, but in reverse.
+            // this way the first received segment tells us how many fragments there are for the message.
+            // for example, if a message contains 3 segments:
+            //   first segment:  .frg is 2 (index in reverse)
+            //   second segment: .frg is 1 (index in reverse)
+            //   third segment:  .frg is 0 (index in reverse)
             if (rcv_queue.Count < seq.frg + 1) return -1;
 
+            // recv_queue contains all the fragments necessary to reconstruct the message.
+            // sum all fragment's sizes to get the full message size.
             foreach (Segment seg in rcv_queue)
             {
                 length += (int)seg.data.Position;
@@ -297,6 +312,10 @@ namespace kcp2k
                     seg.data.Write(buffer, offset, size);
                 }
                 // seg.len = size: WriteBytes sets segment.Position!
+
+                // set fragment number.
+                // if the message requires no fragmentation, then
+                // seg.frg becomes 1-0-1 = 0
                 seg.frg = (uint)(count - i - 1);
                 snd_queue.Enqueue(seg);
                 offset += size;

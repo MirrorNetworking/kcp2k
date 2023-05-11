@@ -412,7 +412,10 @@ namespace kcp2k
         // ikcp_parse_fastack
         void ParseFastack(uint sn, uint ts) // serial number, timestamp
         {
-            if (Utils.TimeDiff(sn, snd_una) < 0 || Utils.TimeDiff(sn, snd_nxt) >= 0)
+            if (Utils.TimeDiff(sn, snd_una) < 0)
+                return;
+
+            if (Utils.TimeDiff(sn, snd_nxt) >= 0)
                 return;
 
             foreach (Segment seg in snd_buf)

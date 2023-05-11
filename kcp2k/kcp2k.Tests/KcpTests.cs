@@ -490,6 +490,25 @@ namespace kcp2k.Tests
         }
 
         [Test]
+        public void SetMtu()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // set an allowed MTU that's smaller than default
+            kcp.SetMtu(500);
+            Assert.That(kcp.mtu, Is.EqualTo(500));
+            Assert.That(kcp.buffer.Length, Is.GreaterThanOrEqualTo(500));
+
+            // set an allowed MTU that's larger than default
+            kcp.SetMtu(5000);
+            Assert.That(kcp.mtu, Is.EqualTo(5000));
+            Assert.That(kcp.buffer.Length, Is.GreaterThanOrEqualTo(5000));
+        }
+
+        [Test]
         public void SetIntervalTooSmall()
         {
             void Output(byte[] data, int len) {}
@@ -555,21 +574,6 @@ namespace kcp2k.Tests
             Assert.That(kcp.snd_wnd, Is.EqualTo(42));
             Assert.That(kcp.rcv_wnd, Is.EqualTo(Kcp.WND_RCV));
         }
-
-        /*[Test]
-        public void SetMtu()
-        {
-            void Output(byte[] data, int len) {}
-
-            // setup KCP
-            Kcp kcp = new Kcp(0, Output);
-
-            // double MTU
-            uint mtu = kcp.mtu * 2;
-            kcp.SetMtu(mtu);
-            Assert.That(kcp.mtu, Is.EqualTo(mtu));
-            Assert.That(kcp.buffer.Length, Is.GreaterThanOrEqualTo(mtu));
-        }*/
 
         [Test]
         public void Check()

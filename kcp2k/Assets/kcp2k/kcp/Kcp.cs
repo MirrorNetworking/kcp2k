@@ -387,7 +387,8 @@ namespace kcp2k
         }
 
         // ikcp_parse_una
-        void ParseUna(uint una)
+        // removes all unacknowledged segments with sequence numbers < una from send buffer
+        internal void ParseUna(uint una)
         {
             int removed = 0;
             foreach (Segment seg in snd_buf)

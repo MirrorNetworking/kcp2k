@@ -159,6 +159,87 @@ namespace kcp2k.Tests
             Assert.That(kcp.snd_buf[2], Is.EqualTo(three));
         }
 
+        [Test]
+        public void ParseUna_Empty()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // parse_una should remove all segments < una from send buffer
+            kcp.ParseUna(2);
+            Assert.That(kcp.snd_buf.Count, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void ParseUna_None()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // insert three segments into send buffer
+            Segment one = new Segment{sn=1};
+            kcp.snd_buf.Add(one);
+            Segment two = new Segment{sn=2};
+            kcp.snd_buf.Add(two);
+            Segment three = new Segment{sn=3};
+            kcp.snd_buf.Add(three);
+
+            // parse_una should remove all segments < una from send buffer
+            kcp.ParseUna(1);
+            Assert.That(kcp.snd_buf.Count, Is.EqualTo(3));
+            Assert.That(kcp.snd_buf[0], Is.EqualTo(one));
+            Assert.That(kcp.snd_buf[1], Is.EqualTo(two));
+            Assert.That(kcp.snd_buf[2], Is.EqualTo(three));
+        }
+
+        [Test]
+        public void ParseUna_Some()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // insert three segments into send buffer
+            Segment one = new Segment{sn=1};
+            kcp.snd_buf.Add(one);
+            Segment two = new Segment{sn=2};
+            kcp.snd_buf.Add(two);
+            Segment three = new Segment{sn=3};
+            kcp.snd_buf.Add(three);
+
+            // parse_una should remove all segments < una from send buffer
+            kcp.ParseUna(2);
+            Assert.That(kcp.snd_buf.Count, Is.EqualTo(2));
+            Assert.That(kcp.snd_buf[0], Is.EqualTo(two));
+            Assert.That(kcp.snd_buf[1], Is.EqualTo(three));
+        }
+
+        [Test]
+        public void ParseUna_All()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // insert three segments into send buffer
+            Segment one = new Segment{sn=1};
+            kcp.snd_buf.Add(one);
+            Segment two = new Segment{sn=2};
+            kcp.snd_buf.Add(two);
+            Segment three = new Segment{sn=3};
+            kcp.snd_buf.Add(three);
+
+            // parse_una should remove all segments < una from send buffer
+            kcp.ParseUna(4);
+            Assert.That(kcp.snd_buf.Count, Is.EqualTo(0));
+        }
+
         // peek without any messages in the receive queue
         [Test]
         public void PeekSize_Empty()

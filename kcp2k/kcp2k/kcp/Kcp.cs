@@ -34,12 +34,6 @@ namespace kcp2k
         public const int PROBE_LIMIT = 120000;     // up to 120 secs to probe window
         public const int FASTACK_LIMIT = 5;        // max times to trigger fastack
 
-        internal struct AckItem
-        {
-            internal uint serialNumber;
-            internal uint timestamp;
-        }
-
         // kcp members.
         internal int state;
         readonly uint conv;          // conversation

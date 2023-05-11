@@ -84,7 +84,7 @@ namespace kcp2k
         // output function of type <buffer, size>
         readonly Action<byte[], int> output;
 
-        // get how many packet is waiting to be sent
+        // calculate how many packets are waiting to be sent
         public int WaitSnd => snd_buf.Count + snd_queue.Count;
 
         // segment pool to avoid allocations in C#.

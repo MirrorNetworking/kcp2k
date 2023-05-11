@@ -414,15 +414,19 @@ namespace kcp2k
         {
             // sn needs to be between snd_una and snd_nxt
             // if !(snd_una <= sn && sn < snd_nxt) return;
-            if (Utils.TimeDiff(sn, snd_una) < 0)
+
+            // if (Utils.TimeDiff(sn, snd_una) < 0)
+            if (sn < snd_una)
                 return;
 
-            if (Utils.TimeDiff(sn, snd_nxt) >= 0)
+            // if (Utils.TimeDiff(sn, snd_nxt) >= 0)
+            if (sn >= snd_nxt)
                 return;
 
             foreach (Segment seg in snd_buf)
             {
-                if (Utils.TimeDiff(sn, seg.sn) < 0)
+                // if (Utils.TimeDiff(sn, seg.sn) < 0)
+                if (sn < seg.sn)
                 {
                     break;
                 }

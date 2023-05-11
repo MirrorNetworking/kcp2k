@@ -159,6 +159,7 @@ namespace kcp2k.Tests
             Assert.That(kcp.snd_buf[2], Is.EqualTo(three));
         }
 
+        // test with empty buffer
         [Test]
         public void ParseUna_Empty()
         {
@@ -172,6 +173,7 @@ namespace kcp2k.Tests
             Assert.That(kcp.snd_buf.Count, Is.EqualTo(0));
         }
 
+        // test where no elements should be removed
         [Test]
         public void ParseUna_None()
         {
@@ -196,6 +198,7 @@ namespace kcp2k.Tests
             Assert.That(kcp.snd_buf[2], Is.EqualTo(three));
         }
 
+        // test where some elements should be removed
         [Test]
         public void ParseUna_Some()
         {
@@ -219,6 +222,7 @@ namespace kcp2k.Tests
             Assert.That(kcp.snd_buf[1], Is.EqualTo(three));
         }
 
+        // test where all elements should be removed
         [Test]
         public void ParseUna_All()
         {
@@ -238,6 +242,111 @@ namespace kcp2k.Tests
             // parse_una should remove all segments < una from send buffer
             kcp.ParseUna(4);
             Assert.That(kcp.snd_buf.Count, Is.EqualTo(0));
+        }
+
+        // test with no elements in send buffer
+        [Test]
+        public void ParseFastack_Empty()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            kcp.snd_una = 1; // == sn to ensure <= is checked
+            kcp.snd_nxt = 2; // sn + 1 to ensure < is checked
+
+            kcp.ParseFastack(1, 0);
+            Assert.That(kcp.snd_buf.Count, Is.EqualTo(0));
+        }
+
+        // test where no elements should be counted
+        [Test]
+        public void ParseFastAck_None()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // insert three segments into send buffer
+            Segment one = new Segment{sn=2};
+            kcp.snd_buf.Add(one);
+            Segment two = new Segment{sn=3};
+            kcp.snd_buf.Add(two);
+            Segment three = new Segment{sn=4};
+            kcp.snd_buf.Add(three);
+
+            // sn needs to be between snd_una and snd_nxt
+            kcp.snd_una = 1; // == sn to ensure <= is checked
+            kcp.snd_nxt = 2; // sn + 1 to ensure < is checked
+
+            // only segments with seg.sn < sn should have their fastack incremented
+            // in this case, none
+            kcp.ParseFastack(1, 0);
+            Assert.That(kcp.snd_buf.Count, Is.EqualTo(3));
+            Assert.That(kcp.snd_buf[0].fastack, Is.EqualTo(0));
+            Assert.That(kcp.snd_buf[1].fastack, Is.EqualTo(0));
+            Assert.That(kcp.snd_buf[2].fastack, Is.EqualTo(0));
+        }
+
+        // test where some elements should be counted
+        [Test]
+        public void ParseFastAck_Some()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // insert three segments into send buffer
+            Segment one = new Segment{sn=2};
+            kcp.snd_buf.Add(one);
+            Segment two = new Segment{sn=3};
+            kcp.snd_buf.Add(two);
+            Segment three = new Segment{sn=4};
+            kcp.snd_buf.Add(three);
+
+            // sn needs to be between snd_una and snd_nxt
+            kcp.snd_una = 3; // == sn to ensure <= is checked
+            kcp.snd_nxt = 4; // sn + 1 to ensure < is checked
+
+            // only segments with seg.sn < sn should have their fastack incremented
+            kcp.ParseFastack(3, 0);
+            Assert.That(kcp.snd_buf.Count, Is.EqualTo(3));
+            Assert.That(kcp.snd_buf[0].fastack, Is.EqualTo(1));
+            Assert.That(kcp.snd_buf[1].fastack, Is.EqualTo(0));
+            Assert.That(kcp.snd_buf[2].fastack, Is.EqualTo(0));
+        }
+
+        // test where all elements should be counted
+        [Test]
+        public void ParseFastAck_All()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // insert three segments into send buffer
+            Segment one = new Segment{sn=2};
+            kcp.snd_buf.Add(one);
+            Segment two = new Segment{sn=3};
+            kcp.snd_buf.Add(two);
+            Segment three = new Segment{sn=4};
+            kcp.snd_buf.Add(three);
+
+            // sn needs to be between snd_una and snd_nxt
+            kcp.snd_una = 5; // == sn to ensure <= is checked
+            kcp.snd_nxt = 6; // sn + 1 to ensure < is checked
+
+            // only segments with seg.sn < sn should have their fastack incremented
+            // in this case, all
+            kcp.ParseFastack(5, 0);
+            Assert.That(kcp.snd_buf.Count, Is.EqualTo(3));
+            Assert.That(kcp.snd_buf[0].fastack, Is.EqualTo(1));
+            Assert.That(kcp.snd_buf[1].fastack, Is.EqualTo(1));
+            Assert.That(kcp.snd_buf[2].fastack, Is.EqualTo(1));
         }
 
         // peek without any messages in the receive queue

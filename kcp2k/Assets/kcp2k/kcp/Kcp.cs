@@ -410,8 +410,10 @@ namespace kcp2k
         }
 
         // ikcp_parse_fastack
-        void ParseFastack(uint sn, uint ts) // serial number, timestamp
+        internal void ParseFastack(uint sn, uint ts) // serial number, timestamp
         {
+            // sn needs to be between snd_una and snd_nxt
+            // if !(snd_una <= sn && sn < snd_nxt) return;
             if (Utils.TimeDiff(sn, snd_una) < 0)
                 return;
 

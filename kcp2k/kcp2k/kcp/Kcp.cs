@@ -84,9 +84,6 @@ namespace kcp2k
         // output function of type <buffer, size>
         readonly Action<byte[], int> output;
 
-        // calculate how many packets are waiting to be sent
-        public int WaitSnd => snd_buf.Count + snd_queue.Count;
-
         // segment pool to avoid allocations in C#.
         // this is not part of the original C code.
         readonly Pool<Segment> SegmentPool = new Pool<Segment>(
@@ -129,6 +126,18 @@ namespace kcp2k
         // we keep the original function and add our pooling to it.
         // this way we'll never miss it anywhere.
         void SegmentDelete(Segment seg) => SegmentPool.Return(seg);
+
+        // calculate how many packets are waiting to be sent
+        public int WaitSnd => snd_buf.Count + snd_queue.Count;
+
+        // ikcp_wnd_unused
+        // returns the remaining space in receive window (rcv_wnd - rcv_queue)
+        internal uint WndUnused()
+        {
+            if (rcv_queue.Count < rcv_wnd)
+                return rcv_wnd - (uint)rcv_queue.Count;
+            return 0;
+        }
 
         // ikcp_recv
         // receive data from kcp state machine
@@ -683,15 +692,6 @@ namespace kcp2k
                 }
             }
 
-            return 0;
-        }
-
-        // ikcp_wnd_unused
-        // returns the remaining space in receive window (rcv_wnd - rcv_queue)
-        internal uint WndUnused()
-        {
-            if (rcv_queue.Count < rcv_wnd)
-                return rcv_wnd - (uint)rcv_queue.Count;
             return 0;
         }
 

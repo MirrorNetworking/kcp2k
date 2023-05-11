@@ -1,8 +1,13 @@
 # kcp2k
+C# KCP based on the original C [kcp](https://github.com/skywind3000/kcp).
 
-C# [kcp](https://github.com/skywind3000/kcp) for Unity.
+Works with **netcore** and **Unity**. 
 
+Developed for [Mirror Networking](https://github.com/MirrorNetworking/Mirror).
+
+# Features
 * Kcp.cs based on kcp.c v1.7, line-by-line translation to C#
+* Heavy test coverage
 * Fixed [WND_RCV bug](https://github.com/skywind3000/kcp/pull/291) from original kcp
 * Optional high level C# code for client/server connection handling
 * Optional high level Unreliable channel added
@@ -10,9 +15,7 @@ C# [kcp](https://github.com/skywind3000/kcp) for Unity.
 Pull requests for bug fixes & tests welcome.
 
 # Unity
-kcp2k works perfectly in netcore.
-where-allocation only works with Unity's mono sockets.
-In order to run the nonalloc tests, kcp2k remains a Unity project until Unity moves to netcore.
+kcp2k works perfectly with Unity, see the Mirror repository's KcpTransport.
 
 # Allocations
 The client is allocation free.
@@ -26,4 +29,4 @@ Previously, [where-allocation](https://github.com/vis2k/where-allocation) for a 
 - Microsoft is considering to [remove the allocation](https://github.com/dotnet/runtime/issues/30797#issuecomment-1308599410).
 
 # Remarks
-- **Congestion Control** should be left disabled. It seems broken in KCP.
+- **Congestion Control** should be left disabled. It seems to be broken in KCP.

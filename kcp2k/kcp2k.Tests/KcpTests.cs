@@ -509,6 +509,31 @@ namespace kcp2k.Tests
         }
 
         [Test]
+        public void SetNoDelay()
+        {
+            void Output(byte[] data, int len) {}
+
+            // setup KCP
+            Kcp kcp = new Kcp(0, Output);
+
+            // enable nodelay with specific settings
+            kcp.SetNoDelay(1, 11, 2, true);
+            Assert.That(kcp.nodelay, Is.EqualTo(1));
+            Assert.That(kcp.rx_minrto, Is.EqualTo(Kcp.RTO_NDL));
+            Assert.That(kcp.interval, Is.EqualTo(11));
+            Assert.That(kcp.fastresend, Is.EqualTo(2));
+            Assert.That(kcp.nocwnd, Is.EqualTo(true));
+
+            // disable nodelay with specific settings
+            kcp.SetNoDelay(0, 22, 0, false);
+            Assert.That(kcp.nodelay, Is.EqualTo(0));
+            Assert.That(kcp.rx_minrto, Is.EqualTo(Kcp.RTO_MIN));
+            Assert.That(kcp.interval, Is.EqualTo(22));
+            Assert.That(kcp.fastresend, Is.EqualTo(0));
+            Assert.That(kcp.nocwnd, Is.EqualTo(false));
+        }
+
+        [Test]
         public void SetIntervalTooSmall()
         {
             void Output(byte[] data, int len) {}

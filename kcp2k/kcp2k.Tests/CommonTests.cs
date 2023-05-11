@@ -14,18 +14,28 @@ namespace kcp2k.Tests
             IPEndPoint endPointD = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 7778);
             IPEndPoint endPointE = new IPEndPoint(IPAddress.Parse("127.9.0.1"), 7778);
 
+            // hashes will be different in different .net environments.
+            // for example, Unity will have different hashes than .net core.
+            // for this reason we don't hardcode them
+
             // same ip:port
-            Assert.That(Common.ConnectionHash(endPointA), Is.EqualTo(35685658));
-            Assert.That(Common.ConnectionHash(endPointB), Is.EqualTo(35685658));
+            int hashA = Common.ConnectionHash(endPointA);
+            int hashB = Common.ConnectionHash(endPointB);
+            int hashC = Common.ConnectionHash(endPointC);
+            int hashD = Common.ConnectionHash(endPointD);
+            int hashE = Common.ConnectionHash(endPointE);
+
+            // same ip:port
+            Assert.That(hashA, Is.EqualTo(hashB));
 
             // different ip
-            Assert.That(Common.ConnectionHash(endPointC), Is.EqualTo(1049776323));
+            Assert.That(hashC, !Is.EqualTo(hashA));
 
             // different port
-            Assert.That(Common.ConnectionHash(endPointD), Is.EqualTo(35685657));
+            Assert.That(hashD, !Is.EqualTo(hashA));
 
             // different ip:port
-            Assert.That(Common.ConnectionHash(endPointE), Is.EqualTo(1049776320));
+            Assert.That(hashE, !Is.EqualTo(hashA));
         }
 
         [Test]

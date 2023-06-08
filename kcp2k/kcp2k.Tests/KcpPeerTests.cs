@@ -44,5 +44,25 @@ namespace kcp2k.Tests
             KcpPeer peer = new MockPeer(config);
             Assert.That(peer.MaxReceiveRate, Is.EqualTo(15_296_000));
         }
+
+        // test to prevent https://github.com/vis2k/kcp2k/issues/49
+        [Test]
+        public void InputTooSmall()
+        {
+            KcpConfig config = new KcpConfig(
+                SendWindowSize: 32,
+                ReceiveWindowSize: 128
+            );
+
+            KcpPeer peer = new MockPeer(config);
+
+            // try all sizes which are too small.
+            // we need at least 1 byte channel + 4 bytes cookie
+            peer.RawInput(new byte[]{1});
+            peer.RawInput(new byte[]{1, 2});
+            peer.RawInput(new byte[]{1, 2, 3});
+            peer.RawInput(new byte[]{1, 2, 3, 4});
+            peer.RawInput(new byte[]{1, 3, 3, 4, 5});
+        }
     }
 }

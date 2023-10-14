@@ -66,7 +66,7 @@ namespace kcp2k
 
         public virtual bool IsActive() => socket != null;
 
-        static Socket CreateServerSocket(bool DualMode, ushort port)
+        static Socket CreateServerSocket(bool DualMode, ushort port, bool enableBroadcast)
         {
             if (DualMode)
             {
@@ -84,6 +84,7 @@ namespace kcp2k
                 {
                     Log.Warning($"Failed to set Dual Mode, continuing with IPv6 without Dual Mode. Error: {e}");
                 }
+                socket.EnableBroadcast = enableBroadcast;
                 socket.Bind(new IPEndPoint(IPAddress.IPv6Any, port));
                 return socket;
             }
@@ -91,6 +92,7 @@ namespace kcp2k
             {
                 // IPv4 socket @ "0.0.0.0" : port
                 Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                socket.EnableBroadcast = enableBroadcast;
                 socket.Bind(new IPEndPoint(IPAddress.Any, port));
                 return socket;
             }
@@ -106,7 +108,7 @@ namespace kcp2k
             }
 
             // listen
-            socket = CreateServerSocket(config.DualMode, port);
+            socket = CreateServerSocket(config.DualMode, port, config.EnableBroadcast);
 
             // recv & send are called from main thread.
             // need to ensure this never blocks.

@@ -114,11 +114,22 @@ namespace kcp2k
             // even a 1ms block per connection would stop us from scaling.
             socket.Blocking = false;
 
+            // set flag to be able to send/recv broadcast messages if needed
+            socket.EnableBroadcast = config.EnableBroadcast;
+
             // configure buffer sizes
             Common.ConfigureSocketBuffers(socket, config.RecvBufferSize, config.SendBufferSize);
 
             // bind to endpoint so we can use send/recv instead of sendto/recvfrom.
-            socket.Connect(remoteEndPoint);
+            // But we don't do that if we want to be able to receive answers to
+            // broadcast requests, we must use socket.SendTo instead of socket.Connect.
+            // Otherwise broadcast address will be bound to the socket and it will be
+            // trying to receive data from it instead of the real address of
+            // the client and nothing will be received.
+            if (!config.EnableBroadcast)
+            {
+                socket.Connect(remoteEndPoint);
+            }
 
             // client should send handshake to server as very first message
             peer.SendHandshake();
@@ -158,7 +169,18 @@ namespace kcp2k
         {
             try
             {
-                socket.SendNonBlocking(data);
+                // if broadcast enabled, we use connectionless mode and must send
+                // data using the SendTo method. Note that using this method causes
+                // allocations (remoteEndPoint is re-serialized each time). Thus it
+                // is recommended to use broadcast-enabled client ONLY for discovery.
+                if (config.EnableBroadcast)
+                {
+                    socket.SendToNonBlocking(data, remoteEndPoint);
+                }
+                else
+                {
+                    socket.SendNonBlocking(data);
+                }
             }
             catch (SocketException e)
             {

@@ -199,9 +199,6 @@ namespace kcp2k
 
         protected virtual KcpServerConnection CreateConnection(int connectionId)
         {
-            // events need to be wrapped with connectionIds
-            void RawSendWrap(ArraySegment<byte> data) => RawSend(connectionId, data);
-
             // generate a random cookie for this connection to avoid UDP spoofing.
             // needs to be random, but without allocations to avoid GC.
             uint cookie = Common.GenerateCookie();
@@ -209,12 +206,13 @@ namespace kcp2k
             // create empty connection without peer first.
             // we need it to set up peer callbacks.
             // afterwards we assign the peer.
+            // events need to be wrapped with connectionIds
             KcpServerConnection connection = new KcpServerConnection(
                 OnConnectedCallback,
                 (message,  channel) => OnData(connectionId, message, channel),
                 OnDisconnectedCallback,
                 (error, reason) => OnError(connectionId, error, reason),
-                RawSendWrap,
+                (data) => RawSend(connectionId, data),
                 config,
                 cookie,
                 newClientEP);

@@ -22,15 +22,11 @@ namespace kcp2k
         // => cookie can be a random number, but it needs to be cryptographically
         //    secure random that can't be easily predicted.
         // => cookie can be hash(ip, port) BUT only if salted to be not predictable
-        readonly uint cookie;
-
-        // this is the cookie that the other end received during handshake.
-        // store byte[] representation to avoid runtime int->byte[] conversions.
-        internal readonly byte[] receivedCookie = new byte[4];
+        internal uint cookie;
 
         // state: connected as soon as we create the peer.
         // leftover from KcpConnection. remove it after refactoring later.
-        KcpState state = KcpState.Connected;
+        protected KcpState state = KcpState.Connected;
 
         // If we don't receive anything these many milliseconds
         // then consider us disconnected
@@ -133,7 +129,7 @@ namespace kcp2k
         protected void Reset(KcpConfig config)
         {
             // reset state
-            Array.Clear(receivedCookie);
+            cookie = 0;
             state = KcpState.Connected;
             lastReceiveTime = 0;
             lastPingTime = 0;
@@ -295,26 +291,13 @@ namespace kcp2k
                 // message type FSM. no default so we never miss a case.
                 switch (header)
                 {
-                    case KcpHeader.Handshake:
+                    case KcpHeader.Hello:
                     {
-                        // we were waiting for a handshake.
+                        // we were waiting for a Hello message.
                         // it proves that the other end speaks our protocol.
 
-                        // parse the cookie
-                        if (message.Count != 4)
-                        {
-                            // pass error to user callback. no need to log it manually.
-                            OnError(ErrorCode.InvalidReceive, $"{GetType()}: received invalid handshake message with size {message.Count} != 4. Disconnecting the connection.");
-                            Disconnect();
-                            return;
-                        }
-
-                        // store the cookie bytes to avoid int->byte[] conversions when sending.
-                        // still convert to uint once, just for prettier logging.
-                        Buffer.BlockCopy(message.Array, message.Offset, receivedCookie, 0, 4);
-                        uint prettyCookie = BitConverter.ToUInt32(message.Array, message.Offset);
-
-                        Log.Info($"{GetType()}: received handshake with cookie={prettyCookie}");
+                        // log with previously parsed cookie
+                        Log.Info($"{GetType()}: received hello with cookie={cookie}");
                         state = KcpState.Authenticated;
                         OnAuthenticated();
                         break;
@@ -352,9 +335,9 @@ namespace kcp2k
                 // message type FSM. no default so we never miss a case.
                 switch (header)
                 {
-                    case KcpHeader.Handshake:
+                    case KcpHeader.Hello:
                     {
-                        // should never receive another handshake after auth
+                        // should never receive another hello after auth
                         // GetType() shows Server/ClientConn instead of just Connection.
                         Log.Warning($"{GetType()}: received invalid header {header} while Authenticated. Disconnecting the connection.");
                         Disconnect();
@@ -496,7 +479,7 @@ namespace kcp2k
             }
         }
 
-        void OnRawInputReliable(ArraySegment<byte> message)
+        protected void OnRawInputReliable(ArraySegment<byte> message)
         {
             // input into kcp, but skip channel byte
             int input = kcp.Input(message.Array, message.Offset, message.Count);
@@ -507,7 +490,7 @@ namespace kcp2k
             }
         }
 
-        void OnRawInputUnreliable(ArraySegment<byte> message)
+        protected void OnRawInputUnreliable(ArraySegment<byte> message)
         {
             // ideally we would queue all unreliable messages and
             // then process them in ReceiveNext() together with the
@@ -558,57 +541,6 @@ namespace kcp2k
             }
         }
 
-        // insert raw IO. usually from socket.Receive.
-        // offset is useful for relays, where we may parse a header and then
-        // feed the rest to kcp.
-        public void RawInput(ArraySegment<byte> segment)
-        {
-            // ensure valid size: at least 1 byte for channel + 4 bytes for cookie
-            if (segment.Count <= 5) return;
-
-            // parse channel
-            // byte channel = segment[0]; ArraySegment[i] isn't supported in some older Unity Mono versions
-            byte channel = segment.Array[segment.Offset + 0];
-
-            // parse cookie
-            uint messageCookie = BitConverter.ToUInt32(segment.Array, segment.Offset + 1);
-
-            // compare cookie to protect against UDP spoofing.
-            // messages won't have a cookie until after handshake.
-            // so only compare if we are authenticated.
-            // simply drop the message if the cookie doesn't match.
-            if (state == KcpState.Authenticated && messageCookie != cookie)
-            {
-                Log.Warning($"{GetType()}: dropped message with invalid cookie: {messageCookie} expected: {cookie}.");
-                return;
-            }
-
-            // parse message
-            ArraySegment<byte> message = new ArraySegment<byte>(segment.Array, segment.Offset + 1+4, segment.Count - 1-4);
-
-            switch (channel)
-            {
-                case (byte)KcpChannel.Reliable:
-                {
-                    OnRawInputReliable(message);
-                    break;
-                }
-                case (byte)KcpChannel.Unreliable:
-                {
-                    OnRawInputUnreliable(message);
-                    break;
-                }
-                default:
-                {
-                    // invalid channel indicates random internet noise.
-                    // servers may receive random UDP data.
-                    // just ignore it, but log for easier debugging.
-                    Log.Warning($"{GetType()}: invalid channel header: {channel}, likely internet noise");
-                    break;
-                }
-            }
-        }
-
         // raw send called by kcp
         void RawSendReliable(byte[] data, int length)
         {
@@ -618,7 +550,7 @@ namespace kcp2k
 
             // write handshake cookie to protect against UDP spoofing.
             // from 1, with 4 bytes
-            Buffer.BlockCopy(receivedCookie, 0, rawSendBuffer, 1, 4);
+            Utils.Encode32U(rawSendBuffer, 1, cookie); // allocation free
 
             // write data
             // from 5, with N bytes
@@ -673,7 +605,7 @@ namespace kcp2k
 
             // write handshake cookie to protect against UDP spoofing.
             // from 1, with 4 bytes
-            Buffer.BlockCopy(receivedCookie, 0, rawSendBuffer, 1, 4);
+            Utils.Encode32U(rawSendBuffer, 1, cookie); // allocation free
 
             // write data
             // from 5, with N bytes
@@ -690,20 +622,14 @@ namespace kcp2k
         // * server should send it as reply to client's handshake, not before
         //   (server should not reply to random internet messages with handshake)
         // => handshake info needs to be delivered, so it goes over reliable.
-        public void SendHandshake()
+        public void SendHello()
         {
-            // server includes a random cookie in handshake.
-            // client is expected to include in every message.
-            // this avoid UDP spoofing.
-            // KcpPeer simply always sends a cookie.
-            // in case client -> server cookies are ever implemented, etc.
-
-            // TODO nonalloc
-            byte[] cookieBytes = BitConverter.GetBytes(cookie);
+            // send an empty message with 'Hello' header.
+            // cookie is automatically included in all messages.
 
             // GetType() shows Server/ClientConn instead of just Connection.
             Log.Info($"{GetType()}: sending handshake to other end with cookie={cookie}");
-            SendReliable(KcpHeader.Handshake, new ArraySegment<byte>(cookieBytes));
+            SendReliable(KcpHeader.Hello, ArraySegment<byte>.Empty);
         }
 
         public void SendData(ArraySegment<byte> data, KcpChannel channel)

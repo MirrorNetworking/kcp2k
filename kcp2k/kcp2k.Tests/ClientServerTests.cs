@@ -522,7 +522,7 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
 
             // change client to a wrong cookie
-            client.receivedCookie[0] += 1;
+            client.cookie += 1;
 
             // try to send a message with wrong cookie
             client.Send(new ArraySegment<byte>(new byte[]{0x01, 0x02}), KcpChannel.Reliable);
@@ -542,7 +542,7 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
 
             // change client to a wrong cookie
-            client.receivedCookie[0] += 1;
+            client.cookie += 1;
 
             // try to send a message with wrong cookie
             client.Send(new ArraySegment<byte>(new byte[]{0x01, 0x02}), KcpChannel.Unreliable);

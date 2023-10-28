@@ -62,50 +62,6 @@ namespace kcp2k
         // Unity's time.deltaTime over long periods.
         readonly Stopwatch watch = new Stopwatch();
 
-        // we need to subtract the channel and cookie bytes from every
-        // MaxMessageSize calculation.
-        // we also need to tell kcp to use MTU-1 to leave space for the byte.
-        const int CHANNEL_HEADER_SIZE = 1;
-        const int COOKIE_HEADER_SIZE = 4;
-        const int METADATA_SIZE = CHANNEL_HEADER_SIZE + COOKIE_HEADER_SIZE;
-
-        // reliable channel (= kcp) MaxMessageSize so the outside knows largest
-        // allowed message to send. the calculation in Send() is not obvious at
-        // all, so let's provide the helper here.
-        //
-        // kcp does fragmentation, so max message is way larger than MTU.
-        //
-        // -> runtime MTU changes are disabled: mss is always MTU_DEF-OVERHEAD
-        // -> Send() checks if fragment count < rcv_wnd, so we use rcv_wnd - 1.
-        //    NOTE that original kcp has a bug where WND_RCV default is used
-        //    instead of configured rcv_wnd, limiting max message size to 144 KB
-        //    https://github.com/skywind3000/kcp/pull/291
-        //    we fixed this in kcp2k.
-        // -> we add 1 byte KcpHeader enum to each message, so -1
-        //
-        // IMPORTANT: max message is MTU * rcv_wnd, in other words it completely
-        //            fills the receive window! due to head of line blocking,
-        //            all other messages have to wait while a maxed size message
-        //            is being delivered.
-        //            => in other words, DO NOT use max size all the time like
-        //               for batching.
-        //            => sending UNRELIABLE max message size most of the time is
-        //               best for performance (use that one for batching!)
-        static int ReliableMaxMessageSize_Unconstrained(int mtu, uint rcv_wnd) =>
-            (mtu - Kcp.OVERHEAD - METADATA_SIZE) * ((int)rcv_wnd - 1) - 1;
-
-        // kcp encodes 'frg' as 1 byte.
-        // max message size can only ever allow up to 255 fragments.
-        //   WND_RCV gives 127 fragments.
-        //   WND_RCV * 2 gives 255 fragments.
-        // so we can limit max message size by limiting rcv_wnd parameter.
-        public static int ReliableMaxMessageSize(int mtu, uint rcv_wnd) =>
-            ReliableMaxMessageSize_Unconstrained(mtu, Math.Min(rcv_wnd, Kcp.FRG_MAX));
-
-        // unreliable max message size is simply MTU - channel header size
-        public static int UnreliableMaxMessageSize(int mtu) =>
-            mtu - METADATA_SIZE;
-
         // buffer to receive kcp's processed messages (avoids allocations).
         // IMPORTANT: this is for KCP messages. so it needs to be of size:
         //            1 byte header + MaxMessageSize content
@@ -202,14 +158,14 @@ namespace kcp2k
             // message. so while Kcp.MTU_DEF is perfect, we actually need to
             // tell kcp to use MTU-1 so we can still put the header into the
             // message afterwards.
-            kcp.SetMtu((uint)config.Mtu - METADATA_SIZE);
+            kcp.SetMtu((uint)config.Mtu - Common.METADATA_SIZE);
 
             // create mtu sized send buffer
             rawSendBuffer = new byte[config.Mtu];
 
             // calculate max message sizes once
-            unreliableMax = UnreliableMaxMessageSize(config.Mtu);
-            reliableMax = ReliableMaxMessageSize(config.Mtu, config.ReceiveWindowSize);
+            unreliableMax = Common.UnreliableMaxMessageSize(config.Mtu);
+            reliableMax = Common.ReliableMaxMessageSize(config.Mtu, config.ReceiveWindowSize);
 
             // set maximum retransmits (aka dead_link)
             kcp.dead_link = config.MaxRetransmits;

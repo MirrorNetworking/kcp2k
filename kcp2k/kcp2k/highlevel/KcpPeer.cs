@@ -106,9 +106,12 @@ namespace kcp2k
         //    let's force require the parameters so we don't forget it anywhere.
         protected KcpPeer(KcpConfig config, uint cookie)
         {
-            // set readonly state here //
+            // initialize variable state in extra function so we can reuse it
+            // when reconnecting to reset state
+            Reset(config);
 
-            // security cookie
+            // set the cookie after resetting state so it's not overwritten again.
+            // with log message for debugging in case of cookie issues.
             this.cookie = cookie;
 
             // create mtu sized send buffer
@@ -122,15 +125,11 @@ namespace kcp2k
             // see comments on buffer definition for the "+1" part
             kcpMessageBuffer = new byte[1 + reliableMax];
             kcpSendBuffer    = new byte[1 + reliableMax];
-
-            // initialize variable state in extra function so we can reuse it
-            // when reconnecting to reset state
-            Initialize(config);
         }
 
-        // initialize and reset all state once.
+        // Reset all state once.
         // useful for KcpClient to reconned with a fresh kcp state.
-        protected void Initialize(KcpConfig config)
+        protected void Reset(KcpConfig config)
         {
             // reset state
             Array.Clear(receivedCookie);

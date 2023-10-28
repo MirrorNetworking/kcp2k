@@ -108,7 +108,7 @@ namespace kcp2k
 
             // create fresh peer for each new session
             // client doesn't need secure cookie.
-            Initialize(config);
+            Reset(config);
 
             Log.Info($"KcpClient: connect to {address}:{port}");
 

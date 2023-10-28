@@ -160,33 +160,33 @@ namespace kcp2k.Tests
         void ConnectClientBlocking(string hostname = "127.0.0.1")
         {
             client.Connect(hostname, Port);
-            UpdateSeveralTimes(5);
+            UpdateSeveralTimes(10); // '5' causes flaky tests
         }
 
         // disconnect and give it enough time to handle
         void DisconnectClientBlocking()
         {
             client.Disconnect();
-            UpdateSeveralTimes(5);
+            UpdateSeveralTimes(10); // '5' causes flaky tests
         }
 
         // kick and give it enough time to handle
         void KickClientBlocking(int connectionId)
         {
             server.Disconnect(connectionId);
-            UpdateSeveralTimes(5);
+            UpdateSeveralTimes(10); // '5' causes flaky tests
         }
 
         void SendClientToServerBlocking(ArraySegment<byte> message, KcpChannel channel)
         {
             client.Send(message, channel);
-            UpdateSeveralTimes(10);
+            UpdateSeveralTimes(10); // '5' causes flaky tests
         }
 
         void SendServerToClientBlocking(int connectionId, ArraySegment<byte> message, KcpChannel channel)
         {
             server.Send(connectionId, message, channel);
-            UpdateSeveralTimes(10);
+            UpdateSeveralTimes(10); // '5' causes flaky tests
         }
 
         // tests ///////////////////////////////////////////////////////////////

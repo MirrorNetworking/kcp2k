@@ -177,6 +177,7 @@ namespace kcp2k
             state = KcpState.Connected;
             lastReceiveTime = 0;
             lastPingTime = 0;
+            watch.Restart(); // start at 0 each time
 
             // set up kcp over reliable channel (that's what kcp is for)
             kcp = new Kcp(0, RawSendReliable);
@@ -195,8 +196,6 @@ namespace kcp2k
             // set maximum retransmits (aka dead_link)
             kcp.dead_link = config.MaxRetransmits;
             timeout = config.Timeout;
-
-            watch.Start();
         }
 
         // callbacks ///////////////////////////////////////////////////////////

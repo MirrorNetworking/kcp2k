@@ -1,4 +1,4 @@
 namespace kcp2k
 {
-    enum KcpState { Connected, Authenticated, Disconnected }
+    public enum KcpState { Connected, Authenticated, Disconnected }
 }

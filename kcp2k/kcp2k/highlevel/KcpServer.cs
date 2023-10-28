@@ -200,7 +200,7 @@ namespace kcp2k
         protected virtual KcpServerConnection CreateConnection(int connectionId)
         {
             // events need to be wrapped with connectionIds
-            Action<ArraySegment<byte>> RawSendWrap = data => RawSend(connectionId, data);
+            void RawSendWrap(ArraySegment<byte> data) => RawSend(connectionId, data);
 
             // generate a random cookie for this connection to avoid UDP spoofing.
             // needs to be random, but without allocations to avoid GC.

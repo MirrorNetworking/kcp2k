@@ -753,7 +753,7 @@ namespace kcp2k
             byte[] cookieBytes = BitConverter.GetBytes(cookie);
 
             // GetType() shows Server/ClientConn instead of just Connection.
-            Log.Info($"{identifier}: sending Handshake to other end with cookie={cookie}!");
+            Log.Info($"{identifier}: sending handshake to other end with cookie={cookie}");
             SendReliable(KcpHeader.Handshake, new ArraySegment<byte>(cookieBytes));
         }
 

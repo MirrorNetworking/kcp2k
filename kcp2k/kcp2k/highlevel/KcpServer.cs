@@ -213,7 +213,7 @@ namespace kcp2k
             uint cookie = Common.GenerateCookie();
 
             // set up peer with callbacks
-            KcpPeer peer = new KcpPeer(RawSendWrap, OnAuthenticatedWrap, OnDataWrap, OnDisconnectedWrap, OnErrorWrap, config, cookie);
+            KcpPeer peer = new KcpPeer(RawSendWrap, OnAuthenticatedWrap, OnDataWrap, OnDisconnectedWrap, OnErrorWrap, config, "KcpServerPeer", cookie);
 
             // assign peer to connection
             connection.peer = peer;

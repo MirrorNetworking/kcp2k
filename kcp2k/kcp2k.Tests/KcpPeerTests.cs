@@ -11,6 +11,7 @@ namespace kcp2k.Tests
             () => {},
             (_, _) => {},
             config,
+            "KcpMockPeer",
             0) {}
     }
 

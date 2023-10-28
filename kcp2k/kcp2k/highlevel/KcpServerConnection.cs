@@ -4,8 +4,7 @@ using System.Net;
 
 namespace kcp2k
 {
-    // struct to avoid memory indirection
-    public struct KcpServerConnection
+    public class KcpServerConnection
     {
         // peer can't be set from constructor at the moment.
         // because peer callbacks need to know 'connection'.

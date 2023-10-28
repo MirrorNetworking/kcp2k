@@ -1,18 +1,16 @@
 using NUnit.Framework;
+using System;
 
 namespace kcp2k.Tests
 {
     class MockPeer : KcpPeer
     {
-        public MockPeer(KcpConfig config) : base(
-            (_) => {},
-            () => {},
-            (_, _) => {},
-            () => {},
-            (_, _) => {},
-            config,
-            "KcpMockPeer",
-            0) {}
+        public MockPeer(KcpConfig config) : base(config, 0) {}
+        protected override void OnAuthenticated() => throw new NotImplementedException();
+        protected override void OnData(ArraySegment<byte> message, KcpChannel channel) => throw new NotImplementedException();
+        protected override void OnDisconnected() => throw new NotImplementedException();
+        protected override void OnError(ErrorCode error, string message) => throw new NotImplementedException();
+        protected override void RawSend(ArraySegment<byte> data) => throw new NotImplementedException();
     }
 
     public class KcpPeerTests

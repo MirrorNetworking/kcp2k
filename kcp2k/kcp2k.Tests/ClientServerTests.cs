@@ -522,7 +522,7 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
 
             // change client to a wrong cookie
-            client.peer.receivedCookie[0] += 1;
+            client.receivedCookie[0] += 1;
 
             // try to send a message with wrong cookie
             client.Send(new ArraySegment<byte>(new byte[]{0x01, 0x02}), KcpChannel.Reliable);
@@ -542,7 +542,7 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
 
             // change client to a wrong cookie
-            client.peer.receivedCookie[0] += 1;
+            client.receivedCookie[0] += 1;
 
             // try to send a message with wrong cookie
             client.Send(new ArraySegment<byte>(new byte[]{0x01, 0x02}), KcpChannel.Unreliable);
@@ -930,7 +930,7 @@ namespace kcp2k.Tests
             int connectionId = ServerFirstConnectionId();
 
             // fake dead_link by setting kcp.state to -1
-            server.connections[connectionId].peer.kcp.state = -1;
+            server.connections[connectionId].kcp.state = -1;
 
             // now update
 #if UNITY_2018_3_OR_NEWER

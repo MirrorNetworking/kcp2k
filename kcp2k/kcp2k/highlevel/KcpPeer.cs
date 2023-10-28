@@ -8,8 +8,6 @@ using System.Net.Sockets;
 
 namespace kcp2k
 {
-    enum KcpState { Connected, Authenticated, Disconnected }
-
     public class KcpPeer
     {
         // identifier for logging.

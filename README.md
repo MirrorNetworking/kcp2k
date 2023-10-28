@@ -5,7 +5,7 @@ Works with **netcore** and **Unity**.
 
 Developed for [Mirror Networking](https://github.com/MirrorNetworking/Mirror).
 
-Questions & support on [Mirror Networking Discord](https://discord.gg/xVW4nU4C34 )
+Questions & support on [Mirror Networking Discord](https://discord.gg/xVW4nU4C34).
 
 # Features
 * Kcp.cs based on kcp.c v1.7, line-by-line translation to C#

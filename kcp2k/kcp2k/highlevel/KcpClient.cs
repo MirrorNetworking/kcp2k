@@ -270,8 +270,16 @@ namespace kcp2k
                     RawInput(segment);
             }
 
-            // RawReceive may have disconnected peer. null check again.
-            base.TickIncoming();
+            // RawReceive may have disconnected peer. active check again.
+            if (active) base.TickIncoming();
+        }
+
+        // process outgoing messages. should be called after updating the world.
+        // virtual because relay may need to inject their own ping or similar.
+        public override void TickOutgoing()
+        {
+            // process outgoing while active
+            if (active) base.TickOutgoing();
         }
 
         // process incoming and outgoing for convenience

@@ -970,5 +970,14 @@ namespace kcp2k.Tests
             Assert.That(client.connected, Is.False);
             Assert.That(server.connections.Count, Is.EqualTo(0));
         }
+
+        // KcpClient.TickIncoming/Outgoing should only do work while connectd.
+        // if we forgot the active check, this will throw exceptions when called
+        // before connected.
+        [Test]
+        public void UpdateBeforeConnected()
+        {
+            UpdateSeveralTimes(10);
+        }
     }
 }

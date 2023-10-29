@@ -672,7 +672,7 @@ namespace kcp2k
 
             // GetType() shows Server/ClientConn instead of just Connection.
             Log.Info($"{GetType()}: sending handshake to other end with cookie={cookie}");
-            SendReliable(KcpHeader.Hello, ArraySegment<byte>.Empty);
+            SendReliable(KcpHeader.Hello, default);
         }
 
         public void SendData(ArraySegment<byte> data, KcpChannel channel)

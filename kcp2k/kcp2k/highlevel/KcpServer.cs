@@ -220,10 +220,10 @@ namespace kcp2k
             return connection;
 
             // setup authenticated event that also adds to connections
-            void OnConnectedCallback(KcpServerConnection connection)
+            void OnConnectedCallback(KcpServerConnection conn)
             {
                 // add to connections dict after being authenticated.
-                connections.Add(connectionId, connection);
+                connections.Add(connectionId, conn);
                 Log.Info($"KcpServer: added connection({connectionId})");
 
                 // setup Data + Disconnected events only AFTER the

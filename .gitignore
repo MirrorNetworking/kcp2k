@@ -61,3 +61,5 @@ docs/.sass-cache
 ehthumbs.db
 Thumbs.db
 /VisRepo.txt
+/packages/NUnit.3.14.0
+/packages.config

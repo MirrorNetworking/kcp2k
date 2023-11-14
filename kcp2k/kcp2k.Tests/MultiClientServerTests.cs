@@ -91,7 +91,7 @@ namespace kcp2k.Tests
                 (connectionId) => {},
                 ServerOnData,
                 (connectionId) => {},
-                (connectionId, error, reason) => Log.Warning($"connId={connectionId}: {error}, {reason}"),
+                (connectionId, error, reason) => Log.Warning($"[KCP] connId={connectionId}: {error}, {reason}"),
                 config
             );
         }
@@ -103,14 +103,14 @@ namespace kcp2k.Tests
                 () => {},
                 ClientOnDataA,
                 () => {},
-                (error, reason) => Log.Warning($"A: {error}, {reason}"),
+                (error, reason) => Log.Warning($"[KCP] A: {error}, {reason}"),
                 config
             );
             clientB = new KcpClient(
                 () => {},
                 ClientOnDataB,
                 () => {},
-                (error, reason) => Log.Warning($"B: {error}, {reason}"),
+                (error, reason) => Log.Warning($"[KCP] B: {error}, {reason}"),
                 config
             );
         }

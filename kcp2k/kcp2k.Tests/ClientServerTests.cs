@@ -93,7 +93,7 @@ namespace kcp2k.Tests
                 (connectionId) => {},
                 ServerOnData,
                 (connectionId) => {},
-                (connectionId, error, reason) => Log.Warning($"connId={connectionId}: {error}, {reason}"),
+                (connectionId, error, reason) => Log.Warning($"[KCP] connId={connectionId}: {error}, {reason}"),
                 config
             );
         }
@@ -105,7 +105,7 @@ namespace kcp2k.Tests
                 () => {},
                 ClientOnData,
                 () => { ++onClientDisconnectCalled; },
-                (error, reason) => Log.Warning($"{error}, {reason}"),
+                (error, reason) => Log.Warning($"[KCP] {error}, {reason}"),
                 config
             );
         }
@@ -319,7 +319,7 @@ namespace kcp2k.Tests
             byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(config.Mtu, config.ReceiveWindowSize)];
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
-            Log.Info($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
+            Log.Info($"[KCP] Sending {message.Length} bytes = {message.Length / 1024} KB message");
             SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Reliable);
             UpdateSeveralTimes(5);
             Assert.That(serverReceived.Count, Is.EqualTo(1));
@@ -337,7 +337,7 @@ namespace kcp2k.Tests
             byte[] message = new byte[KcpPeer.UnreliableMaxMessageSize(config.Mtu)];
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
-            Log.Info($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
+            Log.Info($"[KCP] Sending {message.Length} bytes = {message.Length / 1024} KB message");
             SendClientToServerBlocking(new ArraySegment<byte>(message), KcpChannel.Unreliable);
             Assert.That(serverReceived.Count, Is.EqualTo(1));
             Assert.That(serverReceived[0].data.SequenceEqual(message), Is.True);
@@ -360,7 +360,7 @@ namespace kcp2k.Tests
             byte[] message = new byte[Kcp.MTU_DEF - 5];
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
-            Log.Info($"Sending {message.Length} bytes = {message.Length / 1024} KB message");
+            Log.Info($"[KCP] Sending {message.Length} bytes = {message.Length / 1024} KB message");
             SendClientToServerBlocking(new ArraySegment<byte>(message), channel);
             Assert.That(serverReceived.Count, Is.EqualTo(1));
             Assert.That(serverReceived[0].data.SequenceEqual(message), Is.True);
@@ -877,7 +877,7 @@ namespace kcp2k.Tests
 
             // sleep for half a timeout
             int firstSleep = config.Timeout / 2;
-            Log.Info($"sleeping for {firstSleep} ms...");
+            Log.Info($"[KCP] sleeping for {firstSleep} ms...");
             Thread.Sleep(firstSleep);
 
             // send one reliable message to both ends
@@ -891,7 +891,7 @@ namespace kcp2k.Tests
             // sleep for half a timeout again.
             // use exactly the remainder instead of '/2' so nothing gets lost
             int lastSleep = config.Timeout - firstSleep + 1;
-            Log.Info($"sleeping for {lastSleep} ms...");
+            Log.Info($"[KCP] sleeping for {lastSleep} ms...");
             Thread.Sleep(lastSleep);
 
             // should still be connected

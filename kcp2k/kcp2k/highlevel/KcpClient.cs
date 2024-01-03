@@ -166,6 +166,10 @@ namespace kcp2k
         // virtual so it may be modified for relays, etc.
         protected override void RawSend(ArraySegment<byte> data)
         {
+            // only if socket was connected / created yet.
+            // users may call send functions without having connected, causing NRE.
+            if (socket == null) return;
+
             try
             {
                 socket.SendNonBlocking(data);

@@ -357,7 +357,7 @@ namespace kcp2k.Tests
             server.Start(Port);
             ConnectClientBlocking();
 
-            byte[] message = new byte[Kcp.MTU_DEF - 5];
+            byte[] message = new byte[Kcp.MTU_DEF - 6];
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
             Log.Info($"[KCP] Sending {message.Length} bytes = {message.Length / 1024} KB message");
@@ -686,7 +686,7 @@ namespace kcp2k.Tests
             ConnectClientBlocking();
             int connectionId = ServerFirstConnectionId();
 
-            byte[] message = new byte[Kcp.MTU_DEF - 5];
+            byte[] message = new byte[Kcp.MTU_DEF - 6];
             for (int i = 0; i < message.Length; ++i)
                 message[i] = (byte)(i & 0xFF);
 
@@ -831,6 +831,38 @@ namespace kcp2k.Tests
             KickClientBlocking(connectionId);
             Assert.That(client.connected, Is.False);
             Assert.That(server.connections.Count, Is.EqualTo(0));
+        }
+
+        // test to prevent https://github.com/MirrorNetworking/Mirror/issues/3591
+        [Test]
+        public void DisconnectAndCloseImmediately()
+        {
+            // start server and connect a client
+            server.Start(Port);
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+            Assert.That(client.connected, Is.True);
+            Assert.That(server.connections.Count, Is.EqualTo(1));
+
+            // put some messages into the server connection's queue.
+            // just like in a real game where something is always pending.
+            byte[] message = new byte[KcpPeer.ReliableMaxMessageSize(config.Mtu, config.ReceiveWindowSize)];
+            for (int i = 0; i < 100; ++i)
+            {
+                server.connections[connectionId].SendData(new ArraySegment<byte>(message), KcpChannel.Reliable);
+            }
+            Assert.That(client.connected, Is.True);
+
+            // disconnect server's connection.
+            // do not update the server connection again, assume it was removed.
+            server.Disconnect(connectionId);
+
+            // did client receive the disconnect?
+            client.Tick();
+            Assert.That(client.connected, Is.False);
+
+            // close
+            server.Stop();
         }
 
         [Test]

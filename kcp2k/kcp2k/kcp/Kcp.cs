@@ -1048,7 +1048,7 @@ namespace kcp2k
         public void SetMtu(uint mtu)
         {
             if (mtu < 50 || mtu < OVERHEAD)
-                throw new ArgumentException("MTU must be higher than 50 and higher than OVERHEAD");
+                throw new ArgumentException("MTU must be higher than 50 and lower than OVERHEAD");
 
             buffer = new byte[(mtu + OVERHEAD) * 3];
             this.mtu = mtu;

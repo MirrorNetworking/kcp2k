@@ -90,7 +90,7 @@ namespace kcp2k
             {
                 if (messageCookie != cookie)
                 {
-                    Log.Warning($"[KCP] ServerConnection: dropped message with invalid cookie: {messageCookie} expected: {cookie} state: {state}");
+                    Log.Warning($"[KCP] ServerConnection: dropped message with invalid cookie: {messageCookie} from {remoteEndPoint} expected: {cookie} state: {state}");
                     return;
                 }
             }

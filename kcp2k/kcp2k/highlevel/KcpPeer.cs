@@ -39,6 +39,9 @@ namespace kcp2k
         // Unity's time.deltaTime over long periods.
         readonly Stopwatch watch = new Stopwatch();
 
+        // current time property for convenience. uint is easy to serialize across platforms.
+        public uint time => (uint)watch.ElapsedMilliseconds;
+
         // buffer to receive kcp's processed messages (avoids allocations).
         // IMPORTANT: this is for KCP messages. so it needs to be of size:
         //            1 byte header + MaxMessageSize content
@@ -325,7 +328,7 @@ namespace kcp2k
 
             // extract content without header
             message = new ArraySegment<byte>(kcpMessageBuffer, 1, msgSize - 1);
-            lastReceiveTime = (uint)watch.ElapsedMilliseconds;
+            lastReceiveTime = time;
             return true;
         }
 
@@ -423,8 +426,6 @@ namespace kcp2k
 
         public virtual void TickIncoming()
         {
-            uint time = (uint)watch.ElapsedMilliseconds;
-
             try
             {
                 switch (state)
@@ -475,8 +476,6 @@ namespace kcp2k
 
         public virtual void TickOutgoing()
         {
-            uint time = (uint)watch.ElapsedMilliseconds;
-
             try
             {
                 switch (state)
@@ -586,7 +585,7 @@ namespace kcp2k
                         //    otherwise a connection might time out even
                         //    though unreliable were received, but no
                         //    reliable was received.
-                        lastReceiveTime = (uint)watch.ElapsedMilliseconds;
+                        lastReceiveTime = time;
                     }
                     else
                     {

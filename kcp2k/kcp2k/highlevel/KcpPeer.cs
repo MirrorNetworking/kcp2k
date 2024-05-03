@@ -83,7 +83,8 @@ namespace kcp2k
         // we also need to tell kcp to use MTU-1 to leave space for the byte.
         public const int CHANNEL_HEADER_SIZE = 1;
         public const int COOKIE_HEADER_SIZE = 4;
-        public const int METADATA_SIZE = CHANNEL_HEADER_SIZE + COOKIE_HEADER_SIZE;
+        public const int METADATA_SIZE_RELIABLE = CHANNEL_HEADER_SIZE + COOKIE_HEADER_SIZE;
+        public const int METADATA_SIZE_UNRELIABLE = CHANNEL_HEADER_SIZE + COOKIE_HEADER_SIZE;
 
         // reliable channel (= kcp) MaxMessageSize so the outside knows largest
         // allowed message to send. the calculation in Send() is not obvious at
@@ -108,7 +109,7 @@ namespace kcp2k
         //            => sending UNRELIABLE max message size most of the time is
         //               best for performance (use that one for batching!)
         static int ReliableMaxMessageSize_Unconstrained(int mtu, uint rcv_wnd) =>
-            (mtu - Kcp.OVERHEAD - METADATA_SIZE) * ((int)rcv_wnd - 1) - 1;
+            (mtu - Kcp.OVERHEAD - METADATA_SIZE_RELIABLE) * ((int)rcv_wnd - 1) - 1;
 
         // kcp encodes 'frg' as 1 byte.
         // max message size can only ever allow up to 255 fragments.
@@ -120,7 +121,7 @@ namespace kcp2k
 
         // unreliable max message size is simply MTU - channel header - kcp header
         public static int UnreliableMaxMessageSize(int mtu) =>
-            mtu - METADATA_SIZE - 1;
+            mtu - METADATA_SIZE_UNRELIABLE - 1;
 
         // maximum send rate per second can be calculated from kcp parameters
         // source: https://translate.google.com/translate?sl=auto&tl=en&u=https://wetest.qq.com/lab/view/391.html
@@ -191,7 +192,7 @@ namespace kcp2k
             // message. so while Kcp.MTU_DEF is perfect, we actually need to
             // tell kcp to use MTU-1 so we can still put the header into the
             // message afterwards.
-            kcp.SetMtu((uint)config.Mtu - METADATA_SIZE);
+            kcp.SetMtu((uint)config.Mtu - METADATA_SIZE_RELIABLE);
 
             // set maximum retransmits (aka dead_link)
             kcp.dead_link = config.MaxRetransmits;

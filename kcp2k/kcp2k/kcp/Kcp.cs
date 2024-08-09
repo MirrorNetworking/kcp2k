@@ -310,6 +310,18 @@ namespace kcp2k
                 int size = len > (int)mss ? (int)mss : len;
                 Segment seg = SegmentNew();
 
+                while (true)
+                {
+                    if (seg == null)
+                    {
+                        seg = SegmentNew();
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
                 if (len > 0)
                 {
                     seg.data.Write(buffer, offset, size);
@@ -819,6 +831,8 @@ namespace kcp2k
                 if (snd_queue.Count == 0) break;
 
                 Segment newseg = snd_queue.Dequeue();
+
+                if (newseg == null) continue;
 
                 newseg.conv = conv;
                 newseg.cmd = CMD_PUSH;

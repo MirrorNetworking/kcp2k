@@ -62,6 +62,7 @@ namespace kcp2k
         // same goes for slow paced card games etc.
         public const int PING_INTERVAL = 1000;
         uint lastPingTime;
+        uint lastPongTime;
 
         // if we send more than kcp can handle, we will get ever growing
         // send/recv buffers and queues and minutes of latency.
@@ -430,10 +431,16 @@ namespace kcp2k
                     {
                         // ping includes the sender's local time for RTT calculation.
                         // simply send it back to the sender.
+                        // for safety, we only reply every PING_INTERVAL at max.
+                        // so attackers can't force us to reply a PONG every time.
                         if (message.Count == 4)
                         {
-                            Utils.Decode32U(message.Array, message.Offset, out uint pingTimestamp);
-                            SendPong(pingTimestamp);
+                            if (time >= lastPongTime + PING_INTERVAL)
+                            {
+                                Utils.Decode32U(message.Array, message.Offset, out uint pingTimestamp);
+                                SendPong(pingTimestamp);
+                                lastPongTime = time;
+                            }
                         }
                         break;
                     }

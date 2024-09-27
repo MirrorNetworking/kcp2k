@@ -952,6 +952,24 @@ namespace kcp2k.Tests
             Assert.That(server.connections.Count, Is.EqualTo(1));
         }
 
+        [Test]
+        public void PingUpdatesRtt()
+        {
+            Assert.That(client.rttInMilliseconds, Is.EqualTo(0));
+
+            server.Start(Port);
+            ConnectClientBlocking();
+            int connectionId = ServerFirstConnectionId();
+
+            // update a few times, let at least PING_INTERVAL elapse, update again
+            UpdateSeveralTimes(10);
+            Thread.Sleep(KcpPeer.PING_INTERVAL);
+            UpdateSeveralTimes(10);
+
+            Assert.That(client.rttInMilliseconds, Is.GreaterThan(0));
+            Assert.That(server.connections[connectionId].rttInMilliseconds, Is.GreaterThan(0));
+        }
+
         // fake a kcp dead_link by setting state = -1.
         // KcpConnection should detect it and disconnect.
         [Test]

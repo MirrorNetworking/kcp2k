@@ -144,6 +144,10 @@ namespace kcp2k
         public readonly int unreliableMax;
         public readonly int reliableMax;
 
+        // round trip time (RTT) for convenience.
+        // this is the time that it takes for a reliable message to travel to remote and back.
+        public uint rttInMilliseconds { get; private set; }
+
         // SetupKcp creates and configures a new KCP instance.
         // => useful to start from a fresh state every time the client connects
         // => NoDelay, interval, wnd size are the most important configurations.
@@ -360,6 +364,13 @@ namespace kcp2k
                     case KcpHeaderReliable.Ping:
                     {
                         // ping keeps kcp from timing out. do nothing.
+                        // safety: don't reply with pong message before authenticated.
+                        break;
+                    }
+                    case KcpHeaderReliable.Pong:
+                    {
+                        // ping keeps kcp from timing out. do nothing.
+                        // safety: don't handle pong message before authenticated.
                         break;
                     }
                     case KcpHeaderReliable.Data:
@@ -417,6 +428,28 @@ namespace kcp2k
                     }
                     case KcpHeaderReliable.Ping:
                     {
+                        // ping includes the sender's local time for RTT calculation.
+                        // simply send it back to the sender.
+                        if (message.Count == 4)
+                        {
+                            Utils.Decode32U(message.Array, message.Offset, out uint pingTimestamp);
+                            SendPong(pingTimestamp);
+                        }
+                        break;
+                    }
+                    case KcpHeaderReliable.Pong:
+                    {
+                        if (message.Count == 4)
+                        {
+                            Utils.Decode32U(message.Array, message.Offset, out uint originalTimestamp);
+                            if (time >= originalTimestamp)
+                            {
+                                rttInMilliseconds = time - originalTimestamp;
+                                // Log.Info($"[KCP] {GetType()}: RTT={rttInMilliseconds}ms");
+                            }
+                        }
+                        // TODO calculate RTT
+
                         // ping keeps kcp from timing out. do nothing.
                         break;
                     }
@@ -736,7 +769,22 @@ namespace kcp2k
 
         // ping goes through kcp to keep it from timing out, so it goes over the
         // reliable channel.
-        void SendPing() => SendReliable(KcpHeaderReliable.Ping, default);
+        readonly byte[] pingData = new byte[4]; // 4 bytes timestamp
+        void SendPing()
+        {
+            // when sending ping, include the local timestamp so we can
+            // calculate RTT from the pong.
+            Utils.Encode32U(pingData, 0, time);
+            SendReliable(KcpHeaderReliable.Ping, pingData);
+        }
+
+        void SendPong(uint pingTimestamp)
+        {
+            // when sending ping, include the local timestamp so we can
+            // calculate RTT from the pong.
+            Utils.Encode32U(pingData, 0, pingTimestamp);
+            SendReliable(KcpHeaderReliable.Pong, pingData);
+        }
 
         // send disconnect message
         void SendDisconnect()

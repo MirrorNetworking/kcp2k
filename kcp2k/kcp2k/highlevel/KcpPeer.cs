@@ -437,6 +437,7 @@ namespace kcp2k
                         }
                         break;
                     }
+                    // ping keeps kcp from timing out, and is used for RTT calcualtion
                     case KcpHeaderReliable.Pong:
                     {
                         if (message.Count == 4)
@@ -448,9 +449,7 @@ namespace kcp2k
                                 // Log.Info($"[KCP] {GetType()}: RTT={rttInMilliseconds}ms");
                             }
                         }
-                        // TODO calculate RTT
 
-                        // ping keeps kcp from timing out. do nothing.
                         break;
                     }
                 }

@@ -15,6 +15,7 @@ namespace kcp2k
         // we already have a KcpHeader for reliable messages.
         // ping is only used to keep it alive, so latency doesn't matter.
         Ping       = 2,
+        Pong       = 4, // '4' not '3' in order to keep backwards compatibility
         Data       = 3,
     }
 
